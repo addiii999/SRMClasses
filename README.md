@@ -85,17 +85,6 @@ App runs on: http://localhost:5173
 
 ---
 
-## Admin Credentials
-
-| Field | Value |
-|-------|-------|
-| Email | srmclasses01@gmail.com |
-| Password | SRMAdmin@2026 |
-
-> Change the password from `.env` → `ADMIN_PASSWORD` before running `node seed.js`
-
----
-
 ## Gmail App Password (for OTP emails)
 
 1. Go to Google Account → Security → 2-Step Verification → App Passwords  
