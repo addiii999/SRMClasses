@@ -9,11 +9,9 @@ connectDB();
 
 const app = express();
 
-// Middleware
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://srmclasses.in', 'http://srmclasses.in'],
-  credentials: true,
-}));
+// Middleware - Allow all origins (Hostinger handles domain security)
+app.use(cors());
+
 app.use(express.json());
 
 // Root path friendly message
