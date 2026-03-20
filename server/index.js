@@ -11,10 +11,15 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000'],
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://srmclasses.in', 'http://srmclasses.in'],
   credentials: true,
 }));
 app.use(express.json());
+
+// Root path friendly message
+app.get('/', (req, res) => {
+  res.send('<h1>SRM Classes API is Running! 🚀🚀🚀</h1><p>The backend is fully live and connected to MongoDB Atlas.</p>');
+});
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files statically
