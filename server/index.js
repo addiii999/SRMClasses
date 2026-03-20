@@ -46,7 +46,12 @@ app.use('/api/results', require('./routes/resultRoutes'));
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'SRM Classes API is running' });
+  const mongoose = require('mongoose');
+  res.json({ 
+    status: 'OK', 
+    message: 'SRM Classes API is running',
+    dbState: mongoose.connection.readyState // 0: disconnected, 1: connected, 2: connecting, 3: disconnecting
+  });
 });
 
 // Global error handler
