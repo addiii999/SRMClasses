@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.MODE === 'development' ? '/api' : 'https://api.srmclasses.in/api',
   headers: { 'Content-Type': 'application/json' },
 });
 
