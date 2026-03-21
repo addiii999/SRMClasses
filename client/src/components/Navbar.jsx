@@ -40,9 +40,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glass group-hover:scale-105 transition-transform">
-              <GraduationCap className="w-5 h-5 text-white" />
-            </div>
+            <img src="/logo.png" alt="SRM Classes" className="w-10 h-10 object-contain group-hover:scale-105 transition-transform" />
             <span className="font-display font-bold text-xl text-brand-dark">
               SRM <span className="text-gradient">Classes</span>
             </span>
