@@ -47,10 +47,14 @@ app.use('/api/results', require('./routes/resultRoutes'));
 // Health check
 app.get('/api/health', (req, res) => {
   const mongoose = require('mongoose');
+  const uri = process.env.MONGO_URI || 'NOT SET';
   res.json({ 
     status: 'OK', 
     message: 'SRM Classes API is running',
-    dbState: mongoose.connection.readyState // 0: disconnected, 1: connected, 2: connecting, 3: disconnecting
+    dbState: mongoose.connection.readyState,
+    mongoUriSet: uri !== 'NOT SET',
+    mongoUriStart: uri.substring(0, 30) + '...',
+    nodeEnv: process.env.NODE_ENV || 'not set'
   });
 });
 
