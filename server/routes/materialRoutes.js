@@ -5,7 +5,7 @@ const { protect } = require('../middleware/auth');
 const { adminProtect } = require('../middleware/adminAuth');
 const upload = require('../middleware/upload');
 
-router.get('/', protect, getMaterials);                          // student
+router.get('/', getMaterials);                          // public
 router.post('/', adminProtect, upload.single('file'), uploadMaterial); // admin
 router.delete('/:id', adminProtect, deleteMaterial);            // admin
 
