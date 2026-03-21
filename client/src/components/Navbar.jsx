@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Menu, X, GraduationCap, ChevronDown, LogOut, LayoutDashboard } from 'lucide-react';
 
@@ -19,6 +19,10 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  const isHome = location.pathname === '/';
+  const isLightText = isHome && !scrolled;
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -41,8 +45,8 @@ export default function Navbar() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
             <img src="/logo.png?v=2" alt="SRM Classes" className="w-10 h-10 object-contain group-hover:scale-105 transition-transform" />
-            <span className="font-display font-bold text-xl text-brand-dark">
-              SRM <span className="text-gradient">Classes</span>
+            <span className={`font-display font-bold text-xl transition-colors duration-300 ${isLightText ? 'text-[#EAEFFE]' : 'text-brand-dark'}`}>
+              SRM <span className={isLightText ? 'text-white' : 'text-gradient'}>Classes</span>
             </span>
           </Link>
 
@@ -52,13 +56,17 @@ export default function Navbar() {
               <NavLink
                 key={link.to}
                 to={link.to}
-                className={({ isActive }) =>
-                  `px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? 'text-primary bg-primary/10'
-                      : 'text-brand-dark hover:text-primary hover:bg-primary/5'
-                  }`
-                }
+                className={({ isActive }) => {
+                  const baseColors = isLightText 
+                    ? 'text-[#EAEFFE] hover:text-white hover:bg-white/10' 
+                    : 'text-brand-dark hover:text-primary hover:bg-primary/5';
+                  const activeColors = isLightText
+                    ? 'text-white bg-white/20'
+                    : 'text-primary bg-primary/10';
+                  return `px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                    isActive ? activeColors : baseColors
+                  }`;
+                }}
               >
                 {link.label}
               </NavLink>
@@ -94,7 +102,7 @@ export default function Navbar() {
               </div>
             ) : (
               <>
-                <Link to="/login" className="btn-ghost text-sm py-2">Login</Link>
+                <Link to="/login" className={`text-sm py-2 px-4 rounded-xl font-medium transition-all ${isLightText ? 'text-[#EAEFFE] hover:bg-white/10' : 'text-brand-dark hover:bg-primary/5'}`}>Login</Link>
                 <Link to="/register" className="btn-primary text-sm py-2.5 px-5">Register Free</Link>
               </>
             )}
@@ -105,7 +113,7 @@ export default function Navbar() {
             onClick={() => setIsOpen(!isOpen)}
             className="md:hidden p-2 rounded-xl hover:bg-primary/10 transition-all"
           >
-            {isOpen ? <X className="w-6 h-6 text-brand-dark" /> : <Menu className="w-6 h-6 text-brand-dark" />}
+            {isOpen ? <X className={`w-6 h-6 ${isLightText ? 'text-[#EAEFFE]' : 'text-brand-dark'}`} /> : <Menu className={`w-6 h-6 ${isLightText ? 'text-[#EAEFFE]' : 'text-brand-dark'}`} />}
           </button>
         </div>
       </div>
