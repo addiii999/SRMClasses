@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap, ArrowRight, ArrowLeft } from 'lucide-react';
 import api from '../lib/api';
@@ -11,16 +11,34 @@ export default function ForgotPassword() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    let timer;
+    if (cooldown > 0) {
+      timer = setInterval(() => setCooldown(prev => prev - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldown]);
 
   const handleSendOTP = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
+    if (cooldown > 0) {
+      toast.error(`Please wait ${cooldown} seconds before resending.`);
+      return;
+    }
+    if (!email) {
+      toast.error('Please enter your email address.');
+      return;
+    }
     setLoading(true);
     try {
       await api.post('/auth/forgot-password', { email });
       toast.success('OTP sent to your email!');
       setStep(2);
+      setCooldown(60); // 60 seconds anti-spam timer
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Failed to send OTP');
+      toast.error(err.response?.data?.message || 'Failed to send OTP. Check email or app password.');
     } finally {
       setLoading(false);
     }
@@ -70,14 +88,24 @@ export default function ForgotPassword() {
                 <input type="email" className="input-field" placeholder="your@email.com"
                   value={email} onChange={e => setEmail(e.target.value)} required />
               </div>
-              <button type="submit" disabled={loading} className="btn-primary w-full py-4 flex items-center justify-center gap-2 disabled:opacity-60">
-                {loading ? 'Sending OTP...' : <><span>Send OTP</span><ArrowRight className="w-4 h-4" /></>}
+              <button type="submit" disabled={loading || cooldown > 0} className="btn-primary w-full py-4 flex items-center justify-center gap-2 disabled:opacity-60">
+                {loading ? 'Sending OTP...' : cooldown > 0 ? `Please wait ${cooldown}s` : <><span>Send OTP</span><ArrowRight className="w-4 h-4" /></>}
               </button>
             </form>
           ) : (
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
-                <label className="label">6-Digit OTP</label>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="label !mb-0">6-Digit OTP</label>
+                  <button 
+                    type="button" 
+                    onClick={handleSendOTP} 
+                    disabled={cooldown > 0 || loading}
+                    className="text-xs text-primary font-semibold hover:underline disabled:opacity-50 disabled:no-underline"
+                  >
+                    {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend OTP'}
+                  </button>
+                </div>
                 <input className="input-field tracking-widest text-center text-lg font-bold" placeholder="• • • • • •"
                   maxLength={6} value={otp} onChange={e => setOtp(e.target.value)} required />
               </div>
