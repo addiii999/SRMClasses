@@ -1,6 +1,6 @@
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 
 const generateAdminToken = (id) => {
   return jwt.sign({ id, role: 'admin' }, process.env.JWT_SECRET, {
@@ -48,18 +48,17 @@ const adminForgotPassword = async (req, res) => {
     admin.otpExpiry = Date.now() + 10 * 60 * 1000;
     await admin.save({ validateBeforeSave: false });
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-      connectionTimeout: 10000,
-      greetingTimeout: 5000,
-    });
-
-    await transporter.sendMail({
-      from: `SRM Classes <${process.env.EMAIL_USER}>`,
-      to: email,
+    await axios.post('https://api.brevo.com/v3/smtp/email', {
+      sender: { name: "SRM Classes", email: process.env.EMAIL_USER },
+      to: [{ email: email }],
       subject: 'Admin Password Reset OTP - SRM Classes',
-      html: `<p>Your admin OTP is: <strong>${otp}</strong></p><p>Valid for 10 minutes.</p>`,
+      htmlContent: `<p>Your admin OTP is: <strong>${otp}</strong></p><p>Valid for 10 minutes.</p>`
+    }, {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
     });
 
     res.json({ success: true, message: 'OTP sent to admin email' });

@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 const crypto = require('crypto');
 
 const generateToken = (id) => {
@@ -71,18 +71,17 @@ const forgotPassword = async (req, res) => {
     user.resetOTPExpiry = Date.now() + 10 * 60 * 1000; // 10 minutes
     await user.save({ validateBeforeSave: false });
 
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user: process.env.EMAIL_USER, pass: process.env.EMAIL_PASS },
-      connectionTimeout: 10000,
-      greetingTimeout: 5000,
-    });
-
-    await transporter.sendMail({
-      from: `SRM Classes <${process.env.EMAIL_USER}>`,
-      to: user.email,
+    await axios.post('https://api.brevo.com/v3/smtp/email', {
+      sender: { name: "SRM Classes", email: process.env.EMAIL_USER },
+      to: [{ email: user.email }],
       subject: 'Password Reset OTP - SRM Classes',
-      html: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>Valid for 10 minutes.</p>`,
+      htmlContent: `<p>Your OTP for password reset is: <strong>${otp}</strong></p><p>Valid for 10 minutes.</p>`
+    }, {
+      headers: {
+        'api-key': process.env.BREVO_API_KEY,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
     });
 
     res.json({ success: true, message: 'OTP sent to your email' });
