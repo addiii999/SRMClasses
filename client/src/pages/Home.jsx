@@ -52,13 +52,13 @@ export default function Home() {
   return (
     <div className="overflow-x-hidden">
       {/* ── HERO ── */}
-      <section className="relative min-h-screen flex items-center bg-gradient-hero overflow-hidden pt-20">
+      <section className="relative min-h-[100svh] flex items-center bg-gradient-hero overflow-hidden pt-32 pb-40">
         {/* Decorative blobs */}
         <div className="absolute top-20 right-10 w-72 h-72 bg-primary/30 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-20 left-10 w-56 h-56 bg-white/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl" />
 
-        <div className="container-pad relative z-10">
+        <div className="container-pad relative z-10 w-full">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/80 text-sm font-medium mb-6 animate-fade-in">
               <Sparkles className="w-4 h-4 text-primary-300" />
@@ -66,9 +66,9 @@ export default function Home() {
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white leading-tight mb-6 animate-slide-up">
               Shape Your{' '}
-              <span className="relative">
-                <span className="text-primary-300">Future</span>
-                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" fill="none">
+              <span className="relative inline-block mt-2 sm:mt-0">
+                <span className="text-primary-300 z-10 relative">Future</span>
+                <svg className="absolute -bottom-2 left-0 w-full z-0" viewBox="0 0 300 12" fill="none">
                   <path d="M2 10 Q150 2 298 10" stroke="#9787F3" strokeWidth="3" strokeLinecap="round" fill="none" />
                 </svg>
               </span>
@@ -77,18 +77,18 @@ export default function Home() {
             <p className="text-lg md:text-xl text-white/70 mb-8 max-w-xl leading-relaxed animate-fade-in">
               Premium coaching for Class 5–12. Small batches, expert faculty, proven results. Join 2,500+ students who trusted SRM Classes.
             </p>
-            <div className="flex flex-wrap gap-4 mb-10 animate-fade-in">
+            <div className="flex flex-wrap gap-4 mb-4 animate-fade-in">
               <Link to="/register" className="btn-primary text-base px-8 py-4 flex items-center gap-2">
                 Start Learning Free <ArrowRight className="w-5 h-5" />
               </Link>
-              <Link to="/contact#demo" className="flex items-center gap-2 px-8 py-4 rounded-xl border-2 border-white/30 text-white font-semibold hover:bg-white/10 transition-all duration-200">
+              <Link to="/contact#demo" className="flex items-center gap-2 px-8 py-4 rounded-xl border-2 border-white/30 text-white font-semibold hover:bg-white/10 border-solid transition-all duration-200">
                 <Play className="w-5 h-5" /> Book Demo Class
               </Link>
             </div>
             {/* Quick trust badges */}
-            <div className="w-full max-w-2xl flex flex-col sm:flex-row items-center sm:items-center justify-between gap-4 mt-8">
+            <div className="flex flex-wrap items-center gap-6 mt-10">
               {['Free Demo Class', 'Expert Faculty', '98% Success Rate'].map(badge => (
-                <div key={badge} className="flex items-center justify-center gap-2 text-white/90 text-sm md:text-base font-medium">
+                <div key={badge} className="flex items-center gap-2 text-white/90 text-sm md:text-base font-medium">
                   <CheckCircle className="w-5 h-5 text-green-400" /> {badge}
                 </div>
               ))}
@@ -97,7 +97,7 @@ export default function Home() {
         </div>
 
         {/* Stats bar */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white/10 backdrop-blur-md border-t border-white/10">
+        <div className="absolute bottom-0 left-0 w-full bg-white/10 backdrop-blur-md border-t border-white/10">
           <div className="container-pad py-5 grid grid-cols-2 md:grid-cols-4 gap-4">
             {stats.map(({ label, value, icon: Icon }) => (
               <div key={label} className="flex items-center gap-3 text-white">
