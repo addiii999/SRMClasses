@@ -1,4 +1,5 @@
 const Result = require('../models/Result');
+const { uploadFileToHostinger } = require('../utils/ftp');
 
 const getResults = async (req, res) => {
   try {
@@ -11,7 +12,10 @@ const getResults = async (req, res) => {
 
 const createResult = async (req, res) => {
   try {
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : '';
+    let imageUrl = '';
+    if (req.file) {
+       imageUrl = await uploadFileToHostinger(req.file.path, req.file.filename);
+    }
     const result = await Result.create({ ...req.body, imageUrl });
     res.status(201).json({ success: true, data: result });
   } catch (error) {
