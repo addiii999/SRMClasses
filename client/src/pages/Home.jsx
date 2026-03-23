@@ -292,8 +292,8 @@ export default function Home() {
           <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-4">Experience the SRM Difference</h2>
           <p className="text-white/80 mb-8 max-w-xl mx-auto">Attend a free demo class. No commitment required. See why 2,500+ students chose us.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="tel:+91XXXXXXXXXX" className="flex items-center justify-center gap-2 px-8 py-4 bg-white text-primary font-bold rounded-xl hover:bg-white/90 transition-all shadow-glass-lg">
-              <Phone className="w-5 h-5" /> Call Now: +91 XXXX XXXXXX
+            <a href="tel:+917488886903" className="flex items-center justify-center gap-2 px-8 py-4 bg-white text-primary font-bold rounded-xl hover:bg-white/90 transition-all shadow-glass-lg">
+              <Phone className="w-5 h-5" /> Call Now: +91 7488886903
             </a>
             <Link to="/register" className="px-8 py-4 border-2 border-white text-white font-bold rounded-xl hover:bg-white/10 transition-all">
               Register for Free Demo

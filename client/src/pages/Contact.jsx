@@ -60,7 +60,7 @@ export default function Contact() {
           <div className="grid lg:grid-cols-3 gap-8 mb-16">
             {/* Info Cards */}
             {[
-              { icon: Phone, title: 'Call Us', info: '+91 XXXX XXXXXX', sub: 'Mon–Sat, 7 AM – 8 PM', href: 'tel:+91XXXXXXXXXX', cta: 'Call Now' },
+              { icon: Phone, title: 'Call Us', info: '+91 7488886903, 9508639773', sub: 'Mon–Sat, 7 AM – 8 PM', href: 'tel:+917488886903', cta: 'Call Now' },
               { icon: Mail, title: 'Email Us', info: 'srmclasses01@gmail.com', sub: 'We reply within 24 hours', href: 'mailto:srmclasses01@gmail.com', cta: 'Send Email' },
               { icon: MapPin, title: 'Visit Us', info: 'Ranchi, Jharkhand', sub: 'Mon–Sat, 8 AM – 6 PM', href: '#map', cta: 'Get Directions' },
             ].map(({ icon: Icon, title, info, sub, href, cta }) => (
@@ -170,7 +170,7 @@ export default function Contact() {
       <section id="map" className="h-80 bg-gray-100">
         <iframe
           title="SRM Classes - Ranchi Location"
-          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d117912.22993895527!2d85.27352195!3d23.3440997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4e104aa5db7dd%3A0xdc09d49d6e8c5019!2sRanchi%2C%20Jharkhand!5e0!3m2!1sen!2sin!4v1700000000000"
+          src="https://maps.google.com/maps?q=Srm+Classes,+Kamre+Ashram+Rd,+Ravi+Steel,+Tilta,+Kamre,+Jharkhand&t=&z=16&ie=UTF8&iwloc=&output=embed"
           width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
         />
       </section>

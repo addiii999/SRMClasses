@@ -36,10 +36,10 @@ export default function Footer() {
             </p>
             <div className="flex gap-3">
               {[
-                { icon: Instagram, href: '#', label: 'Instagram' },
+                { icon: Instagram, href: 'https://www.instagram.com/srm_classes/', label: 'Instagram' },
                 { icon: Youtube, href: '#', label: 'YouTube' },
                 { icon: Facebook, href: '#', label: 'Facebook' },
-                { icon: MessageCircle, href: 'https://wa.me/91XXXXXXXXXX', label: 'WhatsApp' },
+                { icon: MessageCircle, href: 'https://wa.me/919508639773', label: 'WhatsApp' },
               ].map(({ icon: Icon, href, label }) => (
                 <a key={label} href={href} aria-label={label} target="_blank" rel="noreferrer"
                   className="w-9 h-9 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-all duration-200 hover:-translate-y-0.5">
@@ -75,9 +75,9 @@ export default function Footer() {
                 <span>Ranchi, Jharkhand, India</span>
               </li>
               <li>
-                <a href="tel:+91XXXXXXXXXX" className="flex items-center gap-3 text-sm text-white/60 hover:text-primary transition-colors">
+                <a href="tel:+917488886903" className="flex items-center gap-3 text-sm text-white/60 hover:text-primary transition-colors">
                   <Phone className="w-4 h-4 text-primary shrink-0" />
-                  <span>+91 XXXX XXXXXX</span>
+                  <span>+91 7488886903, 9508639773</span>
                 </a>
               </li>
               <li>
