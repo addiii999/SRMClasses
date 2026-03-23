@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, Users, Trophy, Star, Phone, CheckCircle, Play, ChevronRight, Sparkles } from 'lucide-react';
+import { ArrowRight, BookOpen, Users, Trophy, Star, Phone, CheckCircle, Play, ChevronRight, Sparkles, MapPin } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
@@ -309,10 +309,10 @@ export default function Home() {
             <h2 className="section-title">Find Us in Ranchi</h2>
             <p className="section-subtitle">Visit us at our coaching centre or reach out online</p>
           </div>
-          <div className="rounded-2xl overflow-hidden shadow-card-hover border border-primary/10 aspect-video">
+          <div className="relative group rounded-2xl overflow-hidden shadow-card-hover border border-primary/10 aspect-video">
             <iframe
               title="SRM Classes Location - Ranchi"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d117912.22993895527!2d85.27352195!3d23.3440997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4e104aa5db7dd%3A0xdc09d49d6e8c5019!2sRanchi%2C%20Jharkhand!5e0!3m2!1sen!2sin!4v1700000000000!5m2!1sen!2sin"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3661.8452668403957!2d85.26510447478121!3d23.393814302373514!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4de05a37f8591%3A0xd9b09379e246fa39!2sSrm%20Classes!5e0!3m2!1sen!2sin!4v1774293801590!5m2!1sen!2sin"
               width="100%"
               height="100%"
               style={{ border: 0 }}
@@ -320,6 +320,19 @@ export default function Home() {
               loading="lazy"
               referrerPolicy="no-referrer-when-downgrade"
             />
+
+            {/* Floating Map Button for Mobile/Multi-device Compatibility */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <a
+                href="https://maps.app.goo.gl/TFpjRggpozuA5TDPA"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="pointer-events-auto flex items-center gap-2 px-6 py-3 bg-white text-brand-dark font-bold rounded-full shadow-glass-lg hover:scale-105 transition-all"
+              >
+                <MapPin className="w-5 h-5 text-primary" />
+                <span>Open in Google Maps</span>
+              </a>
+            </div>
           </div>
         </div>
       </section>
