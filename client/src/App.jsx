@@ -7,6 +7,7 @@ import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import WhatsAppButton from './components/WhatsAppButton';
+import Preloader from './components/Preloader';
 
 // Public Pages
 import Home from './pages/Home';
@@ -41,6 +42,7 @@ const PublicLayout = ({ children }) => (
 export default function App() {
   return (
     <AuthProvider>
+      <Preloader />
       <Router>
         <Toaster
           position="top-right"
