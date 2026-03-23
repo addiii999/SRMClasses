@@ -1,5 +1,5 @@
 const Gallery = require('../models/Gallery');
-const { uploadFileToHostinger } = require('../utils/ftp');
+const { uploadToCloudinary } = require('../utils/cloudinary');
 
 const getGallery = async (req, res) => {
   try {
@@ -18,14 +18,14 @@ const uploadGalleryImage = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const { title, category, description } = req.body;
     
-    // FTP Bridge upload to Hostinger
-    const ftpUrl = await uploadFileToHostinger(req.file.path, req.file.filename);
+    // Upload directly to Cloudinary
+    const cloudinaryUrl = await uploadToCloudinary(req.file.path, 'srmclasses/gallery');
 
     const image = await Gallery.create({
       title,
       category,
       description,
-      imageUrl: ftpUrl,
+      imageUrl: cloudinaryUrl,
     });
     res.status(201).json({ success: true, data: image });
   } catch (error) {
