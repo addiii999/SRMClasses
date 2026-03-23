@@ -72,7 +72,14 @@ export default function Footer() {
             <ul className="space-y-3">
               <li className="flex items-start gap-3 text-sm text-white/60">
                 <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                <span>Ranchi, Jharkhand, India</span>
+                <a 
+                  href="https://maps.app.goo.gl/TFpjRggpozuA5TDPA" 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="hover:text-primary transition-colors"
+                >
+                  Srm Classes, Kamre Ashram Rd, Ravi Steel, Tilta, Kamre, Ranchi, Jharkhand 835222
+                </a>
               </li>
               <li>
                 <a href="tel:+917488886903" className="flex items-center gap-3 text-sm text-white/60 hover:text-primary transition-colors">

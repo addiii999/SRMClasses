@@ -62,7 +62,7 @@ export default function Contact() {
             {[
               { icon: Phone, title: 'Call Us', info: '+91 7488886903, 9508639773', sub: 'Mon–Sat, 7 AM – 8 PM', href: 'tel:+917488886903', cta: 'Call Now' },
               { icon: Mail, title: 'Email Us', info: 'srmclasses01@gmail.com', sub: 'We reply within 24 hours', href: 'mailto:srmclasses01@gmail.com', cta: 'Send Email' },
-              { icon: MapPin, title: 'Visit Us', info: 'Ranchi, Jharkhand', sub: 'Mon–Sat, 8 AM – 6 PM', href: '#map', cta: 'Get Directions' },
+              { icon: MapPin, title: 'Visit Us', info: 'Kamre, Ranchi, Jharkhand', sub: 'SRM Classes, Ashram Rd', href: 'https://maps.app.goo.gl/TFpjRggpozuA5TDPA', cta: 'Open in Maps' },
             ].map(({ icon: Icon, title, info, sub, href, cta }) => (
               <a key={title} href={href} className="card p-6 flex gap-4 items-start group hover:border-primary/30 border border-transparent">
                 <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glass shrink-0 group-hover:scale-105 transition-transform">
@@ -167,12 +167,31 @@ export default function Contact() {
       </section>
 
       {/* Map */}
-      <section id="map" className="h-80 bg-gray-100">
-        <iframe
-          title="SRM Classes - Ranchi Location"
-          src="https://maps.google.com/maps?q=Srm+Classes,+Kamre+Ashram+Rd,+Ravi+Steel,+Tilta,+Kamre,+Jharkhand&t=&z=16&ie=UTF8&iwloc=&output=embed"
-          width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-        />
+      <section id="map" className="relative group overflow-hidden">
+        <div className="h-[450px] bg-gray-100">
+          <iframe
+            title="SRM Classes - Ranchi Location"
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3661.8454228491843!2d85.26510447545195!3d23.393814278913955!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4de05a37f8591%3A0xd9b09379e246fa39!2sSrm%20Classes!5e0!3m2!1sen!2sin!4v1742747814440!5m2!1sen!2sin"
+            width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
+        
+        {/* Floating Map Button for Mobile/Multi-device Compatibility */}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+             <div className="bg-black/20 backdrop-blur-sm inset-0 absolute" />
+        </div>
+        
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
+          <a 
+            href="https://maps.app.goo.gl/TFpjRggpozuA5TDPA" 
+            target="_blank" 
+            rel="noreferrer"
+            className="flex items-center gap-2 px-6 py-3 bg-white text-brand-dark font-bold rounded-full shadow-2xl hover:bg-primary hover:text-white transition-all transform hover:-translate-y-1"
+          >
+            <MapPin className="w-5 h-5 text-primary group-hover:text-white" />
+            Open in Google Maps
+          </a>
+        </div>
       </section>
     </div>
   );
