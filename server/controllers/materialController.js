@@ -1,13 +1,13 @@
 const StudyMaterial = require('../models/StudyMaterial');
-const path = require('path');
-const { uploadFileToHostinger } = require('../utils/ftp');
+const { uploadToCloudinary } = require('../utils/cloudinary');
 
 const uploadMaterial = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const { title, description, studentClass, subject, type } = req.body;
     
-    const ftpUrl = await uploadFileToHostinger(req.file.path, req.file.filename);
+    // Cloudinary upload (PDFs/Images are auto-detected)
+    const cloudinaryUrl = await uploadToCloudinary(req.file.path, 'srmclasses/materials');
 
     const material = await StudyMaterial.create({
       title,
@@ -15,7 +15,7 @@ const uploadMaterial = async (req, res) => {
       studentClass,
       subject,
       type,
-      fileUrl: ftpUrl,
+      fileUrl: cloudinaryUrl,
       fileName: req.file.originalname,
       fileSize: req.file.size,
     });

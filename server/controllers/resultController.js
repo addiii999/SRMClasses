@@ -1,5 +1,5 @@
 const Result = require('../models/Result');
-const { uploadFileToHostinger } = require('../utils/ftp');
+const { uploadToCloudinary } = require('../utils/cloudinary');
 
 const getResults = async (req, res) => {
   try {
@@ -14,7 +14,7 @@ const createResult = async (req, res) => {
   try {
     let imageUrl = '';
     if (req.file) {
-       imageUrl = await uploadFileToHostinger(req.file.path, req.file.filename);
+       imageUrl = await uploadToCloudinary(req.file.path, 'srmclasses/results');
     }
     const result = await Result.create({ ...req.body, imageUrl });
     res.status(201).json({ success: true, data: result });
