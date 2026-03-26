@@ -71,7 +71,7 @@ const updateEnquiry = async (req, res) => {
     if (notes !== undefined) updateData.notes = notes;
 
     const enquiry = await Enquiry.findByIdAndUpdate(
-      id, 
+      new mongoose.Types.ObjectId(id), 
       updateData,
       { new: true, runValidators: true }
     );
@@ -92,7 +92,7 @@ const deleteEnquiry = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
-    const enquiry = await Enquiry.findByIdAndDelete(id);
+    const enquiry = await Enquiry.findByIdAndDelete(new mongoose.Types.ObjectId(id));
     if (!enquiry) return res.status(404).json({ success: false, message: 'Enquiry not found' });
     res.json({ success: true, message: 'Enquiry deleted' });
   } catch (error) {

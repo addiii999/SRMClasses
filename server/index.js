@@ -60,9 +60,24 @@ const limiter = rateLimit({
 // Apply limiter to all routes
 app.use(limiter);
 
-// Middleware - Allow all origins (bulletproof CORS fix)
+// Middleware - Allow specific origins (CORS fix)
+const allowedOrigins = [
+  'https://srmclasses.in',
+  'https://www.srmclasses.in',
+  'https://srmclasses-frontend.vercel.app',
+  'http://localhost:5173',
+  process.env.FRONTEND_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: '*',
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1 && process.env.NODE_ENV === 'production') {
+      return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
+    }
+    return callback(null, true);
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
 }));

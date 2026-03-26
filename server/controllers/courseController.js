@@ -40,7 +40,7 @@ const updateCourse = async (req, res) => {
     }
 
     const course = await Course.findByIdAndUpdate(
-      id, 
+      new mongoose.Types.ObjectId(id), 
       { className, description, isActive }, 
       { new: true }
     );
@@ -58,7 +58,7 @@ const deleteCourse = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
-    await Course.findByIdAndDelete(id);
+    await Course.findByIdAndDelete(new mongoose.Types.ObjectId(id));
     res.json({ success: true, message: 'Course deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
