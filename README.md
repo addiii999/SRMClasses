@@ -70,6 +70,9 @@ The following keys are needed in your `server/.env` file:
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
 - `EMAIL_PASS`: Gmail App Password for OTP delivery.
 
+## 🤖 AI-Assisted Development
+This platform was built through a collaborative pair-programming effort between the developer and **Antigravity**, an advanced agentic AI coding assistant by **Google DeepMind**.  
+*Innovation meets Education!* 🤝✨
+
 ---
-Designed with ❤️ for **SRM Classes, Ranchi**.  
-Improving Education through Technology. 🛡️✨
+Designed with ❤️ for **SRM Classes, Ranchi**.
