@@ -41,7 +41,11 @@ const updateCourse = async (req, res) => {
 
     const course = await Course.findByIdAndUpdate(
       new mongoose.Types.ObjectId(id), 
-      { className, description, isActive }, 
+      { 
+        className: String(className), 
+        description: description ? String(description) : undefined, 
+        isActive: Boolean(isActive) 
+      }, 
       { new: true }
     );
     if (!course) return res.status(404).json({ success: false, message: 'Course not found' });

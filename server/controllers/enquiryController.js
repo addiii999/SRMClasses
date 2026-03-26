@@ -67,12 +67,12 @@ const updateEnquiry = async (req, res) => {
     }
 
     const updateData = {};
-    if (status) updateData.status = status;
-    if (notes !== undefined) updateData.notes = notes;
+    if (status) updateData.status = String(status);
+    if (notes !== undefined) updateData.notes = String(notes);
 
     const enquiry = await Enquiry.findByIdAndUpdate(
       new mongoose.Types.ObjectId(id), 
-      updateData,
+      { $set: updateData },
       { new: true, runValidators: true }
     );
     
