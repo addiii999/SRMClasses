@@ -1,4 +1,5 @@
 const Course = require('../models/Course');
+const mongoose = require('mongoose');
 
 const getCourses = async (req, res) => {
   try {
@@ -34,7 +35,6 @@ const updateCourse = async (req, res) => {
     const { className, description, isActive } = req.body;
     
     // Explicitly validate ID to satisfy static analysis
-    const mongoose = require('mongoose');
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
@@ -58,7 +58,6 @@ const updateCourse = async (req, res) => {
 const deleteCourse = async (req, res) => {
   try {
     const { id } = req.params;
-    const mongoose = require('mongoose');
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }

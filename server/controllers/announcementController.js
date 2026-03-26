@@ -1,4 +1,5 @@
 const Announcement = require('../models/Announcement');
+const mongoose = require('mongoose');
 
 const getAnnouncements = async (req, res) => {
   try {
@@ -30,7 +31,6 @@ const createAnnouncement = async (req, res) => {
 const deleteAnnouncement = async (req, res) => {
   try {
     const { id } = req.params;
-    const mongoose = require('mongoose');
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }

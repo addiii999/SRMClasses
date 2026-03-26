@@ -1,4 +1,5 @@
 const Gallery = require('../models/Gallery');
+const mongoose = require('mongoose');
 const { uploadToCloudinary } = require('../utils/cloudinary');
 
 const getGallery = async (req, res) => {
@@ -41,7 +42,6 @@ const uploadGalleryImage = async (req, res) => {
 const deleteGalleryImage = async (req, res) => {
   try {
     const { id } = req.params;
-    const mongoose = require('mongoose');
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }

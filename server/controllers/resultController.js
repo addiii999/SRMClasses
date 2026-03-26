@@ -1,4 +1,5 @@
 const Result = require('../models/Result');
+const mongoose = require('mongoose');
 const { uploadToCloudinary } = require('../utils/cloudinary');
 
 const getResults = async (req, res) => {
@@ -27,7 +28,6 @@ const createResult = async (req, res) => {
 const deleteResult = async (req, res) => {
   try {
     const { id } = req.params;
-    const mongoose = require('mongoose');
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }

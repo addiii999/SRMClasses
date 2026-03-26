@@ -1,4 +1,5 @@
 const Enquiry = require('../models/Enquiry');
+const mongoose = require('mongoose');
 
 // @desc    Submit enquiry (public)
 // @route   POST /api/enquiries
@@ -44,7 +45,6 @@ const updateEnquiry = async (req, res) => {
     const { status, notes } = req.body;
     
     // Explicitly validate ID to satisfy static analysis
-    const mongoose = require('mongoose');
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
@@ -88,7 +88,6 @@ const updateEnquiry = async (req, res) => {
 const deleteEnquiry = async (req, res) => {
   try {
     const { id } = req.params;
-    const mongoose = require('mongoose');
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }

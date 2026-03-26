@@ -1,4 +1,5 @@
 const DemoBooking = require('../models/DemoBooking');
+const mongoose = require('mongoose');
 
 const bookDemo = async (req, res) => {
   try {
@@ -32,7 +33,6 @@ const updateDemoBooking = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
     
-    const mongoose = require('mongoose');
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
@@ -52,7 +52,6 @@ const updateDemoBooking = async (req, res) => {
 const deleteDemoBooking = async (req, res) => {
   try {
     const { id } = req.params;
-    const mongoose = require('mongoose');
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
