@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const Admin = require('./models/Admin');
 const Course = require('./models/Course');
@@ -46,6 +47,18 @@ const seedData = async () => {
 seedData();
 
 const app = express();
+
+// Rate limiting to prevent brute force and satisfy CodeQL
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+
+// Apply limiter to all routes
+app.use(limiter);
 
 // Middleware - Allow all origins (bulletproof CORS fix)
 app.use(cors({
