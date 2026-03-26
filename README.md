@@ -1,148 +1,79 @@
-# SRM Classes Platform
+# SRM Classes Platform 🚀
 
-A full-stack coaching institute platform with React + Vite frontend, Node.js + Express backend, and MongoDB database.
+A modern, full-stack coaching institute management platform built with the MERN stack (MongoDB, Express, React, Node.js). Designed for SRM Classes, Ranchi.
 
-## Prerequisites
+## 🌟 Features
 
-Install the following before running:
-
-1. **Node.js** (v18+): https://nodejs.org/en/download
-2. **MongoDB**: 
-   - Local: https://www.mongodb.com/try/download/community  
-   - OR use **MongoDB Atlas** (cloud): https://www.mongodb.com/atlas
+- **Admin Dashboard**: Comprehensive management for Enquiries (CRM), Demo Bookings, Courses, Study Materials, Announcements, Gallery, and Results.
+- **Student Portal**: Secure login to access study notes, test papers, and announcements.
+- **Cloudinary Integration**: Fully persistent and secure image/PDF storage (HTTPS).
+- **Self-Healing Backend**: Automatic database seeding (Admin & Courses) on first launch.
+- **Premium UI**: Responsive glassmorphism design with brand-tailored animations and Google Maps integration.
+- **Communication**: Built-in WhatsApp floating button and Click-to-call functionality.
 
 ---
 
-## Setup Instructions
+## 🛠️ Tech Stack
 
-### Step 1 – Install Node.js
-Download and install Node.js from https://nodejs.org  
-Verify: open a new terminal and run:
-```
-node --version
-npm --version
-```
+- **Frontend**: React + Vite + Tailwind CSS
+- **Backend**: Node.js + Express
+- **Database**: MongoDB Atlas
+- **Storage**: Cloudinary (Secure CDN)
+- **Deployment**: Render (Backend) & Vercel (Frontend)
 
-### Step 2 – Setup the Backend
+---
 
+## ⚙️ Setup Instructions
+
+### 1. Backend Setup
 ```bash
 cd server
 npm install
 ```
+Create a `.env` file in the `server` folder with these keys:
+```ini
+MONGO_URI=mongodb+srv://... (Your MongoDB Atlas URI)
+JWT_SECRET=... (Any random string)
+ADMIN_EMAIL=...
+ADMIN_PASSWORD=...
 
-Edit `.env` with your actual values:
-- Set `MONGO_URI` to your MongoDB URI  
-  - Local: `mongodb://localhost:27017/srmclasses`  
-  - Atlas: `mongodb+srv://<user>:<pass>@cluster.mongodb.net/srmclasses`
-- Set `EMAIL_PASS` to your Gmail App Password (for OTP emails)
+# Cloudinary (Get these from Cloudinary Dashboard)
+CLOUDINARY_CLOUD_NAME=...
+CLOUDINARY_API_KEY=...
+CLOUDINARY_API_SECRET=...
 
-### Step 3 – Seed Database (Run Once)
-
-```bash
-cd server
-node seed.js
+# Email (For OTPs)
+EMAIL_USER=...
+EMAIL_PASS=... (Gmail App Password)
 ```
 
-This creates the admin account and pre-fills courses for Class 5–12.
-
-### Step 4 – Setup the Frontend
-
+### 2. Frontend Setup
 ```bash
 cd client
 npm install
 ```
 
-### Step 5 – Run the Application
-
-**Terminal 1 – Backend:**
-```bash
-cd server
-npm run dev
-```
-Server runs on: http://localhost:5000
-
-**Terminal 2 – Frontend:**
-```bash
-cd client
-npm run dev
-```
-App runs on: http://localhost:5173
+### 3. Running Locally
+- **Backend**: `npm run dev` (Runs on http://localhost:5000)
+- **Frontend**: `npm run dev` (Runs on http://localhost:5173)
 
 ---
 
-## Key URLs
+## 🚀 Deployment Notes
 
-| URL | Description |
-|-----|-------------|
-| http://localhost:5173 | Main website (home page) |
-| http://localhost:5173/register | Student registration |
-| http://localhost:5173/login | Student login |
-| http://localhost:5173/dashboard | Student dashboard |
-| http://localhost:5173/admin/login | Admin login |
-| http://localhost:5173/admin/dashboard | Admin overview |
-| http://localhost:5173/admin/enquiries | CRM / Lead management |
-| http://localhost:5000/api/health | API health check |
+### Render (Backend)
+- **Root Directory**: `server`
+- **Build Command**: `npm install`
+- **Start Command**: `node index.js`
+- **Note**: The backend now automatically handles database seeding on startup. No separate `seed.js` command is needed.
 
 ---
 
-## Gmail App Password (for OTP emails)
-
-1. Go to Google Account → Security → 2-Step Verification → App Passwords  
-2. Create an app password for "Mail"  
-3. Copy the 16-character password → paste into `server/.env` as `EMAIL_PASS`
-
----
-
-## Project Structure
-
-```
-SRMClasses/
-├── client/                     ← React + Vite + Tailwind CSS
-│   ├── src/
-│   │   ├── pages/              ← Home, About, Courses, Faculty, Results, Gallery, Contact
-│   │   │   ├── admin/          ← AdminLogin, AdminDashboard
-│   │   │   ├── Login.jsx
-│   │   │   ├── Register.jsx
-│   │   │   ├── ForgotPassword.jsx
-│   │   │   └── StudentDashboard.jsx
-│   │   ├── components/         ← Navbar, Footer, WhatsAppButton, ProtectedRoute
-│   │   ├── context/            ← AuthContext (JWT state management)
-│   │   └── lib/                ← api.js (Axios with JWT interceptor)
-│   ├── tailwind.config.js
-│   └── vite.config.js
-│
-└── server/                     ← Node.js + Express + MongoDB
-    ├── models/                 ← User, Admin, Enquiry, DemoBooking, Course, StudyMaterial, Announcement, Gallery, Result
-    ├── controllers/            ← Auth, AdminAuth, Enquiry, Demo, Course, Material, Announcement, Gallery, Result
-    ├── routes/                 ← All API routes
-    ├── middleware/             ← auth.js, adminAuth.js, upload.js (Multer)
-    ├── config/                 ← db.js (MongoDB connection)
-    ├── uploads/                ← Uploaded PDFs and images
-    ├── seed.js                 ← Database seeding script
-    ├── index.js                ← Express entry point
-    └── .env                    ← Environment variables
-```
+## 📂 Project Structure
+- `client/`: React frontend with Tailwind CSS.
+- `server/`: Express backend with MongoDB models and controllers.
+- `server/utils/cloudinary.js`: Secure file upload utility.
+- `index.js`: Main entry point with internal seeding logic.
 
 ---
-
-## Features
-
-- ✅ Student registration & login (JWT + bcrypt)
-- ✅ Forgot password via OTP (email-based)
-- ✅ Admin login with OTP password reset
-- ✅ Student Dashboard (notes, test papers, announcements)
-- ✅ Admin Dashboard with 8 management sections
-- ✅ CRM system (leads with New/Contacted/Converted status)
-- ✅ Demo class booking management
-- ✅ File upload (PDFs, images via Multer)
-- ✅ Course management (Class 5–12)
-- ✅ Results & achievements management
-- ✅ Gallery with category filter
-- ✅ Announcements system
-- ✅ Enquiry form, Contact form, Demo booking form
-- ✅ Google Maps embed (Ranchi location)
-- ✅ WhatsApp floating button
-- ✅ Click-to-call button
-- ✅ Premium glassmorphism UI with brand colors
-- ✅ Fully mobile responsive
-- ✅ SEO meta tags
+Designed for **SRM Classes, Ranchi**. Built with ❤️ for students.
