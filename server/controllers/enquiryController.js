@@ -49,6 +49,14 @@ const updateEnquiry = async (req, res) => {
       });
     }
 
+    // Validate notes if provided to prevent NoSQL injection via operator objects
+    if (notes !== undefined && typeof notes !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid notes. Notes must be a string.'
+      });
+    }
+
     const updateData = {};
     if (status) updateData.status = status;
     if (notes !== undefined) updateData.notes = notes;
