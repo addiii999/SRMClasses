@@ -38,12 +38,27 @@ const getEnquiries = async (req, res) => {
 // @route   PATCH /api/enquiries/:id
 const updateEnquiry = async (req, res) => {
   try {
-    const { status } = req.body;
+    const { status, notes } = req.body;
+    const ALLOWED_STATUSES = ['New', 'Contacted', 'Converted'];
+
+    // Validate status if provided
+    if (status && !ALLOWED_STATUSES.includes(status)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Invalid status. Allowed values: ${ALLOWED_STATUSES.join(', ')}` 
+      });
+    }
+
+    const updateData = {};
+    if (status) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
+
     const enquiry = await Enquiry.findByIdAndUpdate(
       req.params.id, 
-      { status }, // Only allow status update
+      updateData,
       { new: true, runValidators: true }
     );
+    
     if (!enquiry) return res.status(404).json({ success: false, message: 'Enquiry not found' });
     res.json({ success: true, data: enquiry });
   } catch (error) {
