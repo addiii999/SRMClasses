@@ -23,7 +23,12 @@ const getDemoBookings = async (req, res) => {
 
 const updateDemoBooking = async (req, res) => {
   try {
-    const booking = await DemoBooking.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    const { status } = req.body;
+    const booking = await DemoBooking.findByIdAndUpdate(
+      req.params.id, 
+      { status }, // Only allow status update
+      { new: true }
+    );
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
     res.json({ success: true, data: booking });
   } catch (error) {

@@ -20,10 +20,11 @@ const getEnquiries = async (req, res) => {
     let query = {};
     if (status && status !== 'all') query.status = status;
     if (search) {
+      const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex special chars
       query.$or = [
-        { name: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } },
-        { mobile: { $regex: search, $options: 'i' } },
+        { name: { $regex: safeSearch, $options: 'i' } },
+        { email: { $regex: safeSearch, $options: 'i' } },
+        { mobile: { $regex: safeSearch, $options: 'i' } },
       ];
     }
     const enquiries = await Enquiry.find(query).sort({ createdAt: -1 });
@@ -37,7 +38,12 @@ const getEnquiries = async (req, res) => {
 // @route   PATCH /api/enquiries/:id
 const updateEnquiry = async (req, res) => {
   try {
-    const enquiry = await Enquiry.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+    const { status } = req.body;
+    const enquiry = await Enquiry.findByIdAndUpdate(
+      req.params.id, 
+      { status }, // Only allow status update
+      { new: true, runValidators: true }
+    );
     if (!enquiry) return res.status(404).json({ success: false, message: 'Enquiry not found' });
     res.json({ success: true, data: enquiry });
   } catch (error) {
