@@ -48,35 +48,41 @@ const uploadToCloudinary = async (localFilePath, folder = 'srmclasses/gallery') 
       throw new Error('Cloudinary credentials are not set in environment variables');
     }
 
-    // Security: Validate the path before uploading to satisfy static analysis (Taint-Killing)
     if (!localFilePath || typeof localFilePath !== 'string') {
       throw new Error('Invalid file path: must be a string');
     }
-    const resolvedPath = path.resolve(localFilePath);
-    const relativePath = path.relative(TRUSTED_UPLOADS_DIR, resolvedPath);
-    const isSafe = relativePath && !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
 
-    if (!isSafe && resolvedPath !== TRUSTED_UPLOADS_DIR) {
-      throw new Error(`Security Exception: Unauthorized file path for upload: ${resolvedPath}`);
+    // Taint-Killing: Resolve only the filename and join it with our TRUSTED_UPLOADS_DIR
+    // This ensures CodeQL sees the resulting path as anchored to a trusted root.
+    const filename = path.basename(localFilePath);
+    const sanitizedPath = path.join(TRUSTED_UPLOADS_DIR, filename);
+
+    // Final safety check
+    if (!fs.existsSync(sanitizedPath)) {
+      throw new Error(`Security Exception: File not found in trusted directory: ${sanitizedPath}`);
     }
 
-    // Use the resolved, validated path
-    const result = await cloudinary.uploader.upload(resolvedPath, {
+    // Use the sanitized, trusted path
+    const result = await cloudinary.uploader.upload(sanitizedPath, {
       folder: folder,
       resource_type: 'auto',
     });
 
     // Clean up local file securely
-    if (fs.existsSync(resolvedPath)) {
-      fs.unlinkSync(resolvedPath);
+    if (fs.existsSync(sanitizedPath)) {
+      fs.unlinkSync(sanitizedPath);
     }
 
     return result.secure_url;
   } catch (error) {
     console.error('Cloudinary Upload Error:', error);
-    // Try safe cleanup if it was a valid-looking path
+    // On error, attempt safe cleanup of the original path if it exists
     if (typeof localFilePath === 'string') {
-       safeDeleteLocalFile(localFilePath);
+       const filename = path.basename(localFilePath);
+       const sanitizedPath = path.join(TRUSTED_UPLOADS_DIR, filename);
+       if (fs.existsSync(sanitizedPath)) {
+         fs.unlinkSync(sanitizedPath);
+       }
     }
     throw error;
   }
