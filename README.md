@@ -1,79 +1,75 @@
-# SRM Classes Platform 🚀
+# SRM Classes - Official Online Platform 🎓🚀
 
-A modern, full-stack coaching institute management platform built with the MERN stack (MongoDB, Express, React, Node.js). Designed for SRM Classes, Ranchi.
+Welcome to the official repository of **SRM Classes, Ranchi**. This is a premium, full-stack educational platform designed to manage students, enquiries, and digital study materials with a seamless user experience.
 
-## 🌟 Features
-
-- **Admin Dashboard**: Comprehensive management for Enquiries (CRM), Demo Bookings, Courses, Study Materials, Announcements, Gallery, and Results.
-- **Student Portal**: Secure login to access study notes, test papers, and announcements.
-- **Cloudinary Integration**: Fully persistent and secure image/PDF storage (HTTPS).
-- **Self-Healing Backend**: Automatic database seeding (Admin & Courses) on first launch.
-- **Premium UI**: Responsive glassmorphism design with brand-tailored animations and Google Maps integration.
-- **Communication**: Built-in WhatsApp floating button and Click-to-call functionality.
+### 🌐 Live Links
+- **Official Website:** [https://www.srmclasses.in](https://www.srmclasses.in)
+- **Student Gallery:** [https://www.srmclasses.in/gallery](https://www.srmclasses.in/gallery)
+- **Admin Access:** [https://www.srmclasses.in/admin/login](https://www.srmclasses.in/admin/login)
 
 ---
 
-## 🛠️ Tech Stack
+## ✨ Key Features
 
-- **Frontend**: React + Vite + Tailwind CSS
-- **Backend**: Node.js + Express
-- **Database**: MongoDB Atlas
-- **Storage**: Cloudinary (Secure CDN)
-- **Deployment**: Render (Backend) & Vercel (Frontend)
+- **🎯 CRM System:** Manage student enquiries and demo bookings with lead status tracking.
+- **📚 Digital Library:** Securely upload and share Study Materials (PDFs) and Test Papers.
+- **🏆 Results & Gallery:** Showcase student achievements and institute activities via a high-performance Cloudinary CDN.
+- **🔒 Secure Portals:** Dedicated dashboards for Students and Admins with JWT-protected sessions.
+- **📱 Premium Design:** Fully responsive, modern glassmorphism UI with smooth animations and integrated Google Maps.
 
 ---
 
-## ⚙️ Setup Instructions
+## 🛠️ Project Architecture
 
-### 1. Backend Setup
+| Component | Technology | Hosting |
+|-----------|------------|---------|
+| **Frontend** | React.js + Vite | Vercel |
+| **Backend** | Node.js + Express | Render |
+| **Database** | MongoDB Atlas | Cloud |
+| **Storage** | Cloudinary (Secure HTTPS) | CDN |
+
+---
+
+## 💻 Local Development (For Developers)
+
+If you want to run this project on your local machine for coding/testing, follow these steps:
+
+### 1. Requirements
+- Node.js (v18+)
+- MongoDB Atlas account (for database)
+- Cloudinary account (for images)
+
+### 2. Setup
 ```bash
+# Clone the repository
+git clone https://github.com/addiii999/SRMClasses.git
+
+# Setup Backend
 cd server
 npm install
-```
-Create a `.env` file in the `server` folder with these keys:
-```ini
-MONGO_URI=mongodb+srv://... (Your MongoDB Atlas URI)
-JWT_SECRET=... (Any random string)
-ADMIN_EMAIL=...
-ADMIN_PASSWORD=...
+# (Create .env file with your API keys)
 
-# Cloudinary (Get these from Cloudinary Dashboard)
-CLOUDINARY_CLOUD_NAME=...
-CLOUDINARY_API_KEY=...
-CLOUDINARY_API_SECRET=...
-
-# Email (For OTPs)
-EMAIL_USER=...
-EMAIL_PASS=... (Gmail App Password)
-```
-
-### 2. Frontend Setup
-```bash
-cd client
+# Setup Frontend
+cd ../client
 npm install
 ```
 
 ### 3. Running Locally
-- **Backend**: `npm run dev` (Runs on http://localhost:5000)
-- **Frontend**: `npm run dev` (Runs on http://localhost:5173)
+When running locally on your computer, you can access the app at:
+- **Frontend:** `http://localhost:5173`
+- **Backend:** `http://localhost:5000`
+
+*(Note: These `localhost` links only work when you are running the project code on your PC.)*
 
 ---
 
-## 🚀 Deployment Notes
-
-### Render (Backend)
-- **Root Directory**: `server`
-- **Build Command**: `npm install`
-- **Start Command**: `node index.js`
-- **Note**: The backend now automatically handles database seeding on startup. No separate `seed.js` command is needed.
-
----
-
-## 📂 Project Structure
-- `client/`: React frontend with Tailwind CSS.
-- `server/`: Express backend with MongoDB models and controllers.
-- `server/utils/cloudinary.js`: Secure file upload utility.
-- `index.js`: Main entry point with internal seeding logic.
+## 🔐 Environment Variables (Required)
+The following keys are needed in your `server/.env` file:
+- `MONGO_URI`: MongoDB connection string.
+- `JWT_SECRET`: Security key for logins.
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`.
+- `EMAIL_PASS`: Gmail App Password for OTP delivery.
 
 ---
-Designed for **SRM Classes, Ranchi**. Built with ❤️ for students.
+Designed with ❤️ for **SRM Classes, Ranchi**.  
+Improving Education through Technology. 🛡️✨
