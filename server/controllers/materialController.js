@@ -28,6 +28,9 @@ const uploadMaterial = async (req, res) => {
 const getMaterials = async (req, res) => {
   try {
     const { studentClass, type } = req.query;
+    if ((studentClass && typeof studentClass !== 'string') || (type && typeof type !== 'string')) {
+      return res.status(400).json({ success: false, message: 'Invalid query parameters' });
+    }
     let query = {};
     // Students can only see their class materials or 'all'
     if (studentClass) {

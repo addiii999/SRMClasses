@@ -13,6 +13,7 @@ const generateAdminToken = (id) => {
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (typeof email !== 'string') return res.status(401).json({ success: false, message: 'Invalid credentials' });
     if (email !== process.env.ADMIN_EMAIL) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
@@ -36,6 +37,7 @@ const adminLogin = async (req, res) => {
 const adminForgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+    if (typeof email !== 'string') return res.status(400).json({ success: false, message: 'Invalid email' });
     if (email !== process.env.ADMIN_EMAIL) {
       return res.status(400).json({ success: false, message: 'Invalid admin email' });
     }
@@ -72,6 +74,9 @@ const adminForgotPassword = async (req, res) => {
 const adminResetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
+    if (typeof email !== 'string' || typeof otp !== 'string') {
+      return res.status(400).json({ success: false, message: 'Invalid input' });
+    }
     const admin = await Admin.findOne({ email, otp, otpExpiry: { $gt: Date.now() } });
     if (!admin) {
       return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });

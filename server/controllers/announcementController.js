@@ -3,6 +3,9 @@ const Announcement = require('../models/Announcement');
 const getAnnouncements = async (req, res) => {
   try {
     const { studentClass } = req.query;
+    if (studentClass && typeof studentClass !== 'string') {
+      return res.status(400).json({ success: false, message: 'Invalid student class' });
+    }
     let query = { isActive: true };
     if (studentClass) {
       query.$or = [{ targetClass: studentClass }, { targetClass: 'all' }];

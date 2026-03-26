@@ -14,6 +14,7 @@ const generateToken = (id) => {
 const register = async (req, res) => {
   try {
     const { name, email, mobile, studentClass, password } = req.body;
+    if (typeof email !== 'string') return res.status(400).json({ success: false, message: 'Invalid email' });
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email already registered' });
@@ -36,6 +37,7 @@ const register = async (req, res) => {
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    if (typeof email !== 'string') return res.status(400).json({ success: false, message: 'Invalid email' });
     const user = await User.findOne({ email }).select('+password');
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -62,6 +64,7 @@ const getMe = async (req, res) => {
 const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
+    if (typeof email !== 'string') return res.status(400).json({ success: false, message: 'Invalid email' });
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({ success: false, message: 'No account with that email' });
@@ -95,6 +98,9 @@ const forgotPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword } = req.body;
+    if (typeof email !== 'string' || typeof otp !== 'string') {
+      return res.status(400).json({ success: false, message: 'Invalid input' });
+    }
     const user = await User.findOne({ email, resetOTP: otp, resetOTPExpiry: { $gt: Date.now() } });
     if (!user) {
       return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
