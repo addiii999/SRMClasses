@@ -1,5 +1,6 @@
 const cloudinary = require('cloudinary').v2;
 const fs = require('fs');
+const path = require('path');
 
 // Configure Cloudinary
 cloudinary.config({
@@ -7,6 +8,28 @@ cloudinary.config({
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
+
+// Security: Only allow deletion within the trusted uploads directory
+const TRUSTED_UPLOADS_DIR = path.resolve(__dirname, '..', 'uploads');
+
+const safeDeleteLocalFile = (localFilePath) => {
+  try {
+    if (!localFilePath) return;
+    
+    const resolvedPath = path.resolve(localFilePath);
+    
+    // Check if the path is within the trusted uploads directory
+    if (resolvedPath.startsWith(TRUSTED_UPLOADS_DIR + path.sep) || resolvedPath === TRUSTED_UPLOADS_DIR) {
+      if (fs.existsSync(resolvedPath)) {
+        fs.unlinkSync(resolvedPath);
+      }
+    } else {
+      console.warn(`Security Warning: Prevented deletion of file outside trusted directory: ${resolvedPath}`);
+    }
+  } catch (error) {
+    console.error('Error during safe file deletion:', error.message);
+  }
+};
 
 /**
  * Upload a local file to Cloudinary
@@ -25,18 +48,14 @@ const uploadToCloudinary = async (localFilePath, folder = 'srmclasses/gallery') 
       resource_type: 'auto',
     });
 
-    // Clean up local file from Render's ephemeral storage
-    if (fs.existsSync(localFilePath)) {
-      fs.unlinkSync(localFilePath);
-    }
+    // Clean up local file securely
+    safeDeleteLocalFile(localFilePath);
 
     return result.secure_url;
   } catch (error) {
     console.error('Cloudinary Upload Error:', error);
-    // Even on error, try to clean up local file
-    if (fs.existsSync(localFilePath)) {
-      fs.unlinkSync(localFilePath);
-    }
+    // Even on error, try to clean up local file securely
+    safeDeleteLocalFile(localFilePath);
     throw error;
   }
 };
