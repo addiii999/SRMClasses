@@ -65,6 +65,7 @@ const allowedOrigins = [
   'https://srmclasses.in',
   'https://www.srmclasses.in',
   'https://srmclasses-frontend.vercel.app',
+    'https://srm-classes.vercel.app',
   'http://localhost:5173',
   process.env.FRONTEND_URL
 ].filter(Boolean);
