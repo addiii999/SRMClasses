@@ -17,7 +17,7 @@ const adminLogin = async (req, res) => {
     if (email !== process.env.ADMIN_EMAIL) {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
-    let admin = await Admin.findOne({ email }).select('+password');
+    let admin = await Admin.findOne({ email: String(email) }).select('+password');
     if (!admin) {
       return res.status(401).json({ success: false, message: 'Admin not found. Please seed the database.' });
     }

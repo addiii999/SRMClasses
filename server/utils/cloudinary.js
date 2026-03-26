@@ -14,12 +14,17 @@ const TRUSTED_UPLOADS_DIR = path.resolve(__dirname, '..', 'uploads');
 
 const safeDeleteLocalFile = (localFilePath) => {
   try {
-    if (!localFilePath) return;
+    if (!localFilePath || typeof localFilePath !== 'string') return;
     
-    const resolvedPath = path.resolve(localFilePath);
+    // Normalize and resolve the path
+    const normalizedPath = path.normalize(localFilePath);
+    const resolvedPath = path.resolve(normalizedPath);
     
-    // Check if the path is within the trusted uploads directory
-    if (resolvedPath.startsWith(TRUSTED_UPLOADS_DIR + path.sep) || resolvedPath === TRUSTED_UPLOADS_DIR) {
+    // Safety: ensure the resolved path is actually within the trusted uploads directory
+    const relativePath = path.relative(TRUSTED_UPLOADS_DIR, resolvedPath);
+    const isSafe = relativePath && !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
+
+    if (isSafe || resolvedPath === TRUSTED_UPLOADS_DIR) {
       if (fs.existsSync(resolvedPath)) {
         fs.unlinkSync(resolvedPath);
       }
@@ -43,19 +48,36 @@ const uploadToCloudinary = async (localFilePath, folder = 'srmclasses/gallery') 
       throw new Error('Cloudinary credentials are not set in environment variables');
     }
 
-    const result = await cloudinary.uploader.upload(localFilePath, {
+    // Security: Validate the path before uploading to satisfy static analysis (Taint-Killing)
+    if (!localFilePath || typeof localFilePath !== 'string') {
+      throw new Error('Invalid file path: must be a string');
+    }
+    const resolvedPath = path.resolve(localFilePath);
+    const relativePath = path.relative(TRUSTED_UPLOADS_DIR, resolvedPath);
+    const isSafe = relativePath && !relativePath.startsWith('..') && !path.isAbsolute(relativePath);
+
+    if (!isSafe && resolvedPath !== TRUSTED_UPLOADS_DIR) {
+      throw new Error(`Security Exception: Unauthorized file path for upload: ${resolvedPath}`);
+    }
+
+    // Use the resolved, validated path
+    const result = await cloudinary.uploader.upload(resolvedPath, {
       folder: folder,
       resource_type: 'auto',
     });
 
     // Clean up local file securely
-    safeDeleteLocalFile(localFilePath);
+    if (fs.existsSync(resolvedPath)) {
+      fs.unlinkSync(resolvedPath);
+    }
 
     return result.secure_url;
   } catch (error) {
     console.error('Cloudinary Upload Error:', error);
-    // Even on error, try to clean up local file securely
-    safeDeleteLocalFile(localFilePath);
+    // Try safe cleanup if it was a valid-looking path
+    if (typeof localFilePath === 'string') {
+       safeDeleteLocalFile(localFilePath);
+    }
     throw error;
   }
 };

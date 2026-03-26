@@ -7,7 +7,7 @@ const getAnnouncements = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid student class' });
     }
     let query = { isActive: true };
-    if (studentClass) {
+    if (studentClass && typeof studentClass === 'string') {
       query.$or = [{ targetClass: studentClass }, { targetClass: 'all' }];
     }
     const announcements = await Announcement.find(query).sort({ createdAt: -1 });
@@ -19,7 +19,8 @@ const getAnnouncements = async (req, res) => {
 
 const createAnnouncement = async (req, res) => {
   try {
-    const announcement = await Announcement.create(req.body);
+    const { content, targetClass, isImportant, isActive } = req.body;
+    const announcement = await Announcement.create({ content, targetClass, isImportant, isActive });
     res.status(201).json({ success: true, data: announcement });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -28,7 +29,12 @@ const createAnnouncement = async (req, res) => {
 
 const deleteAnnouncement = async (req, res) => {
   try {
-    await Announcement.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    }
+    await Announcement.findByIdAndDelete(id);
     res.json({ success: true, message: 'Announcement deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

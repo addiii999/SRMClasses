@@ -18,7 +18,9 @@ const getEnquiries = async (req, res) => {
   try {
     const { status, search } = req.query;
     let query = {};
-    if (status && status !== 'all') query.status = status;
+    if (status && typeof status === 'string' && status !== 'all') {
+      query.status = status;
+    }
     if (search) {
       const safeSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // Escape regex special chars
       query.$or = [
@@ -38,7 +40,14 @@ const getEnquiries = async (req, res) => {
 // @route   PATCH /api/enquiries/:id
 const updateEnquiry = async (req, res) => {
   try {
+    const { id } = req.params;
     const { status, notes } = req.body;
+    
+    // Explicitly validate ID to satisfy static analysis
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    }
     const ALLOWED_STATUSES = ['New', 'Contacted', 'Converted'];
 
     // Validate status if provided
@@ -62,7 +71,7 @@ const updateEnquiry = async (req, res) => {
     if (notes !== undefined) updateData.notes = notes;
 
     const enquiry = await Enquiry.findByIdAndUpdate(
-      req.params.id, 
+      id, 
       updateData,
       { new: true, runValidators: true }
     );
@@ -78,7 +87,12 @@ const updateEnquiry = async (req, res) => {
 // @route   DELETE /api/enquiries/:id
 const deleteEnquiry = async (req, res) => {
   try {
-    const enquiry = await Enquiry.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    }
+    const enquiry = await Enquiry.findByIdAndDelete(id);
     if (!enquiry) return res.status(404).json({ success: false, message: 'Enquiry not found' });
     res.json({ success: true, message: 'Enquiry deleted' });
   } catch (error) {

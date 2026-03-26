@@ -32,11 +32,10 @@ const getMaterials = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid query parameters' });
     }
     let query = {};
-    // Students can only see their class materials or 'all'
-    if (studentClass) {
+    if (studentClass && typeof studentClass === 'string') {
       query.$or = [{ studentClass }, { studentClass: 'all' }];
     }
-    if (type) query.type = type;
+    if (type && typeof type === 'string') query.type = type;
     const materials = await StudyMaterial.find(query).sort({ uploadedAt: -1 });
     res.json({ success: true, data: materials });
   } catch (error) {
@@ -46,7 +45,12 @@ const getMaterials = async (req, res) => {
 
 const deleteMaterial = async (req, res) => {
   try {
-    await StudyMaterial.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    }
+    await StudyMaterial.findByIdAndDelete(id);
     res.json({ success: true, message: 'Material deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

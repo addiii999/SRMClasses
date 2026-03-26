@@ -8,7 +8,9 @@ const getGallery = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid category' });
     }
     let query = {};
-    if (category && category !== 'all') query.category = category;
+    if (category && typeof category === 'string' && category !== 'all') {
+      query.category = category;
+    }
     const images = await Gallery.find(query).sort({ createdAt: -1 });
     res.json({ success: true, data: images });
   } catch (error) {
@@ -38,7 +40,12 @@ const uploadGalleryImage = async (req, res) => {
 
 const deleteGalleryImage = async (req, res) => {
   try {
-    await Gallery.findByIdAndDelete(req.params.id);
+    const { id } = req.params;
+    const mongoose = require('mongoose');
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    }
+    await Gallery.findByIdAndDelete(id);
     res.json({ success: true, message: 'Image deleted' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
