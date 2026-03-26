@@ -4,6 +4,9 @@ const { uploadToCloudinary } = require('../utils/cloudinary');
 const getGallery = async (req, res) => {
   try {
     const { category } = req.query;
+    if (category && typeof category !== 'string') {
+      return res.status(400).json({ success: false, message: 'Invalid category' });
+    }
     let query = {};
     if (category && category !== 'all') query.category = category;
     const images = await Gallery.find(query).sort({ createdAt: -1 });
