@@ -33,8 +33,8 @@ const cbseClasses = [
   { name: '8', label: 'Class 8', subjects: 'All Subjects', board: 'CBSE' },
   { name: '9', label: 'Class 9', subjects: 'All Subjects', board: 'CBSE' },
   { name: '10', label: 'Class 10', subjects: 'All Subjects', board: 'CBSE' },
-  { name: '11', label: 'Class 11', subjects: 'Commerce – All Subjects', board: 'JAC' },
-  { name: '12', label: 'Class 12', subjects: 'Commerce – All Subjects', board: 'JAC' },
+  { name: '11', label: 'Class 11', subjects: 'Commerce – All Subjects', board: 'CBSE & JAC' },
+  { name: '12', label: 'Class 12', subjects: 'Commerce – All Subjects', board: 'CBSE & JAC' },
 ];
 
 const icseClasses = [
