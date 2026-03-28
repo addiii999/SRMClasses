@@ -1,20 +1,28 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Clock, BookOpen, ArrowRight } from 'lucide-react';
-import api from '../lib/api';
 
-const classColors = ['bg-violet-100 text-violet-700', 'bg-blue-100 text-blue-700', 'bg-green-100 text-green-700', 'bg-orange-100 text-orange-700', 'bg-pink-100 text-pink-700', 'bg-yellow-100 text-yellow-700', 'bg-cyan-100 text-cyan-700', 'bg-rose-100 text-rose-700'];
+const cbseClasses = [
+  { name: '5', label: 'Class 5', subjects: 'All Subjects', board: 'CBSE' },
+  { name: '6', label: 'Class 6', subjects: 'All Subjects', board: 'CBSE' },
+  { name: '7', label: 'Class 7', subjects: 'All Subjects', board: 'CBSE' },
+  { name: '8', label: 'Class 8', subjects: 'All Subjects', board: 'CBSE' },
+  { name: '9', label: 'Class 9', subjects: 'All Subjects', board: 'CBSE' },
+  { name: '10', label: 'Class 10', subjects: 'All Subjects', board: 'CBSE' },
+  { name: '11', label: 'Class 11', subjects: 'Commerce – All Subjects', board: 'JAC' },
+  { name: '12', label: 'Class 12', subjects: 'Commerce – All Subjects', board: 'JAC' },
+];
+
+const icseClasses = [
+  { name: '6', label: 'Class 6', subjects: 'All Subjects', board: 'ICSE' },
+  { name: '7', label: 'Class 7', subjects: 'All Subjects', board: 'ICSE' },
+  { name: '8', label: 'Class 8', subjects: 'All Subjects', board: 'ICSE' },
+  { name: '9', label: 'Class 9', subjects: 'All Subjects', board: 'ICSE' },
+  { name: '10', label: 'Class 10', subjects: 'All Subjects', board: 'ICSE' },
+];
 
 export default function Courses() {
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    api.get('/courses')
-      .then(res => setCourses(res.data.data || []))
-      .catch(() => setCourses([]))
-      .finally(() => setLoading(false));
-  }, []);
+  const [activeTab, setActiveTab] = useState('CBSE');
+  const classes = activeTab === 'CBSE' ? cbseClasses : icseClasses;
 
   return (
     <div className="pt-20">
@@ -30,25 +38,37 @@ export default function Courses() {
       </section>
 
       {/* Courses Grid */}
-      <section className="section-pad" style={{ backgroundColor: "#EAEFFE" }}>
-        <div className="container-pad flex flex-col items-center">
-          <div className="grid md:grid-cols-2 gap-8 w-full max-w-4xl">
-            {/* Card 1: CBSE */}
-            <div className="p-6 rounded-xl bg-white text-[#2D274B] shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-300" style={{ border: "1px solid #9787F3" }}>
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#9787F3" }}>CBSE</h2>
-              <ul className="list-disc list-inside space-y-2 text-base">
-                <li>Classes 5 to 10 (All Subjects)</li>
-                <li>Class 11 &amp; 12 (Commerce Stream – All Subjects)</li>
-                <li>Board: CBSE (5–10) + JAC (11–12)</li>
-              </ul>
-            </div>
-            {/* Card 2: ICSE */}
-            <div className="p-6 rounded-xl bg-white text-[#2D274B] shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-300" style={{ border: "1px solid #9787F3" }}>
-              <h2 className="text-2xl font-bold mb-4" style={{ color: "#9787F3" }}>ICSE</h2>
-              <ul className="list-disc list-inside space-y-2 text-base">
-                <li>Classes 6 to 10 (All Subjects)</li>
-              </ul>
-            </div>
+      <section className="section-pad bg-brand-bg">
+        <div className="container-pad">
+          {/* Board Filter Tabs */}
+          <div className="flex justify-center gap-4 mb-10">
+            {['CBSE', 'ICSE'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                  activeTab === tab
+                    ? 'bg-gradient-brand text-white shadow-glass'
+                    : 'bg-white text-brand-dark border border-primary/20 hover:border-primary/40'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {classes.map((cls) => (
+              <div key={cls.name + cls.board} className="card p-6">
+                <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center mb-4 shadow-glass">
+                  <span className="text-white font-display font-bold text-lg">{cls.name}</span>
+                </div>
+                <h3 className="font-display font-bold text-brand-dark text-lg mb-2">
+                  {cls.label}
+                </h3>
+                <p className="text-gray-500 text-sm mb-3">{cls.subjects}</p>
+                <p className="text-xs text-primary font-semibold">Board: {cls.board}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>

@@ -26,14 +26,29 @@ const testimonials = [
   { name: 'Ananya Singh', class: 'Class 12 – JEE 2024', text: 'I qualified JEE with AIR 4200 after joining SRM Classes in Class 11. The faculty is truly exceptional.', rating: 5 },
 ];
 
+const cbseClasses = [
+  { name: '5', label: 'Class 5', subjects: 'All Subjects', board: 'CBSE' },
+  { name: '6', label: 'Class 6', subjects: 'All Subjects', board: 'CBSE' },
+  { name: '7', label: 'Class 7', subjects: 'All Subjects', board: 'CBSE' },
+  { name: '8', label: 'Class 8', subjects: 'All Subjects', board: 'CBSE' },
+  { name: '9', label: 'Class 9', subjects: 'All Subjects', board: 'CBSE' },
+  { name: '10', label: 'Class 10', subjects: 'All Subjects', board: 'CBSE' },
+  { name: '11', label: 'Class 11', subjects: 'Commerce – All Subjects', board: 'JAC' },
+  { name: '12', label: 'Class 12', subjects: 'Commerce – All Subjects', board: 'JAC' },
+];
+
+const icseClasses = [
+  { name: '6', label: 'Class 6', subjects: 'All Subjects', board: 'ICSE' },
+  { name: '7', label: 'Class 7', subjects: 'All Subjects', board: 'ICSE' },
+  { name: '8', label: 'Class 8', subjects: 'All Subjects', board: 'ICSE' },
+  { name: '9', label: 'Class 9', subjects: 'All Subjects', board: 'ICSE' },
+  { name: '10', label: 'Class 10', subjects: 'All Subjects', board: 'ICSE' },
+];
+
 export default function Home() {
-  const [courses, setCourses] = useState([]);
+  const [courseTab, setCourseTab] = useState('CBSE');
   const [enquiryForm, setEnquiryForm] = useState({ name: '', email: '', mobile: '', studentClass: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
-
-  useEffect(() => {
-    api.get('/courses').then(res => setCourses(res.data.data?.slice(0, 4) || [])).catch(() => {});
-  }, []);
 
   const handleEnquiry = async (e) => {
     e.preventDefault();
@@ -149,53 +164,45 @@ export default function Home() {
       </section>
 
       {/* ── COURSES PREVIEW ── */}
-      <section className="section-pad" style={{ backgroundColor: '#EAEFFE' }}>
+      <section className="section-pad bg-brand-bg">
         <div className="container-pad">
           <div className="text-center mb-12">
-            <div style={{ color: '#9787F3' }} className="font-semibold text-sm tracking-wider uppercase mb-3">Our Programs</div>
-            <h2 className="section-title" style={{ color: '#2D274B' }}>Courses We Offer</h2>
-            <p className="section-subtitle" style={{ color: '#2D274B99' }}>Comprehensive coaching for Class 5 to 12 with subject-wise expertise</p>
+            <div className="text-primary font-semibold text-sm tracking-wider uppercase mb-3">Our Programs</div>
+            <h2 className="section-title">Courses We Offer</h2>
+            <p className="section-subtitle">Comprehensive coaching for Class 5 to 12 with subject-wise expertise</p>
           </div>
-          <div className="flex justify-center">
-            <div className="grid md:grid-cols-2 gap-8 w-full max-w-4xl">
-              {/* Card 1: CBSE */}
-              <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300" style={{ border: '1.5px solid #9787F3', color: '#2D274B' }}>
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 shadow-glass" style={{ background: 'linear-gradient(135deg, #9787F3, #7B6BE6)' }}>
-                  <BookOpen className="w-7 h-7 text-white" />
-                </div>
-                <h3 className="font-display font-bold text-2xl mb-4" style={{ color: '#9787F3' }}>CBSE</h3>
-                <ul className="space-y-3 text-base" style={{ color: '#2D274B' }}>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#9787F3' }} />
-                    <span>Classes 5 to 10 (All Subjects)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#9787F3' }} />
-                    <span>Class 11 &amp; 12 (Commerce Stream – All Subjects)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#9787F3' }} />
-                    <span>Board: CBSE (5–10) + JAC (11–12)</span>
-                  </li>
-                </ul>
-              </div>
-              {/* Card 2: ICSE */}
-              <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300" style={{ border: '1.5px solid #9787F3', color: '#2D274B' }}>
-                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 shadow-glass" style={{ background: 'linear-gradient(135deg, #9787F3, #7B6BE6)' }}>
-                  <BookOpen className="w-7 h-7 text-white" />
-                </div>
-                <h3 className="font-display font-bold text-2xl mb-4" style={{ color: '#9787F3' }}>ICSE</h3>
-                <ul className="space-y-3 text-base" style={{ color: '#2D274B' }}>
-                  <li className="flex items-start gap-2">
-                    <CheckCircle className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#9787F3' }} />
-                    <span>Classes 6 to 10 (All Subjects)</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
+          {/* Board Filter Tabs */}
+          <div className="flex justify-center gap-4 mb-10">
+            {['CBSE', 'ICSE'].map(tab => (
+              <button
+                key={tab}
+                onClick={() => setCourseTab(tab)}
+                className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all duration-200 ${
+                  courseTab === tab
+                    ? 'bg-gradient-brand text-white shadow-glass'
+                    : 'bg-white text-brand-dark border border-primary/20 hover:border-primary/40'
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
-          <div className="text-center mt-10">
-            <Link to="/courses" className="inline-flex items-center gap-2 px-8 py-4 font-bold rounded-xl transition-all duration-200 hover:scale-105" style={{ backgroundColor: '#9787F3', color: '#fff' }}>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {(courseTab === 'CBSE' ? cbseClasses : icseClasses).map((cls) => (
+              <div key={cls.name + cls.board} className="card p-6">
+                <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center mb-4 shadow-glass">
+                  <span className="text-white font-display font-bold text-lg">{cls.name}</span>
+                </div>
+                <h3 className="font-display font-bold text-brand-dark text-lg mb-2">
+                  {cls.label}
+                </h3>
+                <p className="text-gray-500 text-sm mb-3">{cls.subjects}</p>
+                <p className="text-xs text-primary font-semibold">Board: {cls.board}</p>
+              </div>
+            ))}
+          </div>
+          <div className="text-center mt-8">
+            <Link to="/courses" className="btn-outline inline-flex items-center gap-2">
               View All Courses <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
