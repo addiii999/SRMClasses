@@ -149,31 +149,53 @@ export default function Home() {
       </section>
 
       {/* ── COURSES PREVIEW ── */}
-      <section className="section-pad bg-brand-bg">
+      <section className="section-pad" style={{ backgroundColor: '#EAEFFE' }}>
         <div className="container-pad">
           <div className="text-center mb-12">
-            <div className="text-primary font-semibold text-sm tracking-wider uppercase mb-3">Our Programs</div>
-            <h2 className="section-title">Courses We Offer</h2>
-            <p className="section-subtitle">Comprehensive coaching for Class 5 to 12 with subject-wise expertise</p>
+            <div style={{ color: '#9787F3' }} className="font-semibold text-sm tracking-wider uppercase mb-3">Our Programs</div>
+            <h2 className="section-title" style={{ color: '#2D274B' }}>Courses We Offer</h2>
+            <p className="section-subtitle" style={{ color: '#2D274B99' }}>Comprehensive coaching for Class 5 to 12 with subject-wise expertise</p>
           </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {(courses.length > 0 ? courses : Array(4).fill(null)).map((course, i) => (
-              <div key={i} className="card p-6">
-                <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center mb-4 shadow-glass">
-                  <span className="text-white font-display font-bold text-lg">{course ? course.className : i + 9}</span>
+          <div className="flex justify-center">
+            <div className="grid md:grid-cols-2 gap-8 w-full max-w-4xl">
+              {/* Card 1: CBSE */}
+              <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300" style={{ border: '1.5px solid #9787F3', color: '#2D274B' }}>
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 shadow-glass" style={{ background: 'linear-gradient(135deg, #9787F3, #7B6BE6)' }}>
+                  <BookOpen className="w-7 h-7 text-white" />
                 </div>
-                <h3 className="font-display font-bold text-brand-dark text-lg mb-2">
-                  Class {course ? course.className : i + 9}
-                </h3>
-                <p className="text-gray-500 text-sm mb-3">
-                  {course ? (course.subjects?.slice(0, 3).join(', ') || 'Core Subjects') : 'Loading...'}
-                </p>
-                {course && <p className="text-xs text-primary font-semibold">{course.batchTimings?.[0]}</p>}
+                <h3 className="font-display font-bold text-2xl mb-4" style={{ color: '#9787F3' }}>CBSE</h3>
+                <ul className="space-y-3 text-base" style={{ color: '#2D274B' }}>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#9787F3' }} />
+                    <span>Classes 5 to 10 (All Subjects)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#9787F3' }} />
+                    <span>Class 11 &amp; 12 (Commerce Stream – All Subjects)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#9787F3' }} />
+                    <span>Board: CBSE (5–10) + JAC (11–12)</span>
+                  </li>
+                </ul>
               </div>
-            ))}
+              {/* Card 2: ICSE */}
+              <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-xl hover:scale-105 transition-all duration-300" style={{ border: '1.5px solid #9787F3', color: '#2D274B' }}>
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5 shadow-glass" style={{ background: 'linear-gradient(135deg, #9787F3, #7B6BE6)' }}>
+                  <BookOpen className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="font-display font-bold text-2xl mb-4" style={{ color: '#9787F3' }}>ICSE</h3>
+                <ul className="space-y-3 text-base" style={{ color: '#2D274B' }}>
+                  <li className="flex items-start gap-2">
+                    <CheckCircle className="w-5 h-5 mt-0.5 shrink-0" style={{ color: '#9787F3' }} />
+                    <span>Classes 6 to 10 (All Subjects)</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
-          <div className="text-center mt-8">
-            <Link to="/courses" className="btn-outline inline-flex items-center gap-2">
+          <div className="text-center mt-10">
+            <Link to="/courses" className="inline-flex items-center gap-2 px-8 py-4 font-bold rounded-xl transition-all duration-200 hover:scale-105" style={{ backgroundColor: '#9787F3', color: '#fff' }}>
               View All Courses <ArrowRight className="w-4 h-4" />
             </Link>
           </div>

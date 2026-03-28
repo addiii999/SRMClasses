@@ -30,55 +30,26 @@ export default function Courses() {
       </section>
 
       {/* Courses Grid */}
-      <section className="section-pad bg-brand-bg">
-        <div className="container-pad">
-          {loading ? (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {Array(8).fill(0).map((_, i) => (
-                <div key={i} className="card p-6 animate-pulse">
-                  <div className="w-12 h-12 bg-gray-200 rounded-xl mb-4" />
-                  <div className="h-5 bg-gray-200 rounded mb-2 w-2/3" />
-                  <div className="h-4 bg-gray-100 rounded mb-1 w-full" />
-                  <div className="h-4 bg-gray-100 rounded w-4/5" />
-                </div>
-              ))}
+      <section className="section-pad" style={{ backgroundColor: "#EAEFFE" }}>
+        <div className="container-pad flex flex-col items-center">
+          <div className="grid md:grid-cols-2 gap-8 w-full max-w-4xl">
+            {/* Card 1: CBSE */}
+            <div className="p-6 rounded-xl bg-white text-[#2D274B] shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-300" style={{ border: "1px solid #9787F3" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#9787F3" }}>CBSE</h2>
+              <ul className="list-disc list-inside space-y-2 text-base">
+                <li>Classes 5 to 10 (All Subjects)</li>
+                <li>Class 11 &amp; 12 (Commerce Stream – All Subjects)</li>
+                <li>Board: CBSE (5–10) + JAC (11–12)</li>
+              </ul>
             </div>
-          ) : (
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {courses.map((course, i) => (
-                <div key={course._id} className="card p-6 flex flex-col gap-4">
-                  <div className="flex items-center justify-between">
-                    <div className="w-14 h-14 rounded-2xl bg-gradient-brand flex items-center justify-center shadow-glass">
-                      <span className="text-white font-display font-bold text-2xl">{course.className}</span>
-                    </div>
-                    <span className={`text-xs font-semibold px-3 py-1 rounded-full ${classColors[i % classColors.length]}`}>
-                      Class {course.className}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="font-display font-bold text-brand-dark text-lg mb-1">Class {course.className} Program</h3>
-                    <div className="flex items-center gap-1.5 text-gray-500 text-xs mb-3">
-                      <Clock className="w-3.5 h-3.5" /> {course.duration}
-                    </div>
-                    <div className="flex items-start gap-1.5 text-gray-500 text-xs mb-3">
-                      <BookOpen className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                      <span>{course.subjects?.join(', ')}</span>
-                    </div>
-                    {course.batchTimings?.length > 0 && (
-                      <div className="space-y-1">
-                        {course.batchTimings.map((timing, j) => (
-                          <div key={j} className="text-xs bg-primary/5 text-primary font-medium px-3 py-1.5 rounded-lg">{timing}</div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <Link to="/contact#demo" className="btn-primary text-sm py-2.5 text-center mt-auto flex items-center justify-center gap-1.5">
-                    Book Demo <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              ))}
+            {/* Card 2: ICSE */}
+            <div className="p-6 rounded-xl bg-white text-[#2D274B] shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-300" style={{ border: "1px solid #9787F3" }}>
+              <h2 className="text-2xl font-bold mb-4" style={{ color: "#9787F3" }}>ICSE</h2>
+              <ul className="list-disc list-inside space-y-2 text-base">
+                <li>Classes 6 to 10 (All Subjects)</li>
+              </ul>
             </div>
-          )}
+          </div>
         </div>
       </section>
 
