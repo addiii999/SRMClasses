@@ -38,7 +38,7 @@ export default function Footer() {
             <div className="flex gap-3">
               {[
                 { icon: Instagram, href: 'https://www.instagram.com/srm_classes/', label: 'Instagram' },
-                { icon: Youtube, href: '#', label: 'YouTube' },
+                { icon: Youtube, href: 'https://youtube.com/@srmclasses-rnc?si=paFOv6nyy3kRbuhB', label: 'YouTube' },
                 { icon: Facebook, href: 'https://www.facebook.com/share/1GB8aFs4wo/', label: 'Facebook' },
                 { icon: MessageCircle, href: 'https://wa.me/919508639773', label: 'WhatsApp' },
               ].map(({ icon: Icon, href, label }) => (
