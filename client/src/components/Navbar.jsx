@@ -53,6 +53,21 @@ export default function Navbar() {
         </div>
       </div>
 
+      {/* Announcement Bar (Scrolling Ticker) */}
+      <div className="bg-primary/95 text-white py-1.5 overflow-hidden border-b border-white/10 shadow-sm relative z-40">
+        <div className="whitespace-nowrap animate-marquee font-medium text-[10px] md:text-sm tracking-wide uppercase">
+          <span className="mx-8">🚀 New batches starting for Class 10 & 12 Board Exams - Enroll Now!</span>
+          <span className="mx-8 text-primary shadow-glass-lg rounded px-2 bg-white font-bold ml-1 mr-1">OFFER</span>
+          <span className="mx-8">🎓 Limited Scholarship seats available for top performers. Call today!</span>
+          <span className="mx-8">✨ Experience Ranchi's Best Coaching with Free Demo Classes.</span>
+          {/* Replicating for seamless loop */}
+          <span className="mx-8">🚀 New batches starting for Class 10 & 12 Board Exams - Enroll Now!</span>
+          <span className="mx-8 text-primary shadow-glass-lg rounded px-2 bg-white font-bold ml-1 mr-1">OFFER</span>
+          <span className="mx-8">🎓 Limited Scholarship seats available for top performers. Call today!</span>
+          <span className="mx-8">✨ Experience Ranchi's Best Coaching with Free Demo Classes.</span>
+        </div>
+      </div>
+
       {/* Main Nav */}
       <nav className={`transition-all duration-300 ${
         scrolled ? 'bg-white/90 backdrop-blur-xl shadow-card border-b border-primary/10' : 'bg-transparent'

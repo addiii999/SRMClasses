@@ -38,17 +38,54 @@ const cbseClasses = [
 ];
 
 const icseClasses = [
-  { name: '6', label: 'Class 6', subjects: 'All Subjects', board: 'ICSE' },
-  { name: '7', label: 'Class 7', subjects: 'All Subjects', board: 'ICSE' },
-  { name: '8', label: 'Class 8', subjects: 'All Subjects', board: 'ICSE' },
-  { name: '9', label: 'Class 9', subjects: 'All Subjects', board: 'ICSE' },
-  { name: '10', label: 'Class 10', subjects: 'All Subjects', board: 'ICSE' },
+  { name: '6', label: 'Class 6', subjects: 'All Subjects', board: 'ICSE', seats: 4 },
+  { name: '7', label: 'Class 7', subjects: 'All Subjects', board: 'ICSE', seats: 3 },
+  { name: '8', label: 'Class 8', subjects: 'All Subjects', board: 'ICSE', seats: 6 },
+  { name: '9', label: 'Class 9', subjects: 'All Subjects', board: 'ICSE', seats: 2 },
+  { name: '10', label: 'Class 10', subjects: 'All Subjects', board: 'ICSE', seats: 2 },
 ];
+
+const faqs = [
+  { q: "Do you offer free demo classes?", a: "Yes, we offer 2 days of free demo classes for all new students. This allows you to experience our teaching style before enrolling." },
+  { q: "What is the average batch size?", a: "To ensure every student gets personalized attention, we keep our batches small, usually limited to 20 students." },
+  { q: "Do you provide study material?", a: "Absolutely! We provide comprehensive printed notes, weekly test papers, and extra practice sheets for all subjects." },
+  { q: "How do you help students who are weak in certain subjects?", a: "We identify weak areas through regular tests and conduct dedicated doubt-clearing sessions every evening to help them catch up." },
+  { q: "Are there regular updates for parents?", a: "Yes, we share weekly performance reports via WhatsApp and conduct monthly PTMs to discuss your child's progress." },
+];
+
+const liveAlertNames = ['Ankit', 'Sneha', 'Rahul', 'Priya', 'Vikram', 'Ananya', 'Sayan', 'Isha'];
+const liveAlertClasses = ['Class 10', 'Class 12', 'Class 9', 'Class 8'];
 
 export default function Home() {
   const [courseTab, setCourseTab] = useState('CBSE');
   const [enquiryForm, setEnquiryForm] = useState({ name: '', email: '', mobile: '', studentClass: '', message: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [activeFaq, setActiveFaq] = useState(null);
+  const [currentAlert, setCurrentAlert] = useState(null);
+
+  useEffect(() => {
+    const showRandomAlert = () => {
+      const name = liveAlertNames[Math.floor(Math.random() * liveAlertNames.length)];
+      const className = liveAlertClasses[Math.floor(Math.random() * liveAlertClasses.length)];
+      setCurrentAlert({ name, className });
+      
+      setTimeout(() => {
+        setCurrentAlert(null);
+      }, 5000); // Hide after 5 sec
+    };
+
+    const interval = setInterval(() => {
+      showRandomAlert();
+    }, 45000); // Show every 45 sec
+
+    // Initial alert after 10 sec
+    const initialTimeout = setTimeout(showRandomAlert, 10000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(initialTimeout);
+    };
+  }, []);
 
   const handleEnquiry = async (e) => {
     e.preventDefault();
@@ -191,8 +228,15 @@ export default function Home() {
           </div>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {(courseTab === 'CBSE' ? cbseClasses : icseClasses).map((cls) => (
-              <div key={cls.name + cls.board} className="card p-6">
-                <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center mb-4 shadow-glass">
+              <div key={cls.name + cls.board} className="card p-6 relative overflow-hidden group">
+                {/* limited seats badge */}
+                {(cls.seats || cls.name === '10' || cls.name === '12') && (
+                  <div className="absolute top-3 right-0 bg-red-500 text-white text-[10px] font-bold px-3 py-1 rounded-l-lg shadow-lg z-10 animate-pulse">
+                    🔥 Last {cls.seats || 3} Seats!
+                  </div>
+                )}
+                
+                <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center mb-4 shadow-glass transition-transform group-hover:scale-110">
                   <span className="text-white font-display font-bold text-lg">{cls.name}</span>
                 </div>
                 <h3 className="font-display font-bold text-brand-dark text-lg mb-2">
@@ -254,6 +298,34 @@ export default function Home() {
                 <div>
                   <div className="font-semibold text-white">{name}</div>
                   <div className="text-primary-300 text-xs">{cls}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── FAQ SECTION ── */}
+      <section className="section-pad bg-white">
+        <div className="container-pad max-w-4xl">
+          <div className="text-center mb-12">
+            <div className="text-primary font-semibold text-sm tracking-wider uppercase mb-3">Common Doubts</div>
+            <h2 className="section-title">Frequently Asked Questions</h2>
+          </div>
+          <div className="space-y-4">
+            {faqs.map((faq, idx) => (
+              <div key={idx} className="border border-primary/10 rounded-2xl overflow-hidden shadow-sm transition-all duration-200">
+                <button 
+                  onClick={() => setActiveFaq(activeFaq === idx ? null : idx)}
+                  className="w-full flex items-center justify-between p-5 text-left bg-white hover:bg-brand-bg transition-colors"
+                >
+                  <span className="font-semibold text-brand-dark">{faq.q}</span>
+                  <ChevronRight className={`w-5 h-5 text-primary transition-transform duration-300 ${activeFaq === idx ? 'rotate-90' : ''}`} />
+                </button>
+                <div className={`overflow-hidden transition-all duration-300 ${activeFaq === idx ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <div className="p-5 pt-0 text-gray-500 leading-relaxed border-t border-primary/5 bg-brand-bg/30">
+                    {faq.a}
+                  </div>
                 </div>
               </div>
             ))}
@@ -367,6 +439,26 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* ── LIVE BOOKING ALERT ── */}
+      {currentAlert && (
+        <div className="fixed bottom-24 left-4 md:left-8 z-50 animate-slide-up">
+          <div className="bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-glass-lg border border-primary/20 flex items-center gap-4 max-w-sm">
+            <div className="w-10 h-10 rounded-full bg-gradient-brand flex items-center justify-center text-white font-bold shrink-0">
+              {currentAlert.name[0]}
+            </div>
+            <div>
+              <p className="text-sm text-brand-dark font-medium leading-snug">
+                <span className="font-bold text-primary">{currentAlert.name}</span> from Ranchi just booked a <span className="text-primary font-bold">Free Demo Class</span> for {currentAlert.className}!
+              </p>
+              <div className="flex items-center gap-1.5 mt-1">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-[10px] text-gray-400 font-medium uppercase tracking-tighter">Verified Booking • Just now</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
