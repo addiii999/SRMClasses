@@ -6,6 +6,7 @@ import { Menu, X, GraduationCap, ChevronDown, LogOut, LayoutDashboard } from 'lu
 const navLinks = [
   { label: 'Home', to: '/' },
   { label: 'About', to: '/about' },
+  { label: 'Founder', to: '/mentor' },
   { label: 'Courses', to: '/courses' },
   { label: 'Faculty', to: '/faculty' },
   { label: 'Results', to: '/results' },

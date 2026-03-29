@@ -17,6 +17,7 @@ import Faculty from './pages/Faculty';
 import Results from './pages/Results';
 import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
+import Mentor from './pages/Mentor';
 
 // Auth Pages
 import Login from './pages/Login';
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="/faculty" element={<PublicLayout><Faculty /></PublicLayout>} />
           <Route path="/results" element={<PublicLayout><Results /></PublicLayout>} />
           <Route path="/gallery" element={<PublicLayout><Gallery /></PublicLayout>} />
+          <Route path="/mentor" element={<PublicLayout><Mentor /></PublicLayout>} />
           <Route path="/contact" element={<PublicLayout><Contact /></PublicLayout>} />
 
           {/* Auth Routes */}
