@@ -105,6 +105,7 @@ app.use('/api/materials', require('./routes/materialRoutes'));
 app.use('/api/announcements', require('./routes/announcementRoutes'));
 app.use('/api/gallery', require('./routes/galleryRoutes'));
 app.use('/api/results', require('./routes/resultRoutes'));
+app.use('/api/syllabus', require('./routes/syllabusRoutes'));
 
 // Health check
 app.get('/api/health', (req, res) => {
