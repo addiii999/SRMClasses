@@ -80,14 +80,14 @@ export default function Home() {
               Ranchi's Most Trusted Coaching Institute
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-display font-bold text-white leading-tight mb-6 animate-slide-up">
-              Shape Your{' '}
+              Best Coaching{' '}
               <span className="relative inline-block mt-2 sm:mt-0">
-                <span className="text-primary-300 z-10 relative">Future</span>
+                <span className="text-primary-300 z-10 relative">Institute</span>
                 <svg className="absolute -bottom-2 left-0 w-full z-0" viewBox="0 0 300 12" fill="none">
                   <path d="M2 10 Q150 2 298 10" stroke="#9787F3" strokeWidth="3" strokeLinecap="round" fill="none" />
                 </svg>
               </span>
-              {' '}With Expert Coaching
+              {' '}in Ranchi – SRM Classes
             </h1>
             <p className="text-lg md:text-xl text-white/70 mb-8 max-w-xl leading-relaxed animate-fade-in">
               Premium coaching for Class 5–12. Small batches, expert faculty, proven results. Join 2,500+ students who trusted SRM Classes.
