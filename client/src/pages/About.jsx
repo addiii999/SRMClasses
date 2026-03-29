@@ -15,7 +15,7 @@ const values = [
 
 export default function About() {
   return (
-    <div className="pt-28 overflow-x-hidden">
+    <div className="pt-36 overflow-x-hidden">
       {/* Hero */}
       <section className="section-pad bg-gradient-hero relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 rounded-full blur-3xl" />

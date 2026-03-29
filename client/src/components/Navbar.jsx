@@ -24,6 +24,7 @@ export default function Navbar() {
   
   const isHome = location.pathname === '/';
   const isLightText = isHome && !scrolled;
+  const navbarBg = scrolled ? 'bg-white/90 backdrop-blur-xl shadow-card border-b border-primary/10' : (isHome ? 'bg-transparent' : 'bg-white shadow-sm border-b border-primary/5');
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 20);
@@ -69,9 +70,7 @@ export default function Navbar() {
       </div>
 
       {/* Main Nav */}
-      <nav className={`transition-all duration-300 ${
-        scrolled ? 'bg-white/90 backdrop-blur-xl shadow-card border-b border-primary/10' : 'bg-transparent'
-      }`}>
+      <nav className={`transition-all duration-300 ${navbarBg}`}>
         <div className="container-pad">
           <div className="flex items-center justify-between h-16 md:h-20">
             {/* Logo */}

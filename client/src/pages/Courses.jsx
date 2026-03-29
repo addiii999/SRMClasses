@@ -25,7 +25,7 @@ export default function Courses() {
   const classes = activeTab === 'CBSE' ? cbseClasses : icseClasses;
 
   return (
-    <div className="pt-28">
+    <div className="pt-36">
       {/* Hero */}
       <section className="section-pad bg-gradient-hero relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />

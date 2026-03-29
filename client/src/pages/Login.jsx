@@ -28,7 +28,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4 pt-28">
+    <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4 pt-36">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
