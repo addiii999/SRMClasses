@@ -67,7 +67,7 @@ export default function Home() {
   return (
     <div className="overflow-x-hidden">
       {/* ── HERO ── */}
-      <section className="relative min-h-[100svh] flex items-center bg-gradient-hero overflow-hidden pt-32 pb-40">
+      <section className="relative min-h-[100svh] flex items-center bg-gradient-hero overflow-hidden pt-40 pb-40">
         {/* Decorative blobs */}
         <div className="absolute top-20 right-10 w-72 h-72 bg-primary/30 rounded-full blur-3xl animate-float" />
         <div className="absolute bottom-20 left-10 w-56 h-56 bg-white/10 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />

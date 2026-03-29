@@ -37,7 +37,7 @@ export default function Register() {
   };
 
   return (
-    <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4 py-8 pt-24">
+    <div className="min-h-screen bg-brand-bg flex items-center justify-center px-4 py-8 pt-28">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center gap-2.5">

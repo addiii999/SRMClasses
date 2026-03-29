@@ -46,7 +46,7 @@ export default function Contact() {
   };
 
   return (
-    <div className="pt-20">
+    <div className="pt-28">
       <section className="section-pad bg-gradient-hero relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/20 rounded-full blur-3xl" />
         <div className="container-pad relative z-10 text-center">
