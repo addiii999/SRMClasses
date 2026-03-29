@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { CheckCircle, Target, Eye, Award, Users } from 'lucide-react';
+import { CheckCircle, Target, Eye, Award, Users, MapPin, Play, ArrowRight, TrendingUp, BookOpen } from 'lucide-react';
 
 const team = [
   { name: 'Mr. Rajesh Kumar', subject: 'Mathematics & Physics', exp: '15 Years Experience', initial: 'R' },
@@ -24,6 +24,109 @@ export default function About() {
           <p className="text-white/70 text-lg max-w-2xl mx-auto">
             A decade of transforming young minds. Discover our story, our faculty, and our commitment to academic excellence.
           </p>
+        </div>
+      </section>
+
+      {/* Meet The Mentor (Founder Section) */}
+      <section className="section-pad bg-brand-bg relative overflow-hidden">
+        {/* Soft decorative background element */}
+        <div className="absolute -left-32 top-10 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
+        
+        <div className="container-pad relative z-10">
+          <div className="grid lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+            
+            {/* Left Side: Founder Image */}
+            <div className="lg:col-span-5 relative group order-last lg:order-first">
+              <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/20 aspect-[4/5] bg-white">
+                {/* Image Placeholder - User will replace this or upload /images/founder.jpg */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#2D274B]/80 via-[#2D274B]/20 to-transparent z-10" />
+                <img 
+                  src="/images/founder.jpg" 
+                  alt="Ranjan Kumar Soni - Founder of SRM Classes" 
+                  className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  onError={(e) => {
+                    e.target.src = 'https://ui-avatars.com/api/?name=Ranjan+Soni&background=9787F3&color=fff&size=512';
+                  }}
+                />
+                
+                {/* Floating Badge over image */}
+                <div className="absolute bottom-6 left-6 right-6 z-20 glass-dark rounded-xl p-4 border border-white/20 shadow-glass-lg backdrop-blur-md">
+                  <div className="flex items-center gap-3 mb-1">
+                    <MapPin className="w-5 h-5 text-primary-300 shrink-0" />
+                    <span className="text-white text-sm font-medium">Proudly mentoring students across Ranchi</span>
+                  </div>
+                  <div className="text-primary-300 text-xs mt-1 italic pl-8">
+                    "Confusion se clarity tak ka safar hum dete hain."
+                  </div>
+                </div>
+              </div>
+              
+              {/* Decorative square dots or pattern behind image */}
+              <div className="absolute -z-10 -bottom-6 -right-6 w-32 h-32 bg-[radial-gradient(#9787F3_2px,transparent_2px)] [background-size:16px_16px] opacity-40"></div>
+            </div>
+
+            {/* Right Side: Content */}
+            <div className="lg:col-span-7">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white border border-primary/10 text-primary uppercase tracking-wider text-xs font-bold mb-6 shadow-sm">
+                <Target className="w-3.5 h-3.5" />
+                Meet The Mentor
+              </div>
+              
+              <h2 className="text-3xl md:text-5xl font-display font-bold text-brand-dark leading-tight mb-4">
+                "From Confusion to <span className="text-gradient">Clarity</span> — <br className="hidden md:block"/>Guiding Every Student Like His Own"
+              </h2>
+              
+              <div className="mb-6 pb-6 border-b border-primary/10">
+                <h3 className="text-xl font-bold text-brand-dark">Ranjan Kumar Soni</h3>
+                <p className="text-primary font-medium text-sm">Founder & Lead Educator, SRM Classes</p>
+              </div>
+
+              <p className="text-gray-600 text-base md:text-lg leading-relaxed mb-8">
+                With over a decade of teaching experience, Ranjan Kumar Soni has helped thousands of students turn their academic struggles into consistent success. Known for his simple explanations and personal teaching approach, he believes every student deserves clarity, confidence, and the right direction.
+              </p>
+
+              {/* Highlights List */}
+              <div className="grid sm:grid-cols-2 gap-4 mb-8">
+                {[
+                  { icon: Award, text: '10+ Years of Teaching Experience (Since 2010)' },
+                  { icon: Users, text: '3000+ Students Mentored Successfully' },
+                  { icon: TrendingUp, text: '50+ Top Performers Every Year (90%+)' },
+                  { icon: Award, text: '5 Years Continuous Best Teacher Award' },
+                  { icon: BookOpen, text: 'PGT Level Educator & Teacher Trainer' },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-start gap-3">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
+                      <item.icon className="w-3.5 h-3.5 text-primary" />
+                    </div>
+                    <span className="text-brand-dark/80 text-sm font-medium">{item.text}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Teaching Style & Vision Blockquote */}
+              <div className="bg-white rounded-2xl p-6 shadow-card border-l-4 border-primary mb-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-brand opacity-5 blur-2xl rounded-full"></div>
+                <p className="text-gray-600 italic text-sm md:text-base leading-relaxed relative z-10 mb-4">
+                  "Not just a teacher — more like a mentor who explains concepts like a friend, making even the toughest topics feel simple and clear."
+                </p>
+                <p className="text-brand-dark font-medium text-sm md:text-base leading-relaxed relative z-10">
+                  "Built with a vision to make quality education accessible to every student, SRM Classes focuses on delivering strong concepts, personal attention, and real results — without making education feel complicated or unreachable."
+                </p>
+              </div>
+
+              {/* CTA Buttons */}
+              <div className="flex flex-wrap gap-4">
+                <Link to="/contact#demo" className="btn-primary py-4 px-8 text-sm md:text-base flex items-center gap-2 group">
+                  <Play className="w-4 h-4 fill-white" />
+                  Book Demo with Mentor
+                </Link>
+                <Link to="/courses" className="btn-outline py-4 px-8 text-sm md:text-base flex items-center gap-2">
+                  Start Learning Today <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+
+            </div>
+          </div>
         </div>
       </section>
 
