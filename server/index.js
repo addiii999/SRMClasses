@@ -51,6 +51,25 @@ const app = express();
 // Trust proxy for Render/cloud deployments (fixes rate limiter using correct client IP)
 app.set('trust proxy', 1);
 
+// Root path friendly message
+app.get('/', (req, res) => {
+  res.send('<h1>SRM Classes API is Running! 🚀🚀🚀</h1><p>The backend is fully live and connected to MongoDB Atlas.</p>');
+});
+
+// Health check
+app.get('/api/health', (req, res) => {
+  const mongoose = require('mongoose');
+  const uri = process.env.MONGO_URI || 'NOT SET';
+  res.json({ 
+    status: 'OK', 
+    message: 'SRM Classes API is running',
+    dbState: mongoose.connection.readyState,
+    mongoUriSet: uri !== 'NOT SET',
+    mongoUriStart: uri.substring(0, 30) + '...',
+    nodeEnv: process.env.NODE_ENV || 'not set'
+  });
+});
+
 // Rate limiting to prevent brute force and satisfy CodeQL
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -88,10 +107,6 @@ app.use(cors({
 
 app.use(express.json());
 
-// Root path friendly message
-app.get('/', (req, res) => {
-  res.send('<h1>SRM Classes API is Running! 🚀🚀🚀</h1><p>The backend is fully live and connected to MongoDB Atlas.</p>');
-});
 app.use(express.urlencoded({ extended: true }));
 
 // Serve uploaded files statically
@@ -109,20 +124,6 @@ app.use('/api/announcements', require('./routes/announcementRoutes'));
 app.use('/api/gallery', require('./routes/galleryRoutes'));
 app.use('/api/results', require('./routes/resultRoutes'));
 app.use('/api/syllabus', require('./routes/syllabusRoutes'));
-
-// Health check
-app.get('/api/health', (req, res) => {
-  const mongoose = require('mongoose');
-  const uri = process.env.MONGO_URI || 'NOT SET';
-  res.json({ 
-    status: 'OK', 
-    message: 'SRM Classes API is running',
-    dbState: mongoose.connection.readyState,
-    mongoUriSet: uri !== 'NOT SET',
-    mongoUriStart: uri.substring(0, 30) + '...',
-    nodeEnv: process.env.NODE_ENV || 'not set'
-  });
-});
 
 // Global error handler
 app.use((err, req, res, next) => {
