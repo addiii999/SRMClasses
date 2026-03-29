@@ -2,9 +2,9 @@ import { Link } from 'react-router-dom';
 import { CheckCircle, Target, Eye, Award, Users } from 'lucide-react';
 
 const team = [
-  { name: 'Mr. Rajesh Kumar', subject: 'Mathematics & Physics', exp: '15 Years Experience', initial: 'R' },
-  { name: 'Mrs. Sunita Devi', subject: 'Chemistry & Biology', exp: '12 Years Experience', initial: 'S' },
-  { name: 'Mr. Amit Singh', subject: 'English & Social Science', exp: '10 Years Experience', initial: 'A' },
+  { name: 'Mr. Ranjan Kumar Soni', subject: 'Mathematics & Physics', exp: '15 years + experience', initial: 'R' },
+  { name: 'Mr. Raghuwendra Kumar Soni', subject: 'Computer and AI and IT', exp: '12 years + experience', initial: 'R' },
+  { name: 'Mr. Yuvraj Kumar', subject: 'Chemistry & Physics', exp: '6 years + experience', initial: 'Y' },
 ];
 
 const values = [
