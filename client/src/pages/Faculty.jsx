@@ -2,7 +2,7 @@ import { Star } from 'lucide-react';
 
 const faculty = [
   { name: 'Mr. Ranjan Kumar Soni', subject: 'Mathematics & Physics', exp: '15 years + experience', qual: 'M.Sc. Mathematics, Founder', initial: 'R', speciality: 'Board Exam Specialist', rating: 5.0 },
-  { name: 'Mr. Raghuwendra Kumar Soni', subject: 'Computer and AI and IT', exp: '12 years + experience', qual: 'MCA, IT Expert', initial: 'R', speciality: 'Tech & AI Mentor', rating: 4.9 },
+  { name: 'Mr. Raghuwendra Kumar Soni', subject: 'Computer & AI', exp: '12 years + experience', qual: 'MCA, IT Expert', initial: 'R', speciality: 'Tech & AI Mentor', rating: 4.9 },
   { name: 'Mr. Yuvraj Kumar', subject: 'Chemistry & Physics', exp: '6 years + experience', qual: 'B.Sc. Physics, RU', initial: 'Y', speciality: 'Conceptual Science', rating: 4.8 },
   { name: 'Mrs. Priya Pandey', subject: 'Hindi & Sanskrit', exp: '8 Years', qual: 'M.A. Hindi, Ranchi University', initial: 'P', speciality: 'CBSE Hindi Expert', rating: 4.7 },
   { name: 'Mr. Vikash Gupta', subject: 'Computer Science', exp: '7 Years', qual: 'MCA, IGNOU', initial: 'V', speciality: 'Programming & Automation', rating: 4.8 },

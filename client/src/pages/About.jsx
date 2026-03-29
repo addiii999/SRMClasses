@@ -3,7 +3,7 @@ import { CheckCircle, Target, Eye, Award, Users } from 'lucide-react';
 
 const team = [
   { name: 'Mr. Ranjan Kumar Soni', subject: 'Mathematics & Physics', exp: '15 years + experience', initial: 'R' },
-  { name: 'Mr. Raghuwendra Kumar Soni', subject: 'Computer and AI and IT', exp: '12 years + experience', initial: 'R' },
+  { name: 'Mr. Raghuwendra Kumar Soni', subject: 'Computer & AI', exp: '12 years + experience', initial: 'R' },
   { name: 'Mr. Yuvraj Kumar', subject: 'Chemistry & Physics', exp: '6 years + experience', initial: 'Y' },
 ];
 
