@@ -5,6 +5,7 @@ const footerLinks = {
   'Quick Links': [
     { label: 'Home', to: '/' },
     { label: 'About Us', to: '/about' },
+    { label: 'Founder', to: '/mentor' },
     { label: 'Courses', to: '/courses' },
     { label: 'Faculty', to: '/faculty' },
     { label: 'Results', to: '/results' },
@@ -38,7 +39,7 @@ export default function Footer() {
               {[
                 { icon: Instagram, href: 'https://www.instagram.com/srm_classes/', label: 'Instagram' },
                 { icon: Youtube, href: '#', label: 'YouTube' },
-                { icon: Facebook, href: '#', label: 'Facebook' },
+                { icon: Facebook, href: 'https://www.facebook.com/share/1GB8aFs4wo/', label: 'Facebook' },
                 { icon: MessageCircle, href: 'https://wa.me/919508639773', label: 'WhatsApp' },
               ].map(({ icon: Icon, href, label }) => (
                 <a key={label} href={href} aria-label={label} target="_blank" rel="noreferrer"
