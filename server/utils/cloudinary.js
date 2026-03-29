@@ -88,4 +88,54 @@ const uploadToCloudinary = async (localFilePath, folder = 'srmclasses/gallery') 
   }
 };
 
-module.exports = { uploadToCloudinary };
+/**
+ * Upload a PDF file to Cloudinary using resource_type 'raw'
+ * PDFs must use 'raw' type to get a publicly accessible URL
+ * @param {string} localFilePath Path to the local PDF file
+ * @param {string} folder Optional folder name in Cloudinary
+ * @returns {Promise<string>} The secure URL of the uploaded PDF
+ */
+const uploadPdfToCloudinary = async (localFilePath, folder = 'srmclasses/syllabus') => {
+  try {
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      throw new Error('Cloudinary credentials are not set in environment variables');
+    }
+
+    if (!localFilePath || typeof localFilePath !== 'string') {
+      throw new Error('Invalid file path: must be a string');
+    }
+
+    const filename = path.basename(localFilePath);
+    const sanitizedPath = path.join(TRUSTED_UPLOADS_DIR, filename);
+
+    if (!fs.existsSync(sanitizedPath)) {
+      throw new Error(`Security Exception: File not found in trusted directory: ${sanitizedPath}`);
+    }
+
+    // Use resource_type 'raw' for PDFs to get a proper public URL
+    const result = await cloudinary.uploader.upload(sanitizedPath, {
+      folder: folder,
+      resource_type: 'raw',
+      access_mode: 'public',
+    });
+
+    // Clean up local file
+    if (fs.existsSync(sanitizedPath)) {
+      fs.unlinkSync(sanitizedPath);
+    }
+
+    return result.secure_url;
+  } catch (error) {
+    console.error('Cloudinary PDF Upload Error:', error);
+    if (typeof localFilePath === 'string') {
+      const filename = path.basename(localFilePath);
+      const sanitizedPath = path.join(TRUSTED_UPLOADS_DIR, filename);
+      if (fs.existsSync(sanitizedPath)) {
+        fs.unlinkSync(sanitizedPath);
+      }
+    }
+    throw error;
+  }
+};
+
+module.exports = { uploadToCloudinary, uploadPdfToCloudinary };

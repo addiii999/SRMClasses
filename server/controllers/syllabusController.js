@@ -1,8 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const Syllabus = require('../models/Syllabus');
-const { uploadToCloudinary } = require('../utils/cloudinary');
-const cloudinary = require('cloudinary').v2;
+const { uploadPdfToCloudinary } = require('../utils/cloudinary');
 
 // Custom upload wrapper for returning publicId or we can just use secure_url
 // uploadToCloudinary only returns secure_url, so if we want to delete later we can just rely on Cloudinary's auto cleanup or not worry for now.
@@ -32,10 +31,10 @@ exports.uploadSyllabus = async (req, res) => {
        return res.status(400).json({ success: false, message: 'Only PDF files are allowed.' });
     }
 
-    // Upload to Cloudinary
+    // Upload to Cloudinary using raw resource_type for PDFs (avoids 401 error)
     let fileUrl = '';
     try {
-      fileUrl = await uploadToCloudinary(req.file.path, 'srmclasses/syllabus');
+      fileUrl = await uploadPdfToCloudinary(req.file.path, 'srmclasses/syllabus');
     } catch (err) {
       console.error('Cloudinary syllabus upload failed:', err);
       return res.status(500).json({ success: false, message: 'Failed to upload file to Cloudinary.' });

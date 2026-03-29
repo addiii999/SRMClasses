@@ -13,11 +13,15 @@ const generateAdminToken = (id) => {
 const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
-    if (typeof email !== 'string') return res.status(401).json({ success: false, message: 'Invalid credentials' });
-    if (email !== process.env.ADMIN_EMAIL) {
+    if (typeof email !== 'string' || typeof password !== 'string') {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
-    let admin = await Admin.findOne({ email: String(email) }).select('+password');
+    // Normalize email - lowercase and trim to fix keyboard auto-capitalization issues
+    const normalizedEmail = email.toLowerCase().trim();
+    if (normalizedEmail !== (process.env.ADMIN_EMAIL || '').toLowerCase().trim()) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+    let admin = await Admin.findOne({ email: { $regex: new RegExp(`^${normalizedEmail}$`, 'i') } }).select('+password');
     if (!admin) {
       return res.status(401).json({ success: false, message: 'Admin not found. Please seed the database.' });
     }

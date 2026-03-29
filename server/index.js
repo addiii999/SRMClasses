@@ -48,6 +48,9 @@ seedData();
 
 const app = express();
 
+// Trust proxy for Render/cloud deployments (fixes rate limiter using correct client IP)
+app.set('trust proxy', 1);
+
 // Rate limiting to prevent brute force and satisfy CodeQL
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
