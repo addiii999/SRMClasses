@@ -41,7 +41,7 @@ export default function About() {
                 {/* Image Placeholder - User will replace this or upload /images/founder.jpg */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#2D274B]/80 via-[#2D274B]/20 to-transparent z-10" />
                 <img 
-                  src="/images/founder.jpg" 
+                  src="/images/founder.png" 
                   alt="Ranjan Kumar Soni - Founder of SRM Classes" 
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   onError={(e) => {
