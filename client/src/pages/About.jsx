@@ -6,9 +6,17 @@ const team = [
   { name: 'Mr. Ranjan Kumar Soni', subject: 'Mathematics & Physics', exp: '15 years + experience', initial: 'R' },
   { name: 'Mr. Raghuwendra Kumar Soni', subject: 'Computer & AI', exp: '12 years + experience', initial: 'R' },
   { name: 'Mr. Yuvraj Kumar', subject: 'Chemistry & Physics', exp: '6 years + experience', initial: 'Y' },
-  { name: 'Mrs. Priya Pandey', subject: 'Hindi & Sanskrit', exp: '8 Years', initial: 'P' },
-  { name: 'Mr. Vikash Gupta', subject: 'Computer Science', exp: '7 Years', initial: 'V' },
-  { name: 'Mr. Sunil Mahato', subject: 'Mathematics', exp: '9 Years', initial: 'S' },
+  { name: 'Mr. Aayush Gupta', subject: 'Management', exp: '4+ years diverse expertise', initial: 'A' },
+  { name: 'Mr. Raj Kumar Ranjan', subject: 'Social Science & English', exp: '5 years + experience', initial: 'R' },
+  { name: 'Mrs. Kamla Sahu', subject: 'Accountant', exp: '5 years + experience', initial: 'K' },
+  { name: 'Miss Deepsikha Kumari', subject: 'English & Social Science', exp: '5 years + experience', initial: 'D' },
+  { name: 'Mrs. Vibha Sinha', subject: 'Hindi', exp: '5 years + experience', initial: 'V' },
+  { name: 'Mr. Aman Kumar', subject: 'English', exp: '5 years + experience', initial: 'A' },
+  { name: 'Mr. Ravi Kumar', subject: 'Mathematics', exp: '7 years + experience', initial: 'R' },
+  { name: 'Miss Priyanka Kumari', subject: 'Mathematics', exp: 'Fresher', initial: 'P' },
+  { name: 'Miss Deepanshu Kumari', subject: 'Social Science', exp: 'Fresher', initial: 'D' },
+  { name: 'Miss Priyanshu Kumari', subject: 'Biology', exp: 'Fresher', initial: 'P' },
+  { name: 'Mr. Adarsh Kumar', subject: 'English & History', exp: '4 years + experience', initial: 'A' },
 ];
 
 const values = [
