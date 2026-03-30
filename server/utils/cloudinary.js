@@ -92,7 +92,8 @@ const uploadToCloudinary = async (localFilePath, folder = 'srmclasses/gallery') 
 };
 
 /**
- * PDFs must use 'image' type to be served with application/pdf MIME type
+ * PDFs are uploaded as 'raw' resource type for reliable public access.
+ * Display is handled via Google Docs Viewer on the frontend.
  * @param {string} localFilePath Path to the local PDF file
  * @param {string} folder Optional folder name in Cloudinary
  * @returns {Promise<{url: string, public_id: string}>} The secure URL and public_id of the uploaded PDF
@@ -114,10 +115,11 @@ const uploadPdfToCloudinary = async (localFilePath, folder = 'srmclasses/syllabu
       throw new Error(`Security Exception: File not found in trusted directory: ${sanitizedPath}`);
     }
 
-    // Use resource_type 'image' for PDFs so Cloudinary serves them with correct MIME type
+    // Use resource_type 'raw' for PDFs — raw files are publicly accessible
+    // Display is handled via Google Docs Viewer on the frontend
     const result = await cloudinary.uploader.upload(sanitizedPath, {
       folder: folder,
-      resource_type: 'image',
+      resource_type: 'raw',
       access_mode: 'public',
     });
 
