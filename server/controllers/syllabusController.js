@@ -31,10 +31,10 @@ exports.uploadSyllabus = async (req, res) => {
        return res.status(400).json({ success: false, message: 'Only PDF files are allowed.' });
     }
 
-    // Upload to Cloudinary using raw resource_type for PDFs (avoids 401 error)
-    let fileUrl = '';
+    // Upload to Cloudinary using auto resource_type for PDFs (ensures correct application/pdf MIME type)
+    let cloudinaryRes = null;
     try {
-      fileUrl = await uploadPdfToCloudinary(req.file.path, 'srmclasses/syllabus');
+      cloudinaryRes = await uploadPdfToCloudinary(req.file.path, 'srmclasses/syllabus');
     } catch (err) {
       console.error('Cloudinary syllabus upload failed:', err);
       return res.status(500).json({ success: false, message: 'Failed to upload file to Cloudinary.' });
@@ -45,9 +45,9 @@ exports.uploadSyllabus = async (req, res) => {
     const update = {
       board,
       classLevel,
-      pdfUrl: fileUrl,
+      pdfUrl: cloudinaryRes.url,
       fileName: req.file.originalname,
-      publicId: 'N/A' // Not tracking publicId currently as uploadToCloudinary doesn't return it
+      publicId: cloudinaryRes.public_id
     };
 
     const syllabus = await Syllabus.findOneAndUpdate(filter, update, {

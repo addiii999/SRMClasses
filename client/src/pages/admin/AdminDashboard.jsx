@@ -374,7 +374,7 @@ function Materials() {
               <p className="font-semibold text-brand-dark text-sm truncate">{m.title}</p>
               <p className="text-xs text-gray-400">Class {m.studentClass} • {m.subject} • {m.type}</p>
             </div>
-            <a href={m.fileUrl} target="_blank" rel="noreferrer" className="btn-ghost text-xs py-1.5 px-3">View</a>
+            <a href={m.fileUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-1.5 px-3">View</a>
             <button onClick={() => deleteMaterial(m._id)} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
           </div>
         ))}
@@ -775,7 +775,7 @@ function SyllabusAdmin() {
                 </div>
                 <p className="text-xs text-gray-400 mt-1">Updated {new Date(s.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric'})} • {s.fileName}</p>
               </div>
-              <a href={s.pdfUrl} target="_blank" rel="noreferrer" className="btn-ghost text-xs py-1.5 px-3">View PDF</a>
+              <a href={s.pdfUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-1.5 px-3">View PDF</a>
             </div>
           ))
         )}

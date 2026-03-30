@@ -97,7 +97,7 @@ export default function Courses() {
                 
                 <div className="pt-4 border-t border-gray-100">
                   {syllabus ? (
-                    <a href={syllabus.pdfUrl} target="_blank" rel="noreferrer" 
+                    <a href={syllabus.pdfUrl} target="_blank" rel="noopener noreferrer" 
                        className="w-full py-2.5 rounded-xl bg-gradient-brand text-white font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-lg transition-all hover:scale-[1.02]">
                       <FileText className="w-4 h-4" /> View Syllabus
                     </a>

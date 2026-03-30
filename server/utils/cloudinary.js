@@ -40,7 +40,7 @@ const safeDeleteLocalFile = (localFilePath) => {
  * Upload a local file to Cloudinary
  * @param {string} localFilePath Path to the local file
  * @param {string} folder Optional folder name in Cloudinary
- * @returns {Promise<string>} The secure URL of the uploaded image
+ * @returns {Promise<{url: string, public_id: string}>} The secure URL and public_id of the uploaded image
  */
 const uploadToCloudinary = async (localFilePath, folder = 'srmclasses/gallery') => {
   try {
@@ -73,7 +73,10 @@ const uploadToCloudinary = async (localFilePath, folder = 'srmclasses/gallery') 
       fs.unlinkSync(sanitizedPath);
     }
 
-    return result.secure_url;
+    return {
+      url: result.secure_url,
+      public_id: result.public_id
+    };
   } catch (error) {
     console.error('Cloudinary Upload Error:', error);
     // On error, attempt safe cleanup of the original path if it exists
@@ -89,11 +92,10 @@ const uploadToCloudinary = async (localFilePath, folder = 'srmclasses/gallery') 
 };
 
 /**
- * Upload a PDF file to Cloudinary using resource_type 'raw'
- * PDFs must use 'raw' type to get a publicly accessible URL
+ * PDFs must use 'image' type to be served with application/pdf MIME type
  * @param {string} localFilePath Path to the local PDF file
  * @param {string} folder Optional folder name in Cloudinary
- * @returns {Promise<string>} The secure URL of the uploaded PDF
+ * @returns {Promise<{url: string, public_id: string}>} The secure URL and public_id of the uploaded PDF
  */
 const uploadPdfToCloudinary = async (localFilePath, folder = 'srmclasses/syllabus') => {
   try {
@@ -112,10 +114,10 @@ const uploadPdfToCloudinary = async (localFilePath, folder = 'srmclasses/syllabu
       throw new Error(`Security Exception: File not found in trusted directory: ${sanitizedPath}`);
     }
 
-    // Use resource_type 'raw' for PDFs to get a proper public URL
+    // Use resource_type 'image' for PDFs so Cloudinary serves them with correct MIME type
     const result = await cloudinary.uploader.upload(sanitizedPath, {
       folder: folder,
-      resource_type: 'raw',
+      resource_type: 'image',
       access_mode: 'public',
     });
 
@@ -124,7 +126,10 @@ const uploadPdfToCloudinary = async (localFilePath, folder = 'srmclasses/syllabu
       fs.unlinkSync(sanitizedPath);
     }
 
-    return result.secure_url;
+    return {
+      url: result.secure_url,
+      public_id: result.public_id
+    };
   } catch (error) {
     console.error('Cloudinary PDF Upload Error:', error);
     if (typeof localFilePath === 'string') {

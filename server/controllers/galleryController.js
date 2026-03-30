@@ -25,13 +25,13 @@ const uploadGalleryImage = async (req, res) => {
     const { title, category, description } = req.body;
     
     // Upload directly to Cloudinary
-    const cloudinaryUrl = await uploadToCloudinary(req.file.path, 'srmclasses/gallery');
+    const cloudinaryRes = await uploadToCloudinary(req.file.path, 'srmclasses/gallery');
 
     const image = await Gallery.create({
       title,
       category,
       description,
-      imageUrl: cloudinaryUrl,
+      imageUrl: cloudinaryRes.url,
     });
     res.status(201).json({ success: true, data: image });
   } catch (error) {

@@ -14,9 +14,9 @@ const getResults = async (req, res) => {
 const createResult = async (req, res) => {
   try {
     const { title, description, category } = req.body;
-    let imageUrl = '';
     if (req.file) {
-       imageUrl = await uploadToCloudinary(req.file.path, 'srmclasses/results');
+       const cloudinaryRes = await uploadToCloudinary(req.file.path, 'srmclasses/results');
+       imageUrl = cloudinaryRes.url;
     }
     const result = await Result.create({ title, description, category, imageUrl });
     res.status(201).json({ success: true, data: result });

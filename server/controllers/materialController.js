@@ -8,7 +8,7 @@ const uploadMaterial = async (req, res) => {
     const { title, description, studentClass, subject, type } = req.body;
     
     // Cloudinary upload (PDFs/Images are auto-detected)
-    const cloudinaryUrl = await uploadToCloudinary(req.file.path, 'srmclasses/materials');
+    const cloudinaryRes = await uploadToCloudinary(req.file.path, 'srmclasses/materials');
 
     const material = await StudyMaterial.create({
       title,
@@ -16,7 +16,7 @@ const uploadMaterial = async (req, res) => {
       studentClass,
       subject,
       type,
-      fileUrl: cloudinaryUrl,
+      fileUrl: cloudinaryRes.url,
       fileName: req.file.originalname,
       fileSize: req.file.size,
     });
