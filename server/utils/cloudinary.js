@@ -145,4 +145,21 @@ const uploadPdfToCloudinary = async (localFilePath, folder = 'srmclasses/syllabu
   }
 };
 
-module.exports = { uploadToCloudinary, uploadPdfToCloudinary };
+/**
+ * Delete a file from Cloudinary by its public_id
+ * @param {string} publicId The public_id of the file to delete
+ * @param {string} resourceType 'raw' for PDFs, 'image' for images, 'auto' for auto-detect
+ */
+const deleteFromCloudinary = async (publicId, resourceType = 'raw') => {
+  try {
+    if (!publicId || typeof publicId !== 'string') return;
+    const result = await cloudinary.uploader.destroy(publicId, { resource_type: resourceType });
+    console.log(`Cloudinary delete result for ${publicId}:`, result);
+    return result;
+  } catch (error) {
+    // Non-fatal: log but don't throw — deletion failure shouldn't break the main flow
+    console.error('Cloudinary Delete Error:', error.message);
+  }
+};
+
+module.exports = { uploadToCloudinary, uploadPdfToCloudinary, deleteFromCloudinary };

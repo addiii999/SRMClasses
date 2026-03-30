@@ -775,7 +775,7 @@ function SyllabusAdmin() {
                 </div>
                 <p className="text-xs text-gray-400 mt-1">Updated {new Date(s.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric'})} • {s.fileName}</p>
               </div>
-              <a href={`https://docs.google.com/viewer?url=${encodeURIComponent(s.pdfUrl)}`} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-1.5 px-3">View PDF</a>
+              <a href={s.pdfUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-1.5 px-3">View PDF</a>
             </div>
           ))
         )}

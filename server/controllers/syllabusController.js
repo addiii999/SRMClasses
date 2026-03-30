@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const Syllabus = require('../models/Syllabus');
-const { uploadPdfToCloudinary } = require('../utils/cloudinary');
+const { uploadPdfToCloudinary, deleteFromCloudinary } = require('../utils/cloudinary');
 
 // Custom upload wrapper for returning publicId or we can just use secure_url
 // uploadToCloudinary only returns secure_url, so if we want to delete later we can just rely on Cloudinary's auto cleanup or not worry for now.
@@ -31,7 +31,13 @@ exports.uploadSyllabus = async (req, res) => {
        return res.status(400).json({ success: false, message: 'Only PDF files are allowed.' });
     }
 
-    // Upload to Cloudinary using auto resource_type for PDFs (ensures correct application/pdf MIME type)
+    // Delete old Cloudinary file if it exists (storage cleanup)
+    const existing = await Syllabus.findOne({ board, classLevel });
+    if (existing && existing.publicId) {
+      await deleteFromCloudinary(existing.publicId, 'raw');
+    }
+
+    // Upload new file to Cloudinary
     let cloudinaryRes = null;
     try {
       cloudinaryRes = await uploadPdfToCloudinary(req.file.path, 'srmclasses/syllabus');

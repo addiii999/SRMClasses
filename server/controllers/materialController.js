@@ -1,6 +1,6 @@
 const StudyMaterial = require('../models/StudyMaterial');
 const mongoose = require('mongoose');
-const { uploadToCloudinary } = require('../utils/cloudinary');
+const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinary');
 
 const uploadMaterial = async (req, res) => {
   try {
@@ -49,6 +49,11 @@ const deleteMaterial = async (req, res) => {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    }
+    // Fetch before delete so we have the publicId for Cloudinary cleanup
+    const material = await StudyMaterial.findById(id);
+    if (material && material.publicId) {
+      await deleteFromCloudinary(material.publicId, 'raw');
     }
     await StudyMaterial.findByIdAndDelete(id);
     res.json({ success: true, message: 'Material deleted' });
