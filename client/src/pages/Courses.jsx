@@ -44,6 +44,15 @@ export default function Courses() {
     return syllabuses.find(s => s.board === searchBoard && s.classLevel === className);
   };
 
+  // Convert Cloudinary raw URL to inline-viewable PDF URL
+  // Inserts fl_attachment:false so browser opens PDF instead of downloading
+  const getPdfViewUrl = (url) => {
+    if (!url) return url;
+    // Cloudinary raw URL pattern: .../raw/upload/v.../...
+    // We insert fl_attachment:false after /upload/
+    return url.replace('/raw/upload/', '/raw/upload/fl_attachment:false/');
+  };
+
   return (
     <div className="pt-36">
       {/* Hero */}
@@ -97,7 +106,7 @@ export default function Courses() {
                 
                 <div className="pt-4 border-t border-gray-100">
                   {syllabus ? (
-                    <a href={syllabus.pdfUrl} target="_blank" rel="noopener noreferrer" 
+                    <a href={getPdfViewUrl(syllabus.pdfUrl)} target="_blank" rel="noopener noreferrer" 
                        className="w-full py-2.5 rounded-xl bg-gradient-brand text-white font-semibold text-sm flex items-center justify-center gap-2 hover:shadow-lg transition-all hover:scale-[1.02]">
                       <FileText className="w-4 h-4" /> View Syllabus
                     </a>
