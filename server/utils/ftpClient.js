@@ -48,7 +48,7 @@ async function downloadFileStream(remoteFileName, response) {
     const size = fileInfo ? fileInfo.size : null;
     
     // Stream the file
-    await client.downloadToStream(response, remoteFileName);
+    await client.downloadTo(response, remoteFileName);
     return size;
   } finally {
     client.close();
