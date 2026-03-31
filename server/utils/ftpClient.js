@@ -19,13 +19,24 @@ async function getClient() {
 }
 
 /**
+ * Navigate to the site's uploads directory.
+ */
+async function goToUploads(client) {
+    await client.cd('/');
+    // Step-by-step navigation is more resilient on Hostinger
+    await client.cd('domains');
+    await client.cd('srmclasses.in');
+    await client.cd('public_html');
+    await client.cd('uploads');
+}
+
+/**
  * Upload a local file to the FTP server.
  */
 async function uploadFile(localPath, remoteFileName) {
   const client = await getClient();
   try {
-    await client.cd('/');
-    await client.ensureDir('domains/srmclasses.in/public_html/uploads');
+    await goToUploads(client);
     await client.uploadFrom(localPath, remoteFileName);
     return getPublicUrl(remoteFileName);
   } finally {
@@ -34,22 +45,31 @@ async function uploadFile(localPath, remoteFileName) {
 }
 
 /**
- * Get a readable stream for a file from FTP along with its size.
+ * Get file size from FTP.
+ */
+async function getFileSize(remoteFileName) {
+  const client = await getClient();
+  try {
+    await goToUploads(client);
+    const list = await client.list();
+    const fileInfo = list.find(f => f.name === remoteFileName);
+    return fileInfo ? fileInfo.size : null;
+  } catch (err) {
+    console.error(`[STORAGE] Size fetch failed: ${remoteFileName}`, err.message);
+    return null;
+  } finally {
+    client.close();
+  }
+}
+
+/**
+ * Download a file from FTP directly to a writable stream.
  */
 async function downloadFileStream(remoteFileName, response) {
   const client = await getClient();
   try {
-    await client.cd('/');
-    await client.cd('domains/srmclasses.in/public_html/uploads');
-    
-    // Attempt to get file size for Content-Length header
-    const list = await client.list();
-    const fileInfo = list.find(f => f.name === remoteFileName);
-    const size = fileInfo ? fileInfo.size : null;
-    
-    // Stream the file
+    await goToUploads(client);
     await client.downloadTo(response, remoteFileName);
-    return size;
   } finally {
     client.close();
   }
@@ -61,8 +81,7 @@ async function downloadFileStream(remoteFileName, response) {
 async function deleteFile(remoteFileName) {
   const client = await getClient();
   try {
-    await client.cd('/');
-    await client.ensureDir('domains/srmclasses.in/public_html/uploads');
+    await goToUploads(client);
     await client.remove(remoteFileName);
   } catch (err) {
     console.error('FTP delete error:', err);
@@ -71,4 +90,4 @@ async function deleteFile(remoteFileName) {
   }
 }
 
-module.exports = { uploadFile, deleteFile, downloadFileStream };
+module.exports = { uploadFile, deleteFile, downloadFileStream, getFileSize };
