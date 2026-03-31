@@ -113,20 +113,12 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Backend FTP File Proxy (To bypass Hostinger IP/Proxy Blocks)
-const { downloadFileStream, getFileSize } = require('./utils/ftpClient');
+const { downloadFileStream } = require('./utils/ftpClient');
 app.get('/api/uploads/:filename', async (req, res) => {
   const filename = decodeURIComponent(req.params.filename);
   console.log(`[STORAGE] Requesting: ${filename}`);
   
   try {
-    // 1. Get file size FIRST (Important: Headers must be set before stream starts)
-    const size = await getFileSize(filename);
-    
-    if (size) {
-      res.setHeader('Content-Length', size);
-    }
-
-    // 2. Set common headers
     const lowerName = filename.toLowerCase();
     if (lowerName.endsWith('.pdf')) {
       res.setHeader('Content-Type', 'application/pdf');
@@ -134,20 +126,20 @@ app.get('/api/uploads/:filename', async (req, res) => {
       res.setHeader('Content-Type', 'image/png');
     }
     
-    // Set disposition header (Clean name for the browser tab/viewer)
-    const displayName = filename.replace(/^\d+_/, '');
-    res.setHeader('Content-Disposition', `inline; filename="${displayName}"`);
+    // Set disposition header
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
 
-    // 3. Start the stream
-    await downloadFileStream(filename, res);
+    // Stream and get size
+    const size = await downloadFileStream(filename, res);
     
     if (size) {
       console.log(`[STORAGE] Stream Success: ${filename} (${size} bytes)`);
+      res.setHeader('Content-Length', size);
     }
   } catch (err) {
     console.error(`[STORAGE] Stream Failed: ${filename}`, err.message);
     if (!res.headersSent) {
-      res.status(404).json({ success: false, message: 'File not found or connection error' });
+      res.status(404).send('File not found or connection error');
     }
   }
 });
