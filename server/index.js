@@ -126,10 +126,11 @@ app.get('/api/uploads/:filename', async (req, res) => {
       res.setHeader('Content-Type', 'image/png');
     }
     
-    // Set disposition header
-    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    // Set disposition header (Clean name for the browser tab/viewer)
+    const displayName = filename.replace(/^\d+_/, '');
+    res.setHeader('Content-Disposition', `inline; filename="${displayName}"`);
 
-    // Stream and get size
+    // Stream and get size (Use the original timestamped filename to fetch from FTP)
     const size = await downloadFileStream(filename, res);
     
     if (size) {
