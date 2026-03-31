@@ -7,7 +7,7 @@ function getPublicUrl(fileName) {
 
 async function getClient() {
   const client = new ftp.Client();
-  client.ftp.verbose = false; // Keep logs clean unless debugging
+  client.ftp.verbose = false;
   await client.access({
     host: process.env.FTP_HOST,
     user: process.env.FTP_USER,
@@ -17,14 +17,15 @@ async function getClient() {
   return client;
 }
 
+const REMOTE_UPLOADS_DIR = 'domains/srmclasses.in/public_html/uploads';
+
 /**
  * Upload a local file to FTP
  */
 async function uploadFile(localPath, remoteFileName) {
   const client = await getClient();
   try {
-    await client.cd('/');
-    await client.ensureDir('domains/srmclasses.in/public_html/uploads');
+    await client.ensureDir(REMOTE_UPLOADS_DIR);
     await client.uploadFrom(localPath, remoteFileName);
     return getPublicUrl(remoteFileName);
   } finally {
@@ -34,15 +35,15 @@ async function uploadFile(localPath, remoteFileName) {
 
 /**
  * Combined Metadata + Stream Utility (Single Connection)
- * This is crucial for stability on shared hosting (Hostinger)
+ * Consistently uses ensureDir for robust pathing on Hostinger
  */
 async function streamWithMetadata(remoteFileName, response, setHeadersRaw) {
   const client = await getClient();
   try {
-    await client.cd('/');
-    await client.cd('domains/srmclasses.in/public_html/uploads');
+    // ensureDir is more robust than cd on some FTP servers
+    await client.ensureDir(REMOTE_UPLOADS_DIR);
     
-    // 1. Fetch size first inside the same connection
+    // 1. Fetch size inside the same connection
     const list = await client.list();
     const fileInfo = list.find(f => f.name === remoteFileName);
     const size = fileInfo ? fileInfo.size : null;
@@ -66,11 +67,9 @@ async function streamWithMetadata(remoteFileName, response, setHeadersRaw) {
 async function deleteFile(remoteFileName) {
   const client = await getClient();
   try {
-    await client.cd('/');
-    await client.ensureDir('domains/srmclasses.in/public_html/uploads');
+    await client.ensureDir(REMOTE_UPLOADS_DIR);
     await client.remove(remoteFileName);
   } catch (err) {
-    // Silence errors where file doesn't exist (e.g., 550)
     if (err.code !== 550) {
       console.error('FTP delete error:', err);
     }
