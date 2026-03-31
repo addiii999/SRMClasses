@@ -1,7 +1,7 @@
 const path = require('path');
 const fs = require('fs');
 const Syllabus = require('../models/Syllabus');
-const { uploadPdfToCloudinary, deleteFromCloudinary } = require('../utils/cloudinary');
+const { uploadFile, deleteFile } = require('../utils/ftpClient');
 
 // Custom upload wrapper for returning publicId or we can just use secure_url
 // uploadToCloudinary only returns secure_url, so if we want to delete later we can just rely on Cloudinary's auto cleanup or not worry for now.
@@ -33,17 +33,26 @@ exports.uploadSyllabus = async (req, res) => {
 
     // Delete old Cloudinary file if it exists (storage cleanup)
     const existing = await Syllabus.findOne({ board, classLevel });
-    if (existing && existing.publicId) {
-      await deleteFromCloudinary(existing.publicId, 'raw');
+    if (existing && existing.pdfUrl) {
+      const oldFileName = require('path').basename(existing.pdfUrl);
+      await deleteFile(oldFileName);
     }
 
-    // Upload new file to Cloudinary
-    let cloudinaryRes = null;
+    let publicUrl = null;
     try {
-      cloudinaryRes = await uploadPdfToCloudinary(req.file.path, 'srmclasses/syllabus');
+      const remoteFileName = Date.now() + '_' + req.file.originalname;
+      publicUrl = await uploadFile(req.file.path, remoteFileName);
+      // Clean up local temp file after upload
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
     } catch (err) {
-      console.error('Cloudinary syllabus upload failed:', err);
-      return res.status(500).json({ success: false, message: 'Failed to upload file to Cloudinary.' });
+      console.error('FTP syllabus upload failed:', err);
+      // Clean up local temp file on error too
+      if (fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(500).json({ success: false, message: 'Failed to upload file to FTP server.' });
     }
 
     // Upsert into MongoDB
@@ -51,9 +60,8 @@ exports.uploadSyllabus = async (req, res) => {
     const update = {
       board,
       classLevel,
-      pdfUrl: cloudinaryRes.url,
-      fileName: req.file.originalname,
-      publicId: cloudinaryRes.public_id
+      pdfUrl: publicUrl,
+      fileName: req.file.originalname
     };
 
     const syllabus = await Syllabus.findOneAndUpdate(filter, update, {

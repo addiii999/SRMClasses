@@ -1,6 +1,6 @@
 const Result = require('../models/Result');
 const mongoose = require('mongoose');
-const { uploadToCloudinary } = require('../utils/cloudinary');
+const { uploadFile, deleteFile } = require('../utils/ftpClient');
 
 const getResults = async (req, res) => {
   try {
@@ -13,12 +13,18 @@ const getResults = async (req, res) => {
 
 const createResult = async (req, res) => {
   try {
-    const { title, description, category } = req.body;
+    let imageUrl = '';
     if (req.file) {
-       const cloudinaryRes = await uploadToCloudinary(req.file.path, 'srmclasses/results');
-       imageUrl = cloudinaryRes.url;
+       try {
+         const fileName = Date.now() + '_' + req.file.originalname;
+         imageUrl = await uploadFile(req.file.path, fileName);
+         if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
+       } catch (err) {
+         if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
+         return res.status(500).json({ success: false, message: 'FTP upload failed' });
+       }
     }
-    const result = await Result.create({ title, description, category, imageUrl });
+    const result = await Result.create({ ...req.body, imageUrl });
     res.status(201).json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -30,6 +36,11 @@ const deleteResult = async (req, res) => {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    }
+    const result = await Result.findById(id);
+    if (result && result.imageUrl) {
+      const fileName = require('path').basename(result.imageUrl);
+      await deleteFile(fileName);
     }
     await Result.findByIdAndDelete(id);
     res.json({ success: true, message: 'Result deleted' });

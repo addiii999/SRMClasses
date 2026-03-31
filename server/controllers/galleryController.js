@@ -1,6 +1,6 @@
 const Gallery = require('../models/Gallery');
 const mongoose = require('mongoose');
-const { uploadToCloudinary } = require('../utils/cloudinary');
+const { uploadFile, deleteFile } = require('../utils/ftpClient');
 
 const getGallery = async (req, res) => {
   try {
@@ -24,14 +24,21 @@ const uploadGalleryImage = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const { title, category, description } = req.body;
     
-    // Upload directly to Cloudinary
-    const cloudinaryRes = await uploadToCloudinary(req.file.path, 'srmclasses/gallery');
+    let publicUrl = null;
+    try {
+      const fileName = Date.now() + '_' + req.file.originalname;
+      publicUrl = await uploadFile(req.file.path, fileName);
+      if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
+    } catch (err) {
+      if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
+      return res.status(500).json({ success: false, message: 'FTP upload failed' });
+    }
 
     const image = await Gallery.create({
       title,
       category,
       description,
-      imageUrl: cloudinaryRes.url,
+      imageUrl: publicUrl,
     });
     res.status(201).json({ success: true, data: image });
   } catch (error) {
@@ -44,6 +51,11 @@ const deleteGalleryImage = async (req, res) => {
     const { id } = req.params;
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    }
+    const image = await Gallery.findById(id);
+    if (image && image.imageUrl) {
+      const fileName = require('path').basename(image.imageUrl);
+      await deleteFile(fileName);
     }
     await Gallery.findByIdAndDelete(id);
     res.json({ success: true, message: 'Image deleted' });

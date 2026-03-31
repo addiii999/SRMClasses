@@ -1,14 +1,21 @@
 const StudyMaterial = require('../models/StudyMaterial');
 const mongoose = require('mongoose');
-const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinary');
+const { uploadFile, deleteFile } = require('../utils/ftpClient');
 
 const uploadMaterial = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const { title, description, studentClass, subject, type } = req.body;
     
-    // Cloudinary upload (PDFs/Images are auto-detected)
-    const cloudinaryRes = await uploadToCloudinary(req.file.path, 'srmclasses/materials');
+    let publicUrl = null;
+    try {
+      const fileName = Date.now() + '_' + req.file.originalname;
+      publicUrl = await uploadFile(req.file.path, fileName);
+      if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
+    } catch (err) {
+      if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
+      return res.status(500).json({ success: false, message: 'FTP upload failed' });
+    }
 
     const material = await StudyMaterial.create({
       title,
@@ -16,7 +23,7 @@ const uploadMaterial = async (req, res) => {
       studentClass,
       subject,
       type,
-      fileUrl: cloudinaryRes.url,
+      fileUrl: publicUrl,
       fileName: req.file.originalname,
       fileSize: req.file.size,
     });
@@ -50,10 +57,10 @@ const deleteMaterial = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
-    // Fetch before delete so we have the publicId for Cloudinary cleanup
     const material = await StudyMaterial.findById(id);
-    if (material && material.publicId) {
-      await deleteFromCloudinary(material.publicId, 'raw');
+    if (material && material.fileUrl) {
+      const fileName = require('path').basename(material.fileUrl);
+      await deleteFile(fileName);
     }
     await StudyMaterial.findByIdAndDelete(id);
     res.json({ success: true, message: 'Material deleted' });

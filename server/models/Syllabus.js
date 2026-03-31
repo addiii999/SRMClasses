@@ -17,7 +17,7 @@ const syllabusSchema = new mongoose.Schema({
   },
   publicId: {
     type: String,
-    required: true
+    required: false
   },
   fileName: {
     type: String,
