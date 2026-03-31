@@ -125,8 +125,10 @@ app.get('/api/uploads/:filename', async (req, res) => {
        const lowerName = filename.toLowerCase();
        if (lowerName.endsWith('.pdf')) {
          res.setHeader('Content-Type', 'application/pdf');
-       } else if (lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
+       } else if (lowerName.endsWith('.png')) {
          res.setHeader('Content-Type', 'image/png');
+       } else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
+         res.setHeader('Content-Type', 'image/jpeg');
        }
        
        res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
