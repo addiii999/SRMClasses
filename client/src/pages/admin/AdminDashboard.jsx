@@ -681,6 +681,13 @@ function SyllabusAdmin() {
   const [classLevel, setClassLevel] = useState('10');
   const [loading, setLoading] = useState(false);
 
+  // Helper to clean timestamp prefix from filename
+  const cleanFileName = (name) => {
+    if (!name) return '';
+    // Remove leading digits and underscore (e.g., "1774984723311_CBSE Class 5.pdf" -> "CBSE Class 5.pdf")
+    return name.replace(/^\d+_/, '');
+  };
+
   const fetchSyllabus = async () => {
     try {
       const res = await api.get('/syllabus');
