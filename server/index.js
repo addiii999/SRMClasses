@@ -116,18 +116,26 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 const { downloadFileStream } = require('./utils/ftpClient');
 app.get('/api/uploads/:filename', async (req, res) => {
   try {
-    const { filename } = req.params;
+    // Decode filename to handle spaces (%20) correctly for FTP
+    const filename = decodeURIComponent(req.params.filename);
+    
     // Set basic headers for PDF/Image
-    if (filename.toLowerCase().endsWith('.pdf')) {
+    const lowerName = filename.toLowerCase();
+    if (lowerName.endsWith('.pdf')) {
       res.setHeader('Content-Type', 'application/pdf');
-    } else if (filename.toLowerCase().endsWith('.png') || filename.toLowerCase().endsWith('.jpg') || filename.toLowerCase().endsWith('.jpeg')) {
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+    } else if (lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
       res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     }
     
     await downloadFileStream(filename, res);
   } catch (err) {
     console.error('File streaming error:', err);
-    res.status(404).send('File not found');
+    // If headers haven't been sent yet, send a 404
+    if (!res.headersSent) {
+      res.status(404).send('File not found');
+    }
   }
 });
 

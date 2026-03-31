@@ -43,7 +43,8 @@ async function downloadFileStream(remoteFileName, response) {
       secure: false,
     });
     
-    await client.cd('/domains/srmclasses.in/public_html/uploads');
+    await client.cd('/');
+    await client.cd('domains/srmclasses.in/public_html/uploads');
     await client.downloadToStream(response, remoteFileName);
   } finally {
     client.close();
