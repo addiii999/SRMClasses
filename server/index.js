@@ -119,21 +119,20 @@ app.get('/api/uploads/:filename', async (req, res) => {
   console.log(`[STORAGE] Stream Request: ${filename}`);
   
   try {
-    const lowerName = filename.toLowerCase();
-    if (lowerName.endsWith('.pdf')) {
-      res.setHeader('Content-Type', 'application/pdf');
-    } else if (lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
-      res.setHeader('Content-Type', 'image/png');
-    }
-    
-    // Set disposition
-    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-
     // Unified Metadata + Stream (Single Connection)
+    // Headers are ONLY sent if the file is found
     await streamWithMetadata(filename, res, (size) => {
-      if (size) {
-        res.setHeader('Content-Length', size);
-      }
+       const lowerName = filename.toLowerCase();
+       if (lowerName.endsWith('.pdf')) {
+         res.setHeader('Content-Type', 'application/pdf');
+       } else if (lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
+         res.setHeader('Content-Type', 'image/png');
+       }
+       
+       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+       if (size) {
+         res.setHeader('Content-Length', size);
+       }
     });
 
     console.log(`[STORAGE] Stream Success: ${filename}`);
