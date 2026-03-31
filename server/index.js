@@ -113,10 +113,10 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Backend FTP File Proxy (To bypass Hostinger IP/Proxy Blocks)
-const { downloadFileStream } = require('./utils/ftpClient');
+const { getFileSize, streamFile } = require('./utils/ftpClient');
 app.get('/api/uploads/:filename', async (req, res) => {
   const filename = decodeURIComponent(req.params.filename);
-  console.log(`[STORAGE] Requesting: ${filename}`);
+  console.log(`[STORAGE] Stream Request: ${filename}`);
   
   try {
     const lowerName = filename.toLowerCase();
@@ -126,20 +126,22 @@ app.get('/api/uploads/:filename', async (req, res) => {
       res.setHeader('Content-Type', 'image/png');
     }
     
-    // Set disposition header
+    // Set disposition
     res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
 
-    // Stream and get size
-    const size = await downloadFileStream(filename, res);
-    
+    // 1. Get size first to set Content-Length header
+    const size = await getFileSize(filename);
     if (size) {
-      console.log(`[STORAGE] Stream Success: ${filename} (${size} bytes)`);
       res.setHeader('Content-Length', size);
     }
+    
+    // 2. Stream content (Headers are now locked)
+    await streamFile(filename, res);
+    console.log(`[STORAGE] Stream Success: ${filename}`);
   } catch (err) {
     console.error(`[STORAGE] Stream Failed: ${filename}`, err.message);
     if (!res.headersSent) {
-      res.status(404).send('File not found or connection error');
+      res.status(404).json({ success: false, message: 'File not found or connection error.' });
     }
   }
 });

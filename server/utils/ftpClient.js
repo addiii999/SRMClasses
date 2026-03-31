@@ -1,7 +1,6 @@
 const ftp = require('basic-ftp');
 const path = require('path');
 
-// Helper to get public URL after upload
 function getPublicUrl(fileName) {
   return `${process.env.BACKEND_URL}/api/uploads/${fileName}`;
 }
@@ -18,9 +17,6 @@ async function getClient() {
   return client;
 }
 
-/**
- * Upload a local file to the FTP server.
- */
 async function uploadFile(localPath, remoteFileName) {
   const client = await getClient();
   try {
@@ -34,30 +30,36 @@ async function uploadFile(localPath, remoteFileName) {
 }
 
 /**
- * Get a readable stream for a file from FTP along with its size.
+ * Get file size independently
  */
-async function downloadFileStream(remoteFileName, response) {
+async function getFileSize(remoteFileName) {
   const client = await getClient();
   try {
     await client.cd('/');
     await client.cd('domains/srmclasses.in/public_html/uploads');
-    
-    // Attempt to get file size for Content-Length header
     const list = await client.list();
     const fileInfo = list.find(f => f.name === remoteFileName);
-    const size = fileInfo ? fileInfo.size : null;
-    
-    // Stream the file
-    await client.downloadTo(response, remoteFileName);
-    return size;
+    return fileInfo ? fileInfo.size : null;
   } finally {
     client.close();
   }
 }
 
 /**
- * Delete a file from the FTP server.
+ * Stream the file content directly to the response
  */
+async function streamFile(remoteFileName, response) {
+  const client = await getClient();
+  try {
+    await client.cd('/');
+    await client.cd('domains/srmclasses.in/public_html/uploads');
+    // Using downloadTo directly since it's a writable stream
+    await client.downloadTo(response, remoteFileName);
+  } finally {
+    client.close();
+  }
+}
+
 async function deleteFile(remoteFileName) {
   const client = await getClient();
   try {
@@ -71,4 +73,4 @@ async function deleteFile(remoteFileName) {
   }
 }
 
-module.exports = { uploadFile, deleteFile, downloadFileStream };
+module.exports = { uploadFile, deleteFile, getFileSize, streamFile };

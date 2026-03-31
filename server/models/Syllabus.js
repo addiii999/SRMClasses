@@ -21,7 +21,7 @@ const syllabusSchema = new mongoose.Schema({
   },
   fileName: {
     type: String,
-    required: true
+    required: false
   }
 }, { timestamps: true });
 
