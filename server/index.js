@@ -115,26 +115,31 @@ app.use('/public', express.static(path.join(__dirname, 'public')));
 // Backend FTP File Proxy (To bypass Hostinger IP/Proxy Blocks)
 const { downloadFileStream } = require('./utils/ftpClient');
 app.get('/api/uploads/:filename', async (req, res) => {
+  const filename = decodeURIComponent(req.params.filename);
+  console.log(`[STORAGE] Requesting: ${filename}`);
+  
   try {
-    // Decode filename to handle spaces (%20) correctly for FTP
-    const filename = decodeURIComponent(req.params.filename);
-    
-    // Set basic headers for PDF/Image
     const lowerName = filename.toLowerCase();
     if (lowerName.endsWith('.pdf')) {
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     } else if (lowerName.endsWith('.png') || lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
       res.setHeader('Content-Type', 'image/png');
-      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
     }
     
-    await downloadFileStream(filename, res);
+    // Set disposition header
+    res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+
+    // Stream and get size
+    const size = await downloadFileStream(filename, res);
+    
+    if (size) {
+      console.log(`[STORAGE] Stream Success: ${filename} (${size} bytes)`);
+      res.setHeader('Content-Length', size);
+    }
   } catch (err) {
-    console.error('File streaming error:', err);
-    // If headers haven't been sent yet, send a 404
+    console.error(`[STORAGE] Stream Failed: ${filename}`, err.message);
     if (!res.headersSent) {
-      res.status(404).send('File not found');
+      res.status(404).send('File not found or connection error');
     }
   }
 });
