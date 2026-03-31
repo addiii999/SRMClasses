@@ -63,11 +63,12 @@ exports.uploadSyllabus = async (req, res) => {
     // Upsert into MongoDB
     const syllabus = await Syllabus.findOneAndUpdate(
       { board, classLevel },
-      { 
+      {
         board,
         classLevel,
         pdfUrl: finalUrl,
-        publicId: fileName // Storage identifier for deletion
+        publicId: fileName, // Storage identifier for deletion
+        fileName: req.file.originalname // Original filename for display
        },
       { upsert: true, new: true }
     );

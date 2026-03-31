@@ -77,7 +77,7 @@ function Overview() {
     ]).then(([enqRes, demoRes, matRes]) => {
       setStats({ enquiries: enqRes.data.count, demos: demoRes.data.count, materials: matRes.data.data?.length || 0 });
       setRecentEnquiries(enqRes.data.data?.slice(0, 5) || []);
-    }).catch(() => {});
+    }).catch(() => { });
   }, []);
 
   const statCards = [
@@ -305,7 +305,7 @@ function Materials() {
 
   const fetchMaterials = async () => {
     try { const res = await api.get('/materials?studentClass=all'); setMaterials(res.data.data || []); }
-    catch {}
+    catch { }
   };
 
   useEffect(() => { fetchMaterials(); }, []);
@@ -344,7 +344,7 @@ function Materials() {
             <select className="input-field" value={form.studentClass} onChange={e => setForm({ ...form, studentClass: e.target.value })} required>
               <option value="">Select Class</option>
               <option value="all">All Classes</option>
-              {['5','6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+              {['5', '6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
             </select>
           </div>
           <div><label className="label">Subject</label><input className="input-field" placeholder="e.g. Mathematics" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></div>
@@ -390,7 +390,7 @@ function CoursesAdmin() {
   const [loading, setLoading] = useState(false);
 
   const fetchCourses = async () => {
-    try { const res = await api.get('/courses/all'); setCourses(res.data.data || []); } catch {}
+    try { const res = await api.get('/courses/all'); setCourses(res.data.data || []); } catch { }
   };
   useEffect(() => { fetchCourses(); }, []);
 
@@ -415,6 +415,13 @@ function CoursesAdmin() {
     catch { toast.error('Failed'); }
   };
 
+  // Helper to clean timestamp prefix from filename
+  const cleanFileName = (name) => {
+    if (!name) return '';
+    // Remove leading digits and underscore (e.g., "1774984723311_CBSE Class 5.pdf" -> "CBSE Class 5.pdf")
+    return name.replace(/^\d+_/, '');
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-display font-bold text-brand-dark">Course Management</h2>
@@ -424,7 +431,7 @@ function CoursesAdmin() {
           <div><label className="label">Class</label>
             <select className="input-field" value={form.className} onChange={e => setForm({ ...form, className: e.target.value })} required>
               <option value="">Select</option>
-              {['5','6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+              {['5', '6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
             </select>
           </div>
           <div><label className="label">Duration</label><input className="input-field" value={form.duration} onChange={e => setForm({ ...form, duration: e.target.value })} /></div>
@@ -458,7 +465,7 @@ function ResultsAdmin() {
   const [loading, setLoading] = useState(false);
 
   const fetchResults = async () => {
-    try { const res = await api.get('/results'); setResults(res.data.data || []); } catch {}
+    try { const res = await api.get('/results'); setResults(res.data.data || []); } catch { }
   };
   useEffect(() => { fetchResults(); }, []);
 
@@ -492,7 +499,7 @@ function ResultsAdmin() {
           <div><label className="label">Class</label>
             <select className="input-field" value={form.studentClass} onChange={e => setForm({ ...form, studentClass: e.target.value })} required>
               <option value="">Select</option>
-              {['5','6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+              {['5', '6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
             </select>
           </div>
           <div><label className="label">Score</label><input className="input-field" placeholder="e.g. 95% or AIR 4200" value={form.score} onChange={e => setForm({ ...form, score: e.target.value })} /></div>
@@ -530,7 +537,7 @@ function GalleryAdmin() {
   const [loading, setLoading] = useState(false);
 
   const fetchImages = async () => {
-    try { const res = await api.get('/gallery'); setImages(res.data.data || []); } catch {}
+    try { const res = await api.get('/gallery'); setImages(res.data.data || []); } catch { }
   };
   useEffect(() => { fetchImages(); }, []);
 
@@ -600,7 +607,7 @@ function AnnouncementsAdmin() {
   const [loading, setLoading] = useState(false);
 
   const fetchAnnouncements = async () => {
-    try { const res = await api.get('/announcements?studentClass=all'); setAnnouncements(res.data.data || []); } catch {}
+    try { const res = await api.get('/announcements?studentClass=all'); setAnnouncements(res.data.data || []); } catch { }
   };
   useEffect(() => { fetchAnnouncements(); }, []);
 
@@ -617,7 +624,7 @@ function AnnouncementsAdmin() {
 
   const del = async (id) => {
     if (!confirm('Delete?')) return;
-    try { await api.delete(`/announcements/${id}`); toast.success('Deleted'); fetchAnnouncements(); } catch {}
+    try { await api.delete(`/announcements/${id}`); toast.success('Deleted'); fetchAnnouncements(); } catch { }
   };
 
   const priorityColors = { high: 'bg-red-100 text-red-700', medium: 'bg-yellow-100 text-yellow-700', low: 'bg-green-100 text-green-700' };
@@ -633,7 +640,7 @@ function AnnouncementsAdmin() {
           <div><label className="label">Target Class</label>
             <select className="input-field" value={form.targetClass} onChange={e => setForm({ ...form, targetClass: e.target.value })}>
               <option value="all">All Classes</option>
-              {['5','6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+              {['5', '6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
             </select>
           </div>
           <div><label className="label">Priority</label>
@@ -678,7 +685,7 @@ function SyllabusAdmin() {
     try {
       const res = await api.get('/syllabus');
       setSyllabuses(res.data.data || []);
-    } catch {}
+    } catch { }
   };
 
   useEffect(() => { fetchSyllabus(); }, []);
@@ -695,21 +702,21 @@ function SyllabusAdmin() {
 
     setLoading(true);
     try {
-      await api.post('/syllabus', formData, { 
-        headers: { 
+      await api.post('/syllabus', formData, {
+        headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}`
-        } 
+        }
       });
       toast.success('Syllabus updated successfully');
       setFile(null);
       // Reset input element
       document.getElementById('syllabus-file-input').value = '';
       fetchSyllabus();
-    } catch (err) { 
-      toast.error(err.response?.data?.message || 'Upload failed'); 
-    } finally { 
-      setLoading(false); 
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Upload failed');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -735,29 +742,29 @@ function SyllabusAdmin() {
           <div>
             <label className="label">Class</label>
             <select className="input-field" value={classLevel} onChange={e => setClassLevel(e.target.value)}>
-              {board === 'CBSE' 
-                ? ['5','6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)
-                : ['6','7','8','9','10'].map(c => <option key={c} value={c}>Class {c}</option>)
+              {board === 'CBSE'
+                ? ['5', '6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)
+                : ['6', '7', '8', '9', '10'].map(c => <option key={c} value={c}>Class {c}</option>)
               }
             </select>
           </div>
         </div>
         <div>
           <label className="label">Upload PDF (Max 5MB)</label>
-          <input 
+          <input
             id="syllabus-file-input"
-            type="file" 
-            accept=".pdf" 
+            type="file"
+            accept=".pdf"
             onChange={e => setFile(e.target.files[0])}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-primary/10 file:text-primary file:font-semibold hover:file:bg-primary/20 file:cursor-pointer" 
-            required 
+            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-primary/10 file:text-primary file:font-semibold hover:file:bg-primary/20 file:cursor-pointer"
+            required
           />
         </div>
         <button type="submit" disabled={loading} className="btn-primary px-8 py-3 disabled:opacity-60">
           <Upload className="w-4 h-4 inline mr-2" />{loading ? 'Uploading...' : 'Upload Syllabus'}
         </button>
       </form>
-      
+
       <div className="space-y-3 mt-8">
         <h3 className="font-semibold text-brand-dark">Uploaded Syllabuses</h3>
         {syllabuses.length === 0 ? (
@@ -773,7 +780,7 @@ function SyllabusAdmin() {
                   <span className="font-bold text-brand-dark">{s.board}</span>
                   <span className="text-xs bg-brand-bg text-brand-dark px-2 py-0.5 rounded-full font-medium">Class {s.classLevel}</span>
                 </div>
-                <p className="text-xs text-gray-400 mt-1">Updated {new Date(s.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric'})} • {s.fileName}</p>
+                <p className="text-xs text-gray-400 mt-1">Updated {new Date(s.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} • {cleanFileName(s.fileName)}</p>
               </div>
               <a href={s.pdfUrl.replace('/raw/upload/', '/raw/upload/fl_attachment:false/')} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-1.5 px-3">View PDF</a>
             </div>
