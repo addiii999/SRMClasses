@@ -9,6 +9,7 @@ const gallerySchema = new mongoose.Schema({
     default: 'other',
   },
   description: { type: String },
+  fileName: { type: String },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Gallery', gallerySchema);

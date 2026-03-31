@@ -44,6 +44,7 @@ const uploadGalleryImage = async (req, res) => {
       category,
       description,
       imageUrl: finalUrl,
+      fileName: req.file.originalname
     });
     res.status(201).json({ success: true, data: image });
   } catch (error) {

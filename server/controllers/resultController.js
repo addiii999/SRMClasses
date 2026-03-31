@@ -28,7 +28,11 @@ const createResult = async (req, res) => {
          return res.status(500).json({ success: false, message: 'FTP upload failed' });
        }
     }
-    const result = await Result.create({ ...req.body, imageUrl: finalUrl });
+    const result = await Result.create({
+      ...req.body,
+      imageUrl: finalUrl,
+      fileName: req.file ? req.file.originalname : undefined
+    });
     res.status(201).json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
