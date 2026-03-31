@@ -38,10 +38,15 @@ exports.uploadSyllabus = async (req, res) => {
       await deleteFile(oldFileName);
     }
 
-    let publicUrl = null;
+    let finalUrl = null;
+    let fileName = null;
     try {
-      const remoteFileName = Date.now() + '_' + req.file.originalname;
-      publicUrl = await uploadFile(req.file.path, remoteFileName);
+      fileName = Date.now() + '_' + req.file.originalname;
+      const ftpResult = await uploadFile(req.file.path, fileName);
+      
+      // Use the internal streaming URL
+      finalUrl = `${process.env.BACKEND_URL}/api/uploads/${fileName}`;
+
       // Clean up local temp file after upload
       if (fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
@@ -56,18 +61,16 @@ exports.uploadSyllabus = async (req, res) => {
     }
 
     // Upsert into MongoDB
-    const filter = { board, classLevel };
-    const update = {
-      board,
-      classLevel,
-      pdfUrl: publicUrl,
-      fileName: req.file.originalname
-    };
-
-    const syllabus = await Syllabus.findOneAndUpdate(filter, update, {
-      new: true,
-      upsert: true
-    });
+    const syllabus = await Syllabus.findOneAndUpdate(
+      { board, classLevel },
+      { 
+        board,
+        classLevel,
+        pdfUrl: finalUrl,
+        publicId: fileName // Storage identifier for deletion
+       },
+      { upsert: true, new: true }
+    );
 
     res.status(200).json({
       success: true,

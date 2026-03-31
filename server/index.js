@@ -109,9 +109,27 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files statically
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use('/public', express.static(path.join(__dirname, 'public')));
+
+// Backend FTP File Proxy (To bypass Hostinger IP/Proxy Blocks)
+const { downloadFileStream } = require('./utils/ftpClient');
+app.get('/api/uploads/:filename', async (req, res) => {
+  try {
+    const { filename } = req.params;
+    // Set basic headers for PDF/Image
+    if (filename.toLowerCase().endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+    } else if (filename.toLowerCase().endsWith('.png') || filename.toLowerCase().endsWith('.jpg') || filename.toLowerCase().endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/png');
+    }
+    
+    await downloadFileStream(filename, res);
+  } catch (err) {
+    console.error('File streaming error:', err);
+    res.status(404).send('File not found');
+  }
+});
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));

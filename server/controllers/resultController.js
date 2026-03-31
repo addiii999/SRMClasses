@@ -13,18 +13,22 @@ const getResults = async (req, res) => {
 
 const createResult = async (req, res) => {
   try {
-    let imageUrl = '';
+    let finalUrl = '';
     if (req.file) {
        try {
          const fileName = Date.now() + '_' + req.file.originalname;
-         imageUrl = await uploadFile(req.file.path, fileName);
+         const ftpResult = await uploadFile(req.file.path, fileName);
+         
+         // Use the internal streaming URL
+         finalUrl = `${process.env.BACKEND_URL}/api/uploads/${fileName}`;
+
          if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
        } catch (err) {
          if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
          return res.status(500).json({ success: false, message: 'FTP upload failed' });
        }
     }
-    const result = await Result.create({ ...req.body, imageUrl });
+    const result = await Result.create({ ...req.body, imageUrl: finalUrl });
     res.status(201).json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

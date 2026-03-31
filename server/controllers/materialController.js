@@ -7,10 +7,15 @@ const uploadMaterial = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const { title, description, studentClass, subject, type } = req.body;
     
-    let publicUrl = null;
+    let finalUrl = null;
+    let fileName = null;
     try {
-      const fileName = Date.now() + '_' + req.file.originalname;
-      publicUrl = await uploadFile(req.file.path, fileName);
+      fileName = Date.now() + '_' + req.file.originalname;
+      const ftpResult = await uploadFile(req.file.path, fileName);
+      
+      // Use the internal streaming URL
+      finalUrl = `${process.env.BACKEND_URL}/api/uploads/${fileName}`;
+
       if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
     } catch (err) {
       if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
@@ -23,7 +28,7 @@ const uploadMaterial = async (req, res) => {
       studentClass,
       subject,
       type,
-      fileUrl: publicUrl,
+      fileUrl: finalUrl,
       fileName: req.file.originalname,
       fileSize: req.file.size,
     });
