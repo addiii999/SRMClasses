@@ -24,9 +24,8 @@ async function uploadFile(localPath, remoteFileName) {
       secure: false,
     });
     
-    // Ensure we start from root and go into public_html/uploads
-    // For Hostinger, if we login as primary user, we land in /
-    // If login lands in /public_html, ensureDir will still work.
+    // Switch to root to ensure path is absolute
+    await client.cd('/');
     await client.ensureDir('public_html/uploads');
     
     // After ensureDir, we are inside /public_html/uploads/
@@ -55,6 +54,7 @@ async function deleteFile(remoteFileName) {
     });
     
     // Go to the target directory before removing
+    await client.cd('/');
     await client.ensureDir('public_html/uploads');
     await client.remove(remoteFileName);
   } catch (err) {
