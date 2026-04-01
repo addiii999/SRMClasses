@@ -14,11 +14,11 @@ exports.uploadSyllabus = async (req, res) => {
     const { board, classLevel } = req.body;
 
     if (!board || !classLevel) {
-       // if we fail early, we should clean up the multer file
-       if (req.file && fs.existsSync(req.file.path)) {
-         fs.unlinkSync(req.file.path);
-       }
-       return res.status(400).json({ success: false, message: 'Board and classLevel are required.' });
+      // if we fail early, we should clean up the multer file
+      if (req.file && fs.existsSync(req.file.path)) {
+        fs.unlinkSync(req.file.path);
+      }
+      return res.status(400).json({ success: false, message: 'Board and classLevel are required.' });
     }
 
     if (!req.file) {
@@ -27,8 +27,8 @@ exports.uploadSyllabus = async (req, res) => {
 
     // Ensure it's a PDF
     if (req.file.mimetype !== 'application/pdf') {
-       if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
-       return res.status(400).json({ success: false, message: 'Only PDF files are allowed.' });
+      if (fs.existsSync(req.file.path)) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ success: false, message: 'Only PDF files are allowed.' });
     }
 
     // Delete old Cloudinary file if it exists (storage cleanup)
@@ -43,7 +43,7 @@ exports.uploadSyllabus = async (req, res) => {
     try {
       fileName = Date.now() + '_' + req.file.originalname;
       const ftpResult = await uploadFile(req.file.path, fileName);
-      
+
       // Use the internal streaming URL
       finalUrl = `${process.env.BACKEND_URL}/api/uploads/${fileName}`;
 
@@ -69,7 +69,7 @@ exports.uploadSyllabus = async (req, res) => {
         pdfUrl: finalUrl,
         publicId: fileName, // Storage identifier for deletion
         fileName: req.file.originalname // Original filename for display
-       },
+      },
       { upsert: true, new: true }
     );
 
@@ -83,9 +83,51 @@ exports.uploadSyllabus = async (req, res) => {
     console.error('Error in uploadSyllabus:', error);
     // clean up local file if error and file still exists
     if (req.file && fs.existsSync(req.file.path)) {
-       fs.unlinkSync(req.file.path);
+      fs.unlinkSync(req.file.path);
     }
     res.status(500).json({ success: false, message: 'Server error.', error: error.message });
+  }
+};
+
+exports.deleteSyllabus = async (req, res) => {
+  try {
+    const syllabus = await Syllabus.findById(req.params.id);
+
+    if (!syllabus) {
+      return res.status(404).json({
+        success: false,
+        message: 'Syllabus not found'
+      });
+    }
+
+    // Delete file from FTP server
+    if (syllabus.publicId) {
+      await deleteFile(syllabus.publicId);
+    }
+
+    // Delete database entry
+    await Syllabus.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Syllabus deleted successfully'
+    });
+
+  } catch (err) {
+    console.error('Error deleting syllabus:', err);
+
+    if (err.name === 'CastError') {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid syllabus ID'
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: 'Server error',
+      error: err.message
+    });
   }
 };
 
