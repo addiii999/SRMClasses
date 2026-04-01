@@ -1,6 +1,7 @@
 const Result = require('../models/Result');
 const mongoose = require('mongoose');
-const { uploadFile, deleteFile } = require('../utils/ftpClient');
+const fs = require('fs');
+const path = require('path');
 
 const getResults = async (req, res) => {
   try {
@@ -15,18 +16,21 @@ const createResult = async (req, res) => {
   try {
     let finalUrl = '';
     if (req.file) {
-       try {
-         const fileName = Date.now() + '_' + req.file.originalname;
-         const ftpResult = await uploadFile(req.file.path, fileName);
-         
-         // Use the internal streaming URL
-         finalUrl = `${process.env.BACKEND_URL}/api/uploads/${fileName}`;
+      const { studentName, examName } = req.body;
+      const rawName = (studentName || 'student').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+      const rawExam = (examName || 'exam').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+      const ext = path.extname(req.file.originalname);
+      const fileName = `result_${rawExam}_${rawName}_${Date.now()}${ext}`;
+      
+      const targetDir = path.join(__dirname, '..', 'public', 'uploads', 'images');
+      const targetPath = path.join(targetDir, fileName);
 
-         if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
-       } catch (err) {
-         if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
-         return res.status(500).json({ success: false, message: 'FTP upload failed' });
-       }
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+
+      fs.renameSync(req.file.path, targetPath);
+      finalUrl = `/uploads/images/${fileName}`;
     }
     const result = await Result.create({
       ...req.body,
@@ -47,8 +51,11 @@ const deleteResult = async (req, res) => {
     }
     const result = await Result.findById(id);
     if (result && result.imageUrl) {
-      const fileName = require('path').basename(result.imageUrl);
-      await deleteFile(fileName);
+      const fileName = path.basename(result.imageUrl);
+      const filePath = path.join(__dirname, '..', 'public', 'uploads', 'images', fileName);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
     await Result.findByIdAndDelete(id);
     res.json({ success: true, message: 'Result deleted' });

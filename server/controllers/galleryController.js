@@ -1,6 +1,7 @@
 const Gallery = require('../models/Gallery');
 const mongoose = require('mongoose');
-const { uploadFile, deleteFile } = require('../utils/ftpClient');
+const fs = require('fs');
+const path = require('path');
 
 const getGallery = async (req, res) => {
   try {
@@ -24,20 +25,21 @@ const uploadGalleryImage = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const { title, category, description } = req.body;
     
-    let finalUrl = null;
-    let fileName = null;
-    try {
-      fileName = Date.now() + '_' + req.file.originalname;
-      const ftpResult = await uploadFile(req.file.path, fileName);
-      
-      // Use the internal streaming URL
-      finalUrl = `${process.env.BACKEND_URL}/api/uploads/${fileName}`;
+    const rawName = (title || 'image').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+    const ext = path.extname(req.file.originalname);
+    const fileName = `gallery_${category || 'all'}_${rawName}_${Date.now()}${ext}`;
+    
+    const targetDir = path.join(__dirname, '..', 'public', 'uploads', 'images');
+    const targetPath = path.join(targetDir, fileName);
 
-      if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
-    } catch (err) {
-      if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
-      return res.status(500).json({ success: false, message: 'FTP upload failed' });
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
     }
+
+    // Move file to static directory
+    fs.renameSync(req.file.path, targetPath);
+    
+    const finalUrl = `/uploads/images/${fileName}`;
 
     const image = await Gallery.create({
       title,
@@ -60,8 +62,11 @@ const deleteGalleryImage = async (req, res) => {
     }
     const image = await Gallery.findById(id);
     if (image && image.imageUrl) {
-      const fileName = require('path').basename(image.imageUrl);
-      await deleteFile(fileName);
+      const fileName = path.basename(image.imageUrl);
+      const filePath = path.join(__dirname, '..', 'public', 'uploads', 'images', fileName);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
     await Gallery.findByIdAndDelete(id);
     res.json({ success: true, message: 'Image deleted' });

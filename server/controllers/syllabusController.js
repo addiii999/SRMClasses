@@ -1,20 +1,12 @@
 const path = require('path');
 const fs = require('fs');
 const Syllabus = require('../models/Syllabus');
-const { uploadFile, deleteFile } = require('../utils/ftpClient');
-
-// Custom upload wrapper for returning publicId or we can just use secure_url
-// uploadToCloudinary only returns secure_url, so if we want to delete later we can just rely on Cloudinary's auto cleanup or not worry for now.
-// For full control, we can do a direct upload here or just save the URL since the free tier is large.
-// The user doesn't require deletion logic specifically, just overwrite logic which upsert handles.
-// But Cloudinary's uploadToCloudinary allows passing folder.
 
 exports.uploadSyllabus = async (req, res) => {
   try {
     const { board, classLevel } = req.body;
 
     if (!board || !classLevel) {
-      // if we fail early, we should clean up the multer file
       if (req.file && fs.existsSync(req.file.path)) {
         fs.unlinkSync(req.file.path);
       }
@@ -31,34 +23,27 @@ exports.uploadSyllabus = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Only PDF files are allowed.' });
     }
 
-    // Delete old Cloudinary file if it exists (storage cleanup)
-    const existing = await Syllabus.findOne({ board, classLevel });
-    if (existing && existing.pdfUrl) {
-      const oldFileName = require('path').basename(existing.pdfUrl);
-      await deleteFile(oldFileName);
+    // Strict naming logic: board_class_syllabus.pdf
+    const fileName = `${board.toLowerCase().trim().replace(/[^a-z0-9]/g, '')}_class${String(classLevel).toLowerCase().trim().replace(/[^a-z0-9]/g, '')}_syllabus.pdf`;
+    
+    const targetDir = path.join(__dirname, '..', 'public', 'uploads', 'syllabus');
+    const targetPath = path.join(targetDir, fileName);
+
+    // Ensure directory exists
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
     }
 
-    let finalUrl = null;
-    let fileName = null;
-    try {
-      fileName = Date.now() + '_' + req.file.originalname;
-      const ftpResult = await uploadFile(req.file.path, fileName);
-
-      // Use the internal streaming URL
-      finalUrl = `${process.env.BACKEND_URL}/api/uploads/${fileName}`;
-
-      // Clean up local temp file after upload
-      if (fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
-    } catch (err) {
-      console.error('FTP syllabus upload failed:', err);
-      // Clean up local temp file on error too
-      if (fs.existsSync(req.file.path)) {
-        fs.unlinkSync(req.file.path);
-      }
-      return res.status(500).json({ success: false, message: 'Failed to upload file to FTP server.' });
+    // Delete old file if it exists (consistent with the strict naming, it would be the same file)
+    if (fs.existsSync(targetPath)) {
+      fs.unlinkSync(targetPath);
     }
+
+    // Move file from temp upload dir to public syllabus dir
+    fs.renameSync(req.file.path, targetPath);
+    console.log("Saved file:", fileName);
+
+    const finalUrl = `/uploads/syllabus/${fileName}`;
 
     // Upsert into MongoDB
     const syllabus = await Syllabus.findOneAndUpdate(
@@ -67,8 +52,8 @@ exports.uploadSyllabus = async (req, res) => {
         board,
         classLevel,
         pdfUrl: finalUrl,
-        publicId: fileName, // Storage identifier for deletion
-        fileName: req.file.originalname // Original filename for display
+        publicId: fileName, // Using filename as identifier
+        fileName: req.file.originalname 
       },
       { upsert: true, new: true }
     );
@@ -81,7 +66,6 @@ exports.uploadSyllabus = async (req, res) => {
 
   } catch (error) {
     console.error('Error in uploadSyllabus:', error);
-    // clean up local file if error and file still exists
     if (req.file && fs.existsSync(req.file.path)) {
       fs.unlinkSync(req.file.path);
     }
@@ -100,9 +84,15 @@ exports.deleteSyllabus = async (req, res) => {
       });
     }
 
-    // Delete file from FTP server
-    if (syllabus.publicId) {
-      await deleteFile(syllabus.publicId);
+    // Delete from local filesystem
+    const fileName = syllabus.publicId;
+    const filePath = path.join(__dirname, '..', 'public', 'uploads', 'syllabus', fileName);
+
+    if (fs.existsSync(filePath)) {
+      fs.unlink(filePath, (err) => {
+        if (err) console.error(`Failed to delete local file: ${filePath}`, err);
+        else console.log(`Deleted file: ${fileName}`);
+      });
     }
 
     // Delete database entry
@@ -115,26 +105,19 @@ exports.deleteSyllabus = async (req, res) => {
 
   } catch (err) {
     console.error('Error deleting syllabus:', err);
-
-    if (err.name === 'CastError') {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid syllabus ID'
-      });
-    }
-
-    res.status(500).json({
-      success: false,
-      message: 'Server error',
-      error: err.message
-    });
+    res.status(500).json({ success: false, message: 'Server error', error: err.message });
   }
 };
 
 exports.getAllSyllabus = async (req, res) => {
   try {
-    // Return all distinct syllabus entries (for the Courses page lookup)
     const syllabuses = await Syllabus.find({}).sort({ updatedAt: -1 });
+    
+    // Log "fetching" for each syllabus found (as requested in Fix 5)
+    syllabuses.forEach(s => {
+      console.log("Fetching file:", s.publicId);
+    });
+
     res.status(200).json({
       success: true,
       data: syllabuses
@@ -144,3 +127,4 @@ exports.getAllSyllabus = async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error.', error: error.message });
   }
 };
+

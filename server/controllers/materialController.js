@@ -1,26 +1,28 @@
 const StudyMaterial = require('../models/StudyMaterial');
 const mongoose = require('mongoose');
-const { uploadFile, deleteFile } = require('../utils/ftpClient');
+const fs = require('fs');
+const path = require('path');
 
 const uploadMaterial = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const { title, description, studentClass, subject, type } = req.body;
     
-    let finalUrl = null;
-    let fileName = null;
-    try {
-      fileName = Date.now() + '_' + req.file.originalname;
-      const ftpResult = await uploadFile(req.file.path, fileName);
-      
-      // Use the internal streaming URL
-      finalUrl = `${process.env.BACKEND_URL}/api/uploads/${fileName}`;
+    const rawClass = (studentClass || 'all').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+    const rawSubject = (subject || 'general').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
+    const ext = path.extname(req.file.originalname);
+    const fileName = `material_${rawClass}_${rawSubject}_${Date.now()}${ext}`;
+    
+    const targetDir = path.join(__dirname, '..', 'public', 'uploads', 'materials');
+    const targetPath = path.join(targetDir, fileName);
 
-      if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
-    } catch (err) {
-      if (require('fs').existsSync(req.file.path)) require('fs').unlinkSync(req.file.path);
-      return res.status(500).json({ success: false, message: 'FTP upload failed' });
+    if (!fs.existsSync(targetDir)) {
+      fs.mkdirSync(targetDir, { recursive: true });
     }
+
+    fs.renameSync(req.file.path, targetPath);
+    
+    const finalUrl = `/uploads/materials/${fileName}`;
 
     const material = await StudyMaterial.create({
       title,
@@ -64,8 +66,11 @@ const deleteMaterial = async (req, res) => {
     }
     const material = await StudyMaterial.findById(id);
     if (material && material.fileUrl) {
-      const fileName = require('path').basename(material.fileUrl);
-      await deleteFile(fileName);
+      const fileName = path.basename(material.fileUrl);
+      const filePath = path.join(__dirname, '..', 'public', 'uploads', 'materials', fileName);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
     }
     await StudyMaterial.findByIdAndDelete(id);
     res.json({ success: true, message: 'Material deleted' });

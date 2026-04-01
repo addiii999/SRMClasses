@@ -109,48 +109,17 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
-
-// Backend FTP File Proxy (To bypass Hostinger IP/Proxy Blocks)
-const { streamWithMetadata } = require('./utils/ftpClient');
-app.get('/api/uploads/:filename', async (req, res) => {
-  const filename = decodeURIComponent(req.params.filename);
-  console.log(`[STORAGE] Stream Request: ${filename}`);
-
-  try {
-    // Unified Metadata + Stream (Single Connection)
-    // Headers are ONLY sent if the file is found
-    await streamWithMetadata(filename, res, (size) => {
-      const lowerName = filename.toLowerCase();
-      
-      // Cache-busting headers
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), {
+  setHeaders: (res, path) => {
+    if (path.endsWith('.pdf')) {
       res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
-      res.setHeader('Surrogate-Control', 'no-store');
-
-      if (lowerName.endsWith('.pdf')) {
-        res.setHeader('Content-Type', 'application/pdf');
-      } else if (lowerName.endsWith('.png')) {
-        res.setHeader('Content-Type', 'image/png');
-      } else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
-        res.setHeader('Content-Type', 'image/jpeg');
-      }
-
-      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-      if (size) {
-        res.setHeader('Content-Length', size);
-      }
-    });
-
-    console.log(`[STORAGE] Stream Success: ${filename}`);
-  } catch (err) {
-    console.error(`[STORAGE] Stream Failed: ${filename}`, err.message);
-    if (!res.headersSent) {
-      res.status(404).json({ success: false, message: 'File not found or connection error.' });
     }
   }
-});
+}));
+
+
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));
