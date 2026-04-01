@@ -122,6 +122,13 @@ app.get('/api/uploads/:filename', async (req, res) => {
     // Headers are ONLY sent if the file is found
     await streamWithMetadata(filename, res, (size) => {
       const lowerName = filename.toLowerCase();
+      
+      // Cache-busting headers
+      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Surrogate-Control', 'no-store');
+
       if (lowerName.endsWith('.pdf')) {
         res.setHeader('Content-Type', 'application/pdf');
       } else if (lowerName.endsWith('.png')) {

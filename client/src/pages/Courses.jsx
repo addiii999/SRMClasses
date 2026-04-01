@@ -46,11 +46,11 @@ export default function Courses() {
 
   // Convert Cloudinary raw URL to inline-viewable PDF URL
   // Inserts fl_attachment:false so browser opens PDF instead of downloading
+  // Robust URL formatting with cache-busting timestamp
   const getPdfViewUrl = (url) => {
     if (!url) return url;
-    // Cloudinary raw URL pattern: .../raw/upload/v.../...
-    // We insert fl_attachment:false after /upload/
-    return url.replace('/raw/upload/', '/raw/upload/fl_attachment:false/');
+    const connector = url.includes('?') ? '&' : '?';
+    return `${url}${connector}v=${Date.now()}`;
   };
 
   return (

@@ -809,7 +809,7 @@ function SyllabusAdmin() {
                 <p className="text-xs text-gray-400 mt-1">Updated {new Date(s.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} • {cleanFileName(s.fileName)}</p>
               </div>
               <div className="flex gap-2">
-                <a href={`/uploads/syllabus/${s.fileName}`} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-1.5 px-3">
+                <a href={`${s.pdfUrl}${s.pdfUrl.includes('?') ? '&' : '?'}v=${Date.now()}`} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-1.5 px-3">
                   View PDF
                 </a>
                 <button
