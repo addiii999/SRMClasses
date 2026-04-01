@@ -67,18 +67,74 @@ export default function Gallery() {
 
       {/* Lightbox */}
       {lightbox && (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
-          onClick={() => setLightbox(null)}>
-          <div className="max-w-4xl w-full glass rounded-2xl overflow-hidden" onClick={e => e.stopPropagation()}>
-            <img src={lightbox.imageUrl} alt={lightbox.title} className="w-full max-h-[70vh] object-contain bg-black" />
-            <div className="p-4 flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-brand-dark">{lightbox.title}</p>
-                <p className="text-xs text-primary capitalize">{lightbox.category}</p>
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 transition-all"
+          style={{ animation: 'fadeIn 0.3s ease-out' }}
+          onClick={() => setLightbox(null)}
+        >
+          <div 
+            className="max-w-5xl w-full rounded-2xl overflow-hidden shadow-[0_0_40px_rgba(151,135,243,0.15)] flex flex-col"
+            style={{ animation: 'scaleUp 0.3s ease-out' }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="bg-black/95 w-full relative flex items-center justify-center">
+              <img src={lightbox.imageUrl} alt={lightbox.title} className="w-full max-h-[75vh] object-contain mx-auto" />
+            </div>
+            
+            <div 
+              className="p-4 md:p-5 flex items-center justify-between w-full"
+              style={{
+                background: 'rgba(0, 0, 0, 0.6)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+              }}
+            >
+              <div className="flex flex-col gap-1">
+                <p style={{ color: '#ffffff', fontWeight: 600 }} className="text-lg md:text-xl tracking-wide uppercase">
+                  {lightbox.title}
+                </p>
+                <p style={{ color: '#9787F3', fontWeight: 500 }} className="text-sm md:text-base capitalize tracking-wider mt-0.5">
+                  {lightbox.category}
+                </p>
               </div>
-              <button onClick={() => setLightbox(null)} className="btn-ghost text-sm">Close</button>
+              
+              <button 
+                onClick={() => setLightbox(null)}
+                style={{
+                  background: 'linear-gradient(135deg, #9787F3, #2D274B)',
+                  color: 'white',
+                  padding: '10px 20px',
+                  borderRadius: '20px',
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  fontSize: '15px',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 0 10px rgba(151, 135, 243, 0.6)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+                className="flex items-center justify-center whitespace-nowrap active:scale-95"
+              >
+                Close ✕
+              </button>
             </div>
           </div>
+          
+          <style dangerouslySetInnerHTML={{__html:`
+            @keyframes fadeIn {
+              from { opacity: 0; }
+              to { opacity: 1; }
+            }
+            @keyframes scaleUp {
+              from { transform: scale(0.95); opacity: 0; }
+              to { transform: scale(1); opacity: 1; }
+            }
+          `}} />
         </div>
       )}
     </div>
