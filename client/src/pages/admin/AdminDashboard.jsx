@@ -680,6 +680,7 @@ function SyllabusAdmin() {
   const [board, setBoard] = useState('CBSE');
   const [classLevel, setClassLevel] = useState('10');
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   // Helper to clean timestamp prefix from filename
   const cleanFileName = (name) => {
@@ -708,11 +709,16 @@ function SyllabusAdmin() {
     formData.append('pdfFile', file);
 
     setLoading(true);
+    setUploadProgress(0);
     try {
       await api.post('/syllabus', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
           Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}`
+        },
+        onUploadProgress: (progressEvent) => {
+          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          setUploadProgress(percentCompleted);
         }
       });
       toast.success('Syllabus updated successfully');
@@ -724,6 +730,7 @@ function SyllabusAdmin() {
       toast.error(err.response?.data?.message || 'Upload failed');
     } finally {
       setLoading(false);
+      setUploadProgress(0);
     }
   };
 
@@ -786,8 +793,25 @@ function SyllabusAdmin() {
             required
           />
         </div>
-        <button type="submit" disabled={loading} className="btn-primary px-8 py-3 disabled:opacity-60">
-          <Upload className="w-4 h-4 inline mr-2" />{loading ? 'Uploading...' : 'Upload Syllabus'}
+
+        {uploadProgress > 0 && (
+          <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex justify-between text-xs font-medium text-gray-500">
+              <span>{uploadProgress === 100 ? 'Finalizing...' : 'Uploading...'}</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden border border-gray-200">
+              <div 
+                className="bg-primary h-full transition-all duration-300 ease-out" 
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        <button type="submit" disabled={loading} className="btn-primary w-full sm:w-auto px-8 py-3 disabled:opacity-60 disabled:cursor-not-allowed group">
+          <Upload className={`w-4 h-4 inline mr-2 transition-transform duration-300 ${loading ? 'animate-bounce' : 'group-hover:-translate-y-1'}`} />
+          {loading ? `Uploading (${uploadProgress}%)...` : 'Upload Syllabus'}
         </button>
       </form>
 
