@@ -60,8 +60,8 @@ app.get('/', (req, res) => {
 app.get('/api/health', (req, res) => {
   const mongoose = require('mongoose');
   const uri = process.env.MONGO_URI || 'NOT SET';
-  res.json({ 
-    status: 'OK', 
+  res.json({
+    status: 'OK',
     message: 'SRM Classes API is running',
     dbState: mongoose.connection.readyState,
     mongoUriSet: uri !== 'NOT SET',
@@ -87,7 +87,7 @@ const allowedOrigins = [
   'https://srmclasses.in',
   'https://www.srmclasses.in',
   'https://srmclasses-frontend.vercel.app',
-    'https://srm-classes.vercel.app',
+  'https://srm-classes.vercel.app',
   'http://localhost:5173',
   process.env.FRONTEND_URL
 ].filter(Boolean);
@@ -109,32 +109,31 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-app.use('/public', express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // Backend FTP File Proxy (To bypass Hostinger IP/Proxy Blocks)
 const { streamWithMetadata } = require('./utils/ftpClient');
 app.get('/api/uploads/:filename', async (req, res) => {
   const filename = decodeURIComponent(req.params.filename);
   console.log(`[STORAGE] Stream Request: ${filename}`);
-  
+
   try {
     // Unified Metadata + Stream (Single Connection)
     // Headers are ONLY sent if the file is found
     await streamWithMetadata(filename, res, (size) => {
-       const lowerName = filename.toLowerCase();
-       if (lowerName.endsWith('.pdf')) {
-         res.setHeader('Content-Type', 'application/pdf');
-       } else if (lowerName.endsWith('.png')) {
-         res.setHeader('Content-Type', 'image/png');
-       } else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
-         res.setHeader('Content-Type', 'image/jpeg');
-       }
-       
-       res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
-       if (size) {
-         res.setHeader('Content-Length', size);
-       }
+      const lowerName = filename.toLowerCase();
+      if (lowerName.endsWith('.pdf')) {
+        res.setHeader('Content-Type', 'application/pdf');
+      } else if (lowerName.endsWith('.png')) {
+        res.setHeader('Content-Type', 'image/png');
+      } else if (lowerName.endsWith('.jpg') || lowerName.endsWith('.jpeg')) {
+        res.setHeader('Content-Type', 'image/jpeg');
+      }
+
+      res.setHeader('Content-Disposition', `inline; filename="${filename}"`);
+      if (size) {
+        res.setHeader('Content-Length', size);
+      }
     });
 
     console.log(`[STORAGE] Stream Success: ${filename}`);

@@ -727,6 +727,25 @@ function SyllabusAdmin() {
     }
   };
 
+  const handleDelete = (board, classLevel, id) => {
+    if (window.confirm(`Are you sure you want to delete the ${board} Class ${classLevel} syllabus?`)) {
+      setLoading(true);
+      api.delete(`/syllabus/${id}`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}`
+        }
+      })
+        .then(() => {
+          toast.success('Syllabus deleted successfully');
+          fetchSyllabus();
+        })
+        .catch(err => {
+          toast.error(err.response?.data?.message || 'Failed to delete syllabus');
+        })
+        .finally(() => setLoading(false));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-display font-bold text-brand-dark">Syllabus Management</h2>
@@ -789,7 +808,17 @@ function SyllabusAdmin() {
                 </div>
                 <p className="text-xs text-gray-400 mt-1">Updated {new Date(s.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} • {cleanFileName(s.fileName)}</p>
               </div>
-              <a href={s.pdfUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-1.5 px-3">View PDF</a>
+              <div className="flex gap-2">
+                <a href={`/uploads/syllabus/${s.fileName}`} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-1.5 px-3">
+                  View PDF
+                </a>
+                <button
+                  onClick={() => handleDelete(s.board, s.classLevel, s._id)}
+                  className="btn-ghost text-xs py-1.5 px-3 bg-red-50 text-red-500 hover:bg-red-100 flex items-center gap-1"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete
+                </button>
+              </div>
             </div>
           ))
         )}
