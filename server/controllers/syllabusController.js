@@ -23,10 +23,10 @@ exports.uploadSyllabus = async (req, res) => {
     // Delete old Cloudinary file if updating
     const existing = await Syllabus.findOne({ board, classLevel });
     if (existing && existing.cloudinaryId) {
-      await deleteFromCloudinary(existing.cloudinaryId, 'raw');
+      await deleteFromCloudinary(existing.cloudinaryId, 'image');
     }
 
-    const result = await uploadToCloudinary(req.file.buffer, 'syllabus', publicId, 'raw');
+    const result = await uploadToCloudinary(req.file.buffer, 'syllabus', publicId, 'image');
 
     const syllabus = await Syllabus.findOneAndUpdate(
       { board, classLevel },
@@ -55,7 +55,7 @@ exports.deleteSyllabus = async (req, res) => {
     }
 
     if (syllabus.cloudinaryId) {
-      await deleteFromCloudinary(syllabus.cloudinaryId, 'raw');
+      await deleteFromCloudinary(syllabus.cloudinaryId, 'image');
     }
 
     await Syllabus.findByIdAndDelete(req.params.id);

@@ -12,9 +12,8 @@ const uploadMaterial = async (req, res) => {
     const rawSubject = (subject || 'general').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
     const publicId = `material_${rawClass}_${rawSubject}_${Date.now()}`;
 
-    // PDFs need 'raw' resource type
-    const ext = path.extname(req.file.originalname).toLowerCase();
-    const resourceType = ext === '.pdf' ? 'raw' : 'image';
+    // PDFs and images both work best with 'image' resource type in Cloudinary
+    const resourceType = 'image';
 
     const result = await uploadToCloudinary(req.file.buffer, 'materials', publicId, resourceType);
 
