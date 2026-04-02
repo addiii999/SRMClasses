@@ -18,15 +18,15 @@ exports.uploadSyllabus = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Only PDF files are allowed.' });
     }
 
-    const publicId = `${board.toLowerCase().trim().replace(/[^a-z0-9]/g, '')}_class${String(classLevel).toLowerCase().trim().replace(/[^a-z0-9]/g, '')}_syllabus`;
+    const publicId = `${board.toLowerCase().trim().replace(/[^a-z0-9]/g, '')}_class${String(classLevel).toLowerCase().trim().replace(/[^a-z0-9]/g, '')}_syllabus.pdf`;
 
     // Delete old Cloudinary file if updating
     const existing = await Syllabus.findOne({ board, classLevel });
     if (existing && existing.cloudinaryId) {
-      await deleteFromCloudinary(existing.cloudinaryId, 'image');
+      await deleteFromCloudinary(existing.cloudinaryId, 'raw');
     }
 
-    const result = await uploadToCloudinary(req.file.buffer, 'syllabus', publicId, 'image');
+    const result = await uploadToCloudinary(req.file.buffer, 'syllabus', publicId, 'raw');
 
     const syllabus = await Syllabus.findOneAndUpdate(
       { board, classLevel },
@@ -55,7 +55,7 @@ exports.deleteSyllabus = async (req, res) => {
     }
 
     if (syllabus.cloudinaryId) {
-      await deleteFromCloudinary(syllabus.cloudinaryId, 'image');
+      await deleteFromCloudinary(syllabus.cloudinaryId, 'raw');
     }
 
     await Syllabus.findByIdAndDelete(req.params.id);
