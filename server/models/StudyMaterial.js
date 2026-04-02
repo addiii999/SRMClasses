@@ -15,6 +15,7 @@ const studyMaterialSchema = new mongoose.Schema({
     default: 'notes',
   },
   fileUrl: { type: String, required: true },
+  cloudinaryId: { type: String },
   fileName: { type: String },
   fileSize: { type: Number },
   uploadedAt: { type: Date, default: Date.now },

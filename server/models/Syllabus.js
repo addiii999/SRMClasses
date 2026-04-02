@@ -19,6 +19,10 @@ const syllabusSchema = new mongoose.Schema({
     type: String,
     required: false
   },
+  cloudinaryId: {
+    type: String,
+    required: false
+  },
   fileName: {
     type: String,
     required: false

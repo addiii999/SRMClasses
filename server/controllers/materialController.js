@@ -1,28 +1,22 @@
 const StudyMaterial = require('../models/StudyMaterial');
 const mongoose = require('mongoose');
-const fs = require('fs');
 const path = require('path');
+const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinary');
 
 const uploadMaterial = async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ success: false, message: 'No file uploaded' });
     const { title, description, studentClass, subject, type } = req.body;
-    
+
     const rawClass = (studentClass || 'all').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
     const rawSubject = (subject || 'general').toLowerCase().trim().replace(/[^a-z0-9]/g, '');
-    const ext = path.extname(req.file.originalname);
-    const fileName = `material_${rawClass}_${rawSubject}_${Date.now()}${ext}`;
-    
-    const targetDir = path.join(__dirname, '..', 'public', 'uploads', 'materials');
-    const targetPath = path.join(targetDir, fileName);
+    const publicId = `material_${rawClass}_${rawSubject}_${Date.now()}`;
 
-    if (!fs.existsSync(targetDir)) {
-      fs.mkdirSync(targetDir, { recursive: true });
-    }
+    // PDFs need 'raw' resource type
+    const ext = path.extname(req.file.originalname).toLowerCase();
+    const resourceType = ext === '.pdf' ? 'raw' : 'image';
 
-    fs.renameSync(req.file.path, targetPath);
-    
-    const finalUrl = `/uploads/materials/${fileName}`;
+    const result = await uploadToCloudinary(req.file.buffer, 'materials', publicId, resourceType);
 
     const material = await StudyMaterial.create({
       title,
@@ -30,7 +24,8 @@ const uploadMaterial = async (req, res) => {
       studentClass,
       subject,
       type,
-      fileUrl: finalUrl,
+      fileUrl: result.url,
+      cloudinaryId: result.publicId,
       fileName: req.file.originalname,
       fileSize: req.file.size,
     });
@@ -65,12 +60,12 @@ const deleteMaterial = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
     const material = await StudyMaterial.findById(id);
-    if (material && material.fileUrl) {
-      const fileName = path.basename(material.fileUrl);
-      const filePath = path.join(__dirname, '..', 'public', 'uploads', 'materials', fileName);
-      if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-      }
+    if (!material) {
+      return res.status(404).json({ success: false, message: 'Material not found' });
+    }
+    if (material.cloudinaryId) {
+      const resourceType = material.fileUrl?.includes('/raw/') ? 'raw' : 'image';
+      await deleteFromCloudinary(material.cloudinaryId, resourceType);
     }
     await StudyMaterial.findByIdAndDelete(id);
     res.json({ success: true, message: 'Material deleted' });

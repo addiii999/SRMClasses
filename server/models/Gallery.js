@@ -9,6 +9,7 @@ const gallerySchema = new mongoose.Schema({
     default: 'other',
   },
   description: { type: String },
+  cloudinaryId: { type: String },
   fileName: { type: String },
 }, { timestamps: true });
 

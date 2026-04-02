@@ -1,7 +1,6 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const Admin = require('./models/Admin');
@@ -108,18 +107,6 @@ app.use(cors({
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
-
-app.use('/uploads', express.static(path.join(__dirname, 'public/uploads'), {
-  setHeaders: (res, path) => {
-    if (path.endsWith('.pdf')) {
-      res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-    }
-  }
-}));
-
-
 
 // Routes
 app.use('/api/auth', require('./routes/authRoutes'));

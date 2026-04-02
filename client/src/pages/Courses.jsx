@@ -47,10 +47,13 @@ export default function Courses() {
   // Convert Cloudinary raw URL to inline-viewable PDF URL
   // Inserts fl_attachment:false so browser opens PDF instead of downloading
   // Robust URL formatting with cache-busting timestamp
+  // Aggressive cache-busting for syllabus PDFs
   const getPdfViewUrl = (url) => {
-    if (!url) return url;
+    if (!url) return '#';
+    // Append unique timestamp to bypass any browser or CDN caching
+    const timestamp = Date.now();
     const connector = url.includes('?') ? '&' : '?';
-    return `${url}${connector}v=${Date.now()}`;
+    return `${url}${connector}v=${timestamp}`;
   };
 
   return (

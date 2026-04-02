@@ -9,6 +9,7 @@ const resultSchema = new mongoose.Schema({
   rank: { type: Number },
   year: { type: String },
   imageUrl: { type: String },
+  cloudinaryId: { type: String },
   fileName: { type: String },
 }, { timestamps: true });
 
