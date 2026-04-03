@@ -6,7 +6,15 @@ import toast from 'react-hot-toast';
 
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', mobile: '', studentClass: '', message: '' });
-  const [demoForm, setDemoForm] = useState({ name: '', email: '', mobile: '', studentClass: '', preferredDate: '', preferredTime: '', subject: '' });
+  const [demoForm, setDemoForm] = useState({ 
+    name: '', 
+    email: '', 
+    mobile: '', 
+    studentClass: '', 
+    preferredDate: new Date().toISOString().split('T')[0], 
+    preferredTime: '', 
+    subject: '' 
+  });
   const [submitting, setSubmitting] = useState(false);
   const [demoSubmitting, setDemoSubmitting] = useState(false);
   
@@ -148,7 +156,13 @@ export default function Contact() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Preferred Date</label>
-                  <input type="date" className="input-field" value={demoForm.preferredDate} onChange={e => setDemoForm({ ...demoForm, preferredDate: e.target.value })} />
+                  <input 
+                    type="date" 
+                    className="input-field" 
+                    min={new Date().toISOString().split('T')[0]}
+                    value={demoForm.preferredDate} 
+                    onChange={e => setDemoForm({ ...demoForm, preferredDate: e.target.value })} 
+                  />
                 </div>
                 <div>
                   <label className="label">Preferred Time</label>

@@ -3,8 +3,22 @@ const mongoose = require('mongoose');
 
 const bookDemo = async (req, res) => {
   try {
-    const { name, email, mobile, studentClass, message } = req.body;
-    const booking = await DemoBooking.create({ name, email, mobile, studentClass, message });
+    const { name, email, mobile, studentClass, preferredDate, preferredTime, subject } = req.body;
+
+    // Backend Validation: Prevent selection of past dates
+    if (preferredDate) {
+      const selectedDate = new Date(preferredDate);
+      const today = new Date();
+      // Set both to start of day for accurate comparison
+      selectedDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+      
+      if (selectedDate < today) {
+        return res.status(400).json({ success: false, message: 'Past date selection is not allowed' });
+      }
+    }
+
+    const booking = await DemoBooking.create({ name, email, mobile, studentClass, preferredDate, preferredTime, subject });
     res.status(201).json({ success: true, message: 'Demo class booked successfully', data: booking });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
