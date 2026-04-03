@@ -19,7 +19,6 @@ const navItems = [
   { path: '/admin/results', label: 'Results', icon: Trophy },
   { path: '/admin/gallery', label: 'Gallery', icon: Image },
   { path: '/admin/announcements', label: 'Announcements', icon: Bell },
-  { path: '/admin/syllabus', label: 'Syllabus', icon: FileText },
 ];
 
 // ─── Admin Sidebar ─────────────────────────────────────────────────
@@ -673,184 +672,6 @@ function AnnouncementsAdmin() {
   );
 }
 
-// ─── Syllabus Management ─────────────────────────────────────
-function SyllabusAdmin() {
-  const [syllabuses, setSyllabuses] = useState([]);
-  const [file, setFile] = useState(null);
-  const [board, setBoard] = useState('CBSE');
-  const [classLevel, setClassLevel] = useState('10');
-  const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-
-  // Helper to clean timestamp prefix from filename
-  const cleanFileName = (name) => {
-    if (!name) return '';
-    // Remove leading digits and underscore (e.g., "1774984723311_CBSE Class 5.pdf" -> "CBSE Class 5.pdf")
-    return name.replace(/^\d+_/, '');
-  };
-
-  const fetchSyllabus = async () => {
-    try {
-      const res = await api.get('/syllabus');
-      setSyllabuses(res.data.data || []);
-    } catch { }
-  };
-
-  useEffect(() => { fetchSyllabus(); }, []);
-
-  const handleUpload = async (e) => {
-    e.preventDefault();
-    if (!file) { toast.error('Please select a PDF file'); return; }
-    if (file.size > 5 * 1024 * 1024) { toast.error('File size must be less than 5MB'); return; }
-
-    const formData = new FormData();
-    formData.append('board', board);
-    formData.append('classLevel', classLevel);
-    formData.append('pdfFile', file);
-
-    setLoading(true);
-    setUploadProgress(0);
-    try {
-      await api.post('/syllabus', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}`
-        },
-        onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          setUploadProgress(percentCompleted);
-        }
-      });
-      toast.success('Syllabus updated successfully');
-      setFile(null);
-      // Reset input element
-      document.getElementById('syllabus-file-input').value = '';
-      fetchSyllabus();
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Upload failed');
-    } finally {
-      setLoading(false);
-      setUploadProgress(0);
-    }
-  };
-
-  const handleDelete = (board, classLevel, id) => {
-    if (window.confirm(`Are you sure you want to delete the ${board} Class ${classLevel} syllabus?`)) {
-      setLoading(true);
-      api.delete(`/syllabus/${id}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}`
-        }
-      })
-        .then(() => {
-          toast.success('Syllabus deleted successfully');
-          fetchSyllabus();
-        })
-        .catch(err => {
-          toast.error(err.response?.data?.message || 'Failed to delete syllabus');
-        })
-        .finally(() => setLoading(false));
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-display font-bold text-brand-dark">Syllabus Management</h2>
-      <form onSubmit={handleUpload} className="card p-6 space-y-4">
-        <h3 className="font-semibold text-brand-dark flex items-center gap-2">
-          <Upload className="w-4 h-4 text-primary" /> Upload Syllabus PDF
-        </h3>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="label">Board</label>
-            <select className="input-field" value={board} onChange={e => {
-              setBoard(e.target.value);
-              // reset class based on board
-              setClassLevel(e.target.value === 'CBSE' ? '10' : '10');
-            }}>
-              <option value="CBSE">CBSE</option>
-              <option value="ICSE">ICSE</option>
-            </select>
-          </div>
-          <div>
-            <label className="label">Class</label>
-            <select className="input-field" value={classLevel} onChange={e => setClassLevel(e.target.value)}>
-              {board === 'CBSE'
-                ? ['5', '6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)
-                : ['6', '7', '8', '9', '10'].map(c => <option key={c} value={c}>Class {c}</option>)
-              }
-            </select>
-          </div>
-        </div>
-        <div>
-          <label className="label">Upload PDF (Max 5MB)</label>
-          <input
-            id="syllabus-file-input"
-            type="file"
-            accept=".pdf"
-            onChange={e => setFile(e.target.files[0])}
-            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:bg-primary/10 file:text-primary file:font-semibold hover:file:bg-primary/20 file:cursor-pointer"
-            required
-          />
-        </div>
-
-        {uploadProgress > 0 && (
-          <div className="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
-            <div className="flex justify-between text-xs font-medium text-gray-500">
-              <span>{uploadProgress === 100 ? 'Finalizing...' : 'Uploading...'}</span>
-              <span>{uploadProgress}%</span>
-            </div>
-            <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden border border-gray-200">
-              <div 
-                className="bg-primary h-full transition-all duration-300 ease-out" 
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
-          </div>
-        )}
-
-        <button type="submit" disabled={loading} className="btn-primary w-full sm:w-auto px-8 py-3 disabled:opacity-60 disabled:cursor-not-allowed group">
-          <Upload className={`w-4 h-4 inline mr-2 transition-transform duration-300 ${loading ? 'animate-bounce' : 'group-hover:-translate-y-1'}`} />
-          {loading ? `Uploading (${uploadProgress}%)...` : 'Upload Syllabus'}
-        </button>
-      </form>
-
-      <div className="space-y-3 mt-8">
-        <h3 className="font-semibold text-brand-dark">Uploaded Syllabuses</h3>
-        {syllabuses.length === 0 ? (
-          <p className="text-gray-500 text-sm">No syllabuses uploaded yet.</p>
-        ) : (
-          syllabuses.map(s => (
-            <div key={s._id} className="card p-4 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                <FileText className="w-5 h-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-brand-dark">{s.board}</span>
-                  <span className="text-xs bg-brand-bg text-brand-dark px-2 py-0.5 rounded-full font-medium">Class {s.classLevel}</span>
-                </div>
-                <p className="text-xs text-gray-400 mt-1">Updated {new Date(s.updatedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} • {cleanFileName(s.fileName)}</p>
-              </div>
-              <div className="flex gap-2">
-                <a href={`${s.pdfUrl}${s.pdfUrl.includes('?') ? '&' : '?'}v=${Date.now()}`} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-1.5 px-3">
-                  View PDF
-                </a>
-                <button
-                  onClick={() => handleDelete(s.board, s.classLevel, s._id)}
-                  className="btn-ghost text-xs py-1.5 px-3 bg-red-50 text-red-500 hover:bg-red-100 flex items-center gap-1"
-                >
-                  <Trash2 className="w-4 h-4" /> Delete
-                </button>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
-    </div>
-  );
-}
-
 // ─── Main AdminDashboard Layout ────────────────────────────────────
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -875,7 +696,6 @@ export default function AdminDashboard() {
             <Route path="results" element={<ResultsAdmin />} />
             <Route path="gallery" element={<GalleryAdmin />} />
             <Route path="announcements" element={<AnnouncementsAdmin />} />
-            <Route path="syllabus" element={<SyllabusAdmin />} />
             <Route index element={<Overview />} />
           </Routes>
         </div>
