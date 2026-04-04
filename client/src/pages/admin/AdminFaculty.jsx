@@ -155,6 +155,9 @@ export default function AdminFaculty() {
                 {isCore && (
                   <span className="px-2 py-0.5 bg-brand-dark text-white text-[8px] font-bold uppercase rounded-md tracking-wider">Core Faculty</span>
                 )}
+                {!teacher.isActive && (
+                  <span className="px-2 py-0.5 bg-red-500 text-white text-[8px] font-bold uppercase rounded-md tracking-wider text-center">Inactive</span>
+                )}
                 {teacher.priorityOrder && (
                   <span className="px-2 py-0.5 bg-primary/10 text-primary text-[8px] font-bold uppercase rounded-md tracking-wider text-center">Priority: #{teacher.priorityOrder}</span>
                 )}

@@ -7,19 +7,22 @@ exports.getPublicFaculty = async (req, res) => {
     
     // Sort logic
     faculty.sort((a, b) => {
-      // 1. Priority Order (Nulls at the end)
+      // 1. Active first (though already filtered, good for safety)
+      if (a.isActive !== b.isActive) return b.isActive - a.isActive;
+
+      // 2. Priority Order (Nulls at the end)
       if (a.priorityOrder !== null && b.priorityOrder !== null) {
         return a.priorityOrder - b.priorityOrder;
       }
       if (a.priorityOrder !== null) return -1;
       if (b.priorityOrder !== null) return 1;
 
-      // 2. Experience DESC
+      // 3. Experience DESC
       if (b.experience !== a.experience) {
         return b.experience - a.experience;
       }
 
-      // 3. Name ASC
+      // 4. Name ASC
       return a.name.localeCompare(b.name);
     });
 
@@ -34,17 +37,24 @@ exports.getAdminFaculty = async (req, res) => {
   try {
     const faculty = await Faculty.find({});
     
-    // Use the same sort logic
+    // Sort logic: Active Top, Inactive Bottom
     faculty.sort((a, b) => {
+      // 1. Active first
+      if (a.isActive !== b.isActive) return b.isActive - a.isActive;
+
+      // 2. Priority Order (Nulls at the end)
       if (a.priorityOrder !== null && b.priorityOrder !== null) {
         return a.priorityOrder - b.priorityOrder;
       }
       if (a.priorityOrder !== null) return -1;
       if (b.priorityOrder !== null) return 1;
 
+      // 3. Experience DESC
       if (b.experience !== a.experience) {
         return b.experience - a.experience;
       }
+
+      // 4. Name ASC
       return a.name.localeCompare(b.name);
     });
 
