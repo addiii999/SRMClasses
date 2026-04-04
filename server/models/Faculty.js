@@ -35,6 +35,10 @@ const facultySchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  priorityOrder: {
+    type: Number,
+    default: null,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Faculty', facultySchema);

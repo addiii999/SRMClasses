@@ -20,8 +20,11 @@ export default function AdminFaculty() {
     experience: '',
     speciality: '',
     rating: 5.0,
-    isActive: true
+    isActive: true,
+    priorityOrder: ''
   });
+
+  const coreFacultyNames = ['Mr. Ranjan Kumar Soni', 'Mr. Raghuwendra Kumar Soni', 'Mr. Yuvraj Kumar'];
 
   useEffect(() => {
     fetchFaculty();
@@ -45,23 +48,24 @@ export default function AdminFaculty() {
     e.preventDefault();
     try {
       const token = localStorage.getItem('srmAdminToken');
-      const payload = { ...form, experience: Number(form.experience), rating: Number(form.rating) };
+      const payload = { 
+        ...form, 
+        experience: Number(form.experience), 
+        rating: Number(form.rating),
+        priorityOrder: form.priorityOrder === '' ? null : Number(form.priorityOrder)
+      };
       
       if (editingTeacher) {
-        await api.put(`/faculty/${editingTeacher._id}`, payload, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.put(`/faculty/${editingTeacher._id}`, payload);
         toast.success('Teacher updated successfully');
       } else {
-        await api.post('/faculty', payload, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await api.post('/faculty', payload);
         toast.success('Teacher added successfully');
       }
       
       setShowModal(false);
       setEditingTeacher(null);
-      setForm({ name: '', subject: '', qualification: '', experience: '', speciality: '', rating: 5.0, isActive: true });
+      setForm({ name: '', subject: '', qualification: '', experience: '', speciality: '', rating: 5.0, isActive: true, priorityOrder: '' });
       fetchFaculty();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Action failed');
@@ -69,11 +73,12 @@ export default function AdminFaculty() {
   };
 
   const handleToggleStatus = async (teacher) => {
+    if (coreFacultyNames.includes(teacher.name) && teacher.isActive) {
+      toast.error('Core faculty members cannot be deactivated');
+      return;
+    }
     try {
-      const token = localStorage.getItem('srmAdminToken');
-      await api.put(`/faculty/${teacher._id}`, { isActive: !teacher.isActive }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.put(`/faculty/${teacher._id}`, { isActive: !teacher.isActive });
       toast.success(`Teacher ${teacher.isActive ? 'deactivated' : 'activated'}`);
       fetchFaculty();
     } catch (error) {
@@ -90,7 +95,8 @@ export default function AdminFaculty() {
       experience: teacher.experience,
       speciality: teacher.speciality,
       rating: teacher.rating,
-      isActive: teacher.isActive
+      isActive: teacher.isActive,
+      priorityOrder: teacher.priorityOrder ?? ''
     });
     setShowModal(true);
   };
@@ -137,17 +143,31 @@ export default function AdminFaculty() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filtered.map((teacher) => (
+        {filtered.map((teacher) => {
+          const isCore = coreFacultyNames.includes(teacher.name);
+          return (
           <div key={teacher._id} className={`card p-6 border transition-all ${teacher.isActive ? 'border-gray-100' : 'border-red-100 bg-red-50/30 grayscale opacity-75'}`}>
             <div className="flex justify-between items-start mb-4">
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-display font-bold text-xl ${teacher.isActive ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'}`}>
-                {teacher.name[0]}
+              <div className="flex flex-col gap-2">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-display font-bold text-xl ${teacher.isActive ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'}`}>
+                  {teacher.name[0]}
+                </div>
+                {isCore && (
+                  <span className="px-2 py-0.5 bg-brand-dark text-white text-[8px] font-bold uppercase rounded-md tracking-wider">Core Faculty</span>
+                )}
+                {teacher.priorityOrder && (
+                  <span className="px-2 py-0.5 bg-primary/10 text-primary text-[8px] font-bold uppercase rounded-md tracking-wider text-center">Priority: #{teacher.priorityOrder}</span>
+                )}
               </div>
               <div className="flex gap-2">
                 <button onClick={() => openEdit(teacher)} className="p-2 hover:bg-primary/5 text-primary rounded-lg transition-colors">
                   <Edit2 className="w-4 h-4" />
                 </button>
-                <button onClick={() => handleToggleStatus(teacher)} className={`p-2 rounded-lg transition-colors ${teacher.isActive ? 'hover:bg-red-50 text-red-500' : 'hover:bg-green-50 text-green-500'}`}>
+                <button 
+                  onClick={() => handleToggleStatus(teacher)} 
+                  disabled={isCore && teacher.isActive}
+                  className={`p-2 rounded-lg transition-colors ${isCore && teacher.isActive ? 'opacity-20 cursor-not-allowed' : teacher.isActive ? 'hover:bg-red-50 text-red-500' : 'hover:bg-green-50 text-green-500'}`}
+                >
                   {teacher.isActive ? <Trash2 className="w-4 h-4" /> : <History className="w-4 h-4" />}
                 </button>
               </div>
@@ -176,7 +196,8 @@ export default function AdminFaculty() {
               </span>
             )}
           </div>
-        ))}
+          );
+        })}
       </div>
 
       {showModal && (
@@ -221,6 +242,21 @@ export default function AdminFaculty() {
                   <label className="label">Rating (1–5)</label>
                   <input type="number" step="0.1" max="5" min="1" className="input-field" value={form.rating} onChange={e => setForm({...form, rating: e.target.value})} required />
                 </div>
+              </div>
+
+              <div>
+                <label className="label">Priority Order (Optional)</label>
+                <input 
+                  type="number" 
+                  className="input-field" 
+                  placeholder="e.g. 1, 2, 3... (Empty for auto-sorting)" 
+                  value={form.priorityOrder} 
+                  onChange={e => setForm({...form, priorityOrder: e.target.value})} 
+                  disabled={editingTeacher && coreFacultyNames.includes(editingTeacher.name)}
+                />
+                {editingTeacher && coreFacultyNames.includes(editingTeacher.name) && (
+                  <p className="text-[10px] text-gray-400 mt-1 italic">* Priority is fixed for core faculty members</p>
+                )}
               </div>
 
               <div className="pt-4">
