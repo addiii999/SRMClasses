@@ -40,6 +40,15 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  isStudent: {
+    type: Boolean,
+    default: false,
+  },
+  studentId: {
+    type: String,
+    unique: true,
+    sparse: true,
+  },
   // Fee Management Fields
   feeType: {
     type: String,

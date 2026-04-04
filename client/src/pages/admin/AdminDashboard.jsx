@@ -10,11 +10,13 @@ import {
 } from 'lucide-react';
 import AdminFeeManagement from './AdminFeeManagement';
 import AdminFaculty from './AdminFaculty';
+import StudentVerification from './StudentVerification';
 
 // ─── Sidebar nav items ────────────────────────────────────────────
 const navItems = [
   { path: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
   { path: '/admin/enquiries', label: 'Enquiries (CRM)', icon: FileText },
+  { path: '/admin/verify-students', label: 'Student Verification', icon: ShieldCheck },
   { path: '/admin/demo', label: 'Demo Bookings', icon: Calendar },
   { path: '/admin/faculty', label: 'Faculty Management', icon: Users },
   { path: '/admin/materials', label: 'Study Materials', icon: BookOpen },
@@ -701,6 +703,7 @@ export default function AdminDashboard() {
             <Route path="gallery" element={<GalleryAdmin />} />
             <Route path="announcements" element={<AnnouncementsAdmin />} />
             <Route path="faculty" element={<AdminFaculty />} />
+            <Route path="verify-students" element={<StudentVerification />} />
             <Route path="fees" element={<AdminFeeManagement />} />
             <Route index element={<Overview />} />
           </Routes>

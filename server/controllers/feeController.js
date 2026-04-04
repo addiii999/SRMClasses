@@ -9,12 +9,13 @@ const mongoose = require('mongoose');
  */
 exports.getStudentsFeeStats = async (req, res) => {
   try {
-    const students = await User.find({ role: 'student' }).sort({ createdAt: -1 });
+    const students = await User.find({ role: 'student', isStudent: true }).sort({ createdAt: -1 });
     
     const studentsWithFees = students.map(student => {
       const feeDetails = calculateFeeDetails(student);
       return {
         _id: student._id,
+        studentId: student.studentId,
         name: student.name,
         email: student.email,
         mobile: student.mobile,
