@@ -3,7 +3,7 @@ const router = express.Router();
 const { 
   getPublicFaculty, getAdminFaculty, addFaculty, updateFaculty, deleteFaculty 
 } = require('../controllers/facultyController');
-const { adminProtect } = require('../middleware/authMiddleware');
+const { adminProtect } = require('../middleware/adminAuth');
 
 // Public
 router.get('/', getPublicFaculty);

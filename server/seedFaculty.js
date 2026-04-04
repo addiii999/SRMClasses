@@ -1,5 +1,9 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
+const dns = require('dns');
+
+// Force using Google DNS to fix the ECONNREFUSED / querySrv error
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 // Define Faculty Schema
 const facultySchema = new mongoose.Schema({
