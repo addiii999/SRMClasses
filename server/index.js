@@ -118,6 +118,7 @@ app.use('/api/announcements', require('./routes/announcementRoutes'));
 app.use('/api/gallery', require('./routes/galleryRoutes'));
 app.use('/api/results', require('./routes/resultRoutes'));
 app.use('/api/fees', require('./routes/feeRoutes'));
+app.use('/api/faculty', require('./routes/facultyRoutes'));
 
 // Global error handler
 app.use((err, req, res, next) => {

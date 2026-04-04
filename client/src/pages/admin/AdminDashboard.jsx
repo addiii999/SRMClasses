@@ -9,12 +9,14 @@ import {
   AlertCircle, Clock, TrendingUp, FileText, Plus, Search, Filter, CreditCard
 } from 'lucide-react';
 import AdminFeeManagement from './AdminFeeManagement';
+import AdminFaculty from './AdminFaculty';
 
 // ─── Sidebar nav items ────────────────────────────────────────────
 const navItems = [
   { path: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { path: '/admin/enquiries', label: 'Enquiries (CRM)', icon: Users },
+  { path: '/admin/enquiries', label: 'Enquiries (CRM)', icon: FileText },
   { path: '/admin/demo', label: 'Demo Bookings', icon: Calendar },
+  { path: '/admin/faculty', label: 'Faculty Management', icon: Users },
   { path: '/admin/materials', label: 'Study Materials', icon: BookOpen },
   { path: '/admin/courses', label: 'Courses', icon: GraduationCap },
   { path: '/admin/results', label: 'Results', icon: Trophy },
@@ -698,6 +700,7 @@ export default function AdminDashboard() {
             <Route path="results" element={<ResultsAdmin />} />
             <Route path="gallery" element={<GalleryAdmin />} />
             <Route path="announcements" element={<AnnouncementsAdmin />} />
+            <Route path="faculty" element={<AdminFaculty />} />
             <Route path="fees" element={<AdminFeeManagement />} />
             <Route index element={<Overview />} />
           </Routes>

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Target, Eye, Award, Users, Sparkles, Star, ChevronDown } from 'lucide-react';
-import { faculty } from '../data/faculty';
+import api from '../lib/api';
+import { Target, Eye, Award, Users, Sparkles, Star, ChevronDown, GraduationCap } from 'lucide-react';
 
 const values = [
   { icon: Target, title: 'Our Mission', desc: 'To make quality education accessible to every student in Ranchi, nurturing analytical thinking and a love for learning.' },
@@ -10,7 +10,24 @@ const values = [
 ];
 
 export default function About() {
+  const [faculty, setFaculty] = useState([]);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchFaculty();
+  }, []);
+
+  const fetchFaculty = async () => {
+    try {
+      const { data } = await api.get('/faculty');
+      setFaculty(data.data);
+    } catch (error) {
+      console.error('Failed to fetch faculty');
+    } finally {
+      setLoading(false);
+    }
+  };
   
   // Show 4 teachers initially, or all if expanded
   const visibleFaculty = isExpanded ? faculty : faculty.slice(0, 4);
@@ -86,7 +103,7 @@ export default function About() {
       </section>
 
       {/* Faculty */}
-      <section className="section-pad bg-white overflow-hidden">
+      <section className="section-pad bg-white overflow-hidden min-h-[500px]">
         <div className="container-pad text-center mb-4">
             <div className="text-primary font-semibold text-sm tracking-wider uppercase mb-3">Our Team</div>
             <h2 className="section-title">Meet Our Expert Faculty</h2>
@@ -97,49 +114,66 @@ export default function About() {
         </div>
 
         <div className="container-pad">
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {visibleFaculty.map(({ name, subject, exp, initial, rating }, idx) => (
-              <div key={name} className="card p-8 text-center animate-fade-in group hover:border-primary/30 transition-all shadow-card hover:shadow-card-hover bg-white border border-gray-100"
-                style={{ animationDelay: `${idx * 0.05}s` }}>
-                <div className="relative w-20 h-20 mx-auto mb-5 translate-y-0 group-hover:-translate-y-1 transition-transform">
-                  <div className="w-20 h-20 rounded-full bg-gradient-brand flex items-center justify-center text-white font-display font-bold text-3xl shadow-glass">
-                    {initial}
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : faculty.length === 0 ? (
+            <div className="text-center py-20 bg-brand-bg rounded-3xl border border-gray-100 max-w-2xl mx-auto">
+               <GraduationCap className="w-12 h-12 text-primary/30 mx-auto mb-4" />
+               <p className="text-gray-500 font-medium italic">Our expert mentors list is being updated...</p>
+            </div>
+          ) : (
+            <>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {visibleFaculty.map((teacher, idx) => (
+                  <div key={teacher._id} className="card p-8 text-center animate-fade-in group hover:border-primary/30 transition-all shadow-card hover:shadow-card-hover bg-white border border-gray-100 flex flex-col"
+                    style={{ animationDelay: `${idx * 0.05}s` }}>
+                    <div className="relative w-20 h-20 mx-auto mb-5 translate-y-0 group-hover:-translate-y-1 transition-transform">
+                      <div className="w-20 h-20 rounded-full bg-gradient-brand flex items-center justify-center text-white font-display font-bold text-3xl shadow-glass">
+                        {teacher.name[0]}
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-400 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                        <span className="text-white text-[10px] font-black uppercase">Pro</span>
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="font-display font-bold text-lg text-brand-dark mb-1 h-14 flex items-center justify-center">{teacher.name}</h3>
+                      <p className="text-primary text-xs font-bold mb-1 uppercase tracking-tight">{teacher.subject}</p>
+                      <p className="text-gray-400 text-[10px] uppercase font-bold tracking-widest mb-3">{teacher.experience}+ years experience</p>
+                    </div>
+                    
+                    {/* Rating Display */}
+                    <div className="flex items-center justify-center gap-1.5 mb-2 py-1.5 bg-brand-bg rounded-lg mt-auto">
+                       <div className="flex gap-0.5">
+                        {Array(5).fill(0).map((_, i) => (
+                            <Star key={i} className={`w-3 h-3 ${i < Math.floor(teacher.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
+                        ))}
+                       </div>
+                       <span className="text-[11px] font-bold text-brand-dark px-1.5">{teacher.rating}</span>
+                    </div>
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-400 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
-                    <span className="text-white text-[10px] font-black uppercase">Pro</span>
-                  </div>
-                </div>
-                <h3 className="font-display font-bold text-lg text-brand-dark mb-1 h-14 flex items-center justify-center">{name}</h3>
-                <p className="text-primary text-xs font-bold mb-1 uppercase tracking-tight">{subject}</p>
-                <p className="text-gray-400 text-[10px] uppercase font-bold tracking-widest mb-3">{exp}</p>
-                
-                {/* Rating Display */}
-                <div className="flex items-center justify-center gap-1.5 mb-2 py-1.5 bg-brand-bg rounded-lg mt-2">
-                   <div className="flex gap-0.5">
-                    {Array(5).fill(0).map((_, i) => (
-                        <Star key={i} className={`w-3 h-3 ${i < Math.floor(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
-                    ))}
-                   </div>
-                   <span className="text-[11px] font-bold text-brand-dark px-1.5">{rating}</span>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          {/* Expansion Controller */}
-          <div className="mt-16 text-center">
-            <button 
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="group relative inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-brand-dark text-white font-bold transition-all hover:bg-[#1a1631] hover:shadow-[0_0_20px_rgba(151,135,243,0.4)] active:scale-95"
-            >
-              <span>{isExpanded ? 'Show Fewer Mentors' : 'Explore Full Faculty'}</span>
-              <ChevronDown className={`w-5 h-5 transition-transform duration-500 ${isExpanded ? 'rotate-180' : 'group-hover:translate-y-1'}`} />
-              
-              {!isExpanded && (
-                <div className="absolute inset-0 rounded-2xl bg-primary/20 animate-ping -z-10 group-hover:opacity-0" />
+              {/* Expansion Controller */}
+              {faculty.length > 4 && (
+                <div className="mt-16 text-center">
+                  <button 
+                    onClick={() => setIsExpanded(!isExpanded)}
+                    className="group relative inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-brand-dark text-white font-bold transition-all hover:bg-[#1a1631] hover:shadow-[0_0_20px_rgba(151,135,243,0.4)] active:scale-95"
+                  >
+                    <span>{isExpanded ? 'Show Fewer Mentors' : 'Explore Full Faculty'}</span>
+                    <ChevronDown className={`w-5 h-5 transition-transform duration-500 ${isExpanded ? 'rotate-180' : 'group-hover:translate-y-1'}`} />
+                    
+                    {!isExpanded && (
+                      <div className="absolute inset-0 rounded-2xl bg-primary/20 animate-ping -z-10 group-hover:opacity-0" />
+                    )}
+                  </button>
+                </div>
               )}
-            </button>
-          </div>
+            </>
+          )}
         </div>
       </section>
 
