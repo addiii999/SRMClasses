@@ -8,6 +8,13 @@ import {
 
 const FEE_TYPES = ['Foundation', 'Advance', 'Math-Science', 'ICSE-Advance', 'None'];
 
+const FEE_STRUCTURE = {
+  'Foundation': { '6': 7500, '7': 8500, '8': 9500, '9': 12000, '10': 14400 },
+  'Advance': { '6': 10000, '7': 12000, '8': 15000, '9': 18000, '10': 20000 },
+  'Math-Science': { '9': 8400, '10': 9600 },
+  'ICSE-Advance': { '7': 18000, '8': 20000, '9': 22000, '10': 25000 }
+};
+
 export default function AdminFeeManagement() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -228,17 +235,33 @@ export default function AdminFeeManagement() {
 function FeeModal({ student, onClose, onSuccess }) {
   const [form, setForm] = useState({
     feeType: student.feeType || 'None',
-    satPercentage: student.satPercentage || 0,
+    satPercentage: student.satPercentage || '', // Starts empty for better UX
     installmentPlan: student.installmentPlan || 1
   });
   const [loading, setLoading] = useState(false);
+
+  // Real-time Calculation Breakdown
+  const yearlyFee = FEE_STRUCTURE[form.feeType]?.[student.studentClass] || 0;
+  const satValue = Number(form.satPercentage) || 0;
+  const satDiscount = Number((satValue / 3).toFixed(2));
+  const satAmount = Math.round(yearlyFee * (satDiscount / 100));
+  const afterSat = yearlyFee - satAmount;
+  
+  let instDiscountPercent = 0;
+  if (form.installmentPlan === 1) instDiscountPercent = 10;
+  else if (form.installmentPlan === 2) instDiscountPercent = 5;
+
+  const instAmount = Math.round(afterSat * (instDiscountPercent / 100));
+  const finalPayable = (afterSat - instAmount) + 500; // Adding ₹500 Admission Fee
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       const token = localStorage.getItem('srmAdminToken');
-      await api.put(`/fees/settings/${student._id}`, form, {
+      // Normalize satPercentage to 0 if empty
+      const payload = { ...form, satPercentage: Number(form.satPercentage) || 0 };
+      await api.put(`/fees/settings/${student._id}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Fee settings updated!');
@@ -257,13 +280,14 @@ function FeeModal({ student, onClose, onSuccess }) {
           <h3 className="font-display font-bold text-brand-dark">Edit Fee – {student.name}</h3>
           <XBtn onClick={onClose} />
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 max-h-[85vh] overflow-y-auto">
           {student.paidAmount > 0 && (
             <div className="p-3 bg-yellow-50 rounded-xl border border-yellow-100 flex gap-3 text-yellow-800 text-xs">
               <AlertTriangle className="w-4 h-4 shrink-0" />
               <p>Changing these settings will recalculate the balance for existing payments.</p>
             </div>
           )}
+          
           <div>
             <label className="label">Fee Type</label>
             <select 
@@ -273,15 +297,22 @@ function FeeModal({ student, onClose, onSuccess }) {
             >
               {FEE_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
-            <p className="text-[10px] text-gray-400 mt-1 italic">Automatically assigns fee for Class {student.studentClass}</p>
           </div>
+
           <div>
             <label className="label">SAT Percentage (%)</label>
             <input 
               type="number" className="input-field" min="0" max="100"
-              value={form.satPercentage} onChange={(e) => setForm({ ...form, satPercentage: Number(e.target.value) })}
+              placeholder="Enter SAT % (e.g. 60)"
+              value={form.satPercentage} 
+              onChange={(e) => {
+                const val = e.target.value;
+                if (val === '') setForm({ ...form, satPercentage: '' });
+                else if (Number(val) <= 100) setForm({ ...form, satPercentage: Number(val) });
+              }}
             />
           </div>
+
           <div>
             <label className="label">Installment Plan</label>
             <div className="grid grid-cols-3 gap-2">
@@ -299,12 +330,51 @@ function FeeModal({ student, onClose, onSuccess }) {
                 </button>
               ))}
             </div>
-            <div className="mt-2 text-[10px] flex gap-2">
-              <span className={form.installmentPlan === 1 ? 'text-green-600 font-bold' : 'text-gray-400'}>1: 10% Off</span>
-              <span className={form.installmentPlan === 2 ? 'text-green-600 font-bold' : 'text-gray-400'}>2: 5% Off</span>
-              <span className="text-gray-400">3-6: No Dis.</span>
-            </div>
           </div>
+
+          {/* Real-time Breakdown Card */}
+          <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 shadow-sm space-y-3">
+             <div className="flex items-center gap-2 mb-2">
+               <TrendingUp className="w-4 h-4 text-primary" />
+               <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">📊 Fee Breakdown</h4>
+             </div>
+             
+             <div className="space-y-1.5 text-sm">
+               <div className="flex justify-between text-gray-600">
+                 <span>Admission Fee:</span>
+                 <span className="font-semibold text-brand-dark">₹500</span>
+               </div>
+               <div className="flex justify-between text-gray-600 pb-3 border-b border-gray-200">
+                 <span>Yearly Fee:</span>
+                 <span className="font-semibold text-brand-dark">₹{yearlyFee.toLocaleString('en-IN')}</span>
+               </div>
+
+               <div className="flex justify-between text-gray-600 pt-2">
+                 <span>SAT Discount ({satValue}% → {satDiscount}%):</span>
+                 <span className="text-red-500 font-medium">- ₹{satAmount.toLocaleString('en-IN')}</span>
+               </div>
+               <div className="flex justify-between text-xs text-gray-400 pb-3 border-b border-gray-200 italic">
+                 <span>After SAT:</span>
+                 <span>₹{afterSat.toLocaleString('en-IN')}</span>
+               </div>
+
+               <div className="flex justify-between text-gray-600 pt-2">
+                 <span>Installment Discount ({instDiscountPercent}%):</span>
+                 <span className="text-red-500 font-medium">- ₹{instAmount.toLocaleString('en-IN')}</span>
+               </div>
+               
+               <div className="mt-4 pt-4 border-t-2 border-dashed border-gray-200">
+                 <div className="flex justify-between items-center">
+                    <span className="font-bold text-brand-dark uppercase text-xs">Final Payable:</span>
+                    <div className="text-right">
+                       <p className="text-2xl font-display font-black text-green-600">₹{finalPayable.toLocaleString('en-IN')}</p>
+                       <p className="text-[10px] text-gray-400 leading-none">Rounding applied</p>
+                    </div>
+                 </div>
+               </div>
+             </div>
+          </div>
+
           <div className="pt-2">
             <button disabled={loading} className="btn-primary w-full py-3">
               {loading ? 'Updating...' : 'Save Settings'}
