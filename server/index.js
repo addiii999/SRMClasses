@@ -71,7 +71,7 @@ app.get('/api/health', (req, res) => {
 // Rate limiting to prevent brute force and satisfy CodeQL
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, // Limit each IP to 1000 requests per windowMs
+  max: 2000, // Limit each IP to 2000 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Too many requests from this IP, please try again after 15 minutes',
