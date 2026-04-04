@@ -390,15 +390,38 @@ function PaymentModal({ student, onClose, onSuccess }) {
   const [form, setForm] = useState({ amount: '', method: 'cash' });
   const [loading, setLoading] = useState(false);
 
+  const handleAmountChange = (e) => {
+    let val = e.target.value;
+    if (val === '') {
+      setForm({ ...form, amount: '' });
+      return;
+    }
+    // Remove leading zeros: 01 -> 1, 000 -> 0 (but we prefer empty for 0)
+    val = val.replace(/^0+/, '');
+    setForm({ ...form, amount: val });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const amt = Number(form.amount);
+    
+    if (amt <= 0) {
+      toast.error('Please enter a valid amount');
+      return;
+    }
+
+    if (amt > student.remainingAmount) {
+      toast.error(`Amount exceeds payable fee. Max possible: ₹${student.remainingAmount}`);
+      return;
+    }
+
     setLoading(true);
     try {
       const token = localStorage.getItem('srmAdminToken');
-      await api.post(`/fees/payment/${student._id}`, form, {
+      await api.post(`/fees/payment/${student._id}`, { ...form, amount: amt }, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast.success('Payment added manually');
+      toast.success('Payment recorded!');
       onSuccess();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Payment failed');
@@ -407,55 +430,106 @@ function PaymentModal({ student, onClose, onSuccess }) {
     }
   };
 
+  const sortedPayments = [...(student.payments || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+
   return (
-    <div className="fixed inset-0 bg-brand-dark/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200">
-        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-emerald-50 text-emerald-900">
-          <h3 className="font-display font-bold">Add Payment – {student.name}</h3>
+    <div className="fixed inset-0 bg-brand-dark/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 my-auto">
+        <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-emerald-50 text-emerald-900 sticky top-0 z-10">
+          <div className="flex items-center gap-3">
+             <div className="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center">
+               <CreditCard className="w-5 h-5 text-emerald-600" />
+             </div>
+             <h3 className="font-display font-bold">Add Payment – {student.name}</h3>
+          </div>
           <XBtn onClick={onClose} />
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="flex justify-between items-end bg-gray-50 p-4 rounded-2xl">
+
+        <div className="p-6 space-y-6 max-h-[75vh] overflow-y-auto">
+          {/* Header Stats */}
+          <div className="grid grid-cols-2 gap-4">
+             <div className="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+               <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider mb-1">Total Payable</p>
+               <p className="text-lg font-bold text-brand-dark">₹{student.payableAmount.toLocaleString('en-IN')}</p>
+             </div>
+             <div className="bg-red-50 p-4 rounded-2xl border border-red-100">
+               <p className="text-[10px] text-red-400 uppercase font-bold tracking-wider mb-1">Remaining</p>
+               <p className="text-xl font-black text-red-600">₹{student.remainingAmount.toLocaleString('en-IN')}</p>
+             </div>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Remaining Balance</p>
-              <p className="text-2xl font-display font-bold text-red-600">₹{student.remainingAmount}</p>
+              <div className="flex justify-between items-end mb-1">
+                <label className="label mb-0">Amount to Pay (₹)</label>
+                <span className="text-[10px] font-bold text-emerald-600 uppercase">Max ₹{student.remainingAmount}</span>
+              </div>
+              <input 
+                type="number" className="input-field" placeholder="Enter amount..."
+                value={form.amount} 
+                onChange={handleAmountChange}
+              />
+              <p className="text-[10px] text-gray-400 mt-1 italic">Enter only digits. No leading zeros.</p>
             </div>
-            <div className="text-right">
-              <p className="text-[10px] text-gray-400 uppercase font-bold tracking-wider">Payable</p>
-              <p className="font-semibold text-brand-dark">₹{student.payableAmount}</p>
+
+            <div>
+              <label className="label">Payment Method</label>
+              <div className="grid grid-cols-3 gap-2">
+                {['cash', 'upi', 'bank'].map(m => (
+                  <button 
+                    key={m} type="button"
+                    onClick={() => setForm({ ...form, method: m })}
+                    className={`py-2 rounded-xl text-xs font-semibold capitalize transition-all ${
+                      form.method === m 
+                      ? 'bg-emerald-600 text-white shadow-lg' 
+                      : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
+                    }`}
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          <div>
-            <label className="label">Amount (₹)</label>
-            <input 
-              type="number" className="input-field" placeholder="Enter amount..." required
-              value={form.amount} onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
-            />
-          </div>
-          <div>
-            <label className="label">Payment Method</label>
-            <div className="grid grid-cols-3 gap-2">
-              {['cash', 'upi', 'bank'].map(m => (
-                <button 
-                  key={m} type="button"
-                  onClick={() => setForm({ ...form, method: m })}
-                  className={`py-2 rounded-xl text-xs font-semibold capitalize transition-all ${
-                    form.method === m 
-                    ? 'bg-emerald-600 text-white shadow-lg' 
-                    : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
+
+            <div className="pt-2">
+              <button 
+                disabled={loading || !form.amount || Number(form.amount) <= 0} 
+                className="bg-emerald-600 hover:bg-emerald-700 text-white w-full py-3.5 rounded-2xl font-bold transition-all disabled:opacity-50 shadow-lg shadow-emerald-600/20"
+              >
+                {loading ? 'Recording...' : `Record ₹${Number(form.amount).toLocaleString('en-IN')} Payment`}
+              </button>
             </div>
+          </form>
+
+          {/* Mini History Section */}
+          <div className="pt-4 border-t border-gray-100">
+             <div className="flex items-center gap-2 mb-4">
+               <History className="w-4 h-4 text-emerald-600" />
+               <h4 className="text-xs font-bold uppercase tracking-widest text-gray-400">📜 Recent Payments</h4>
+             </div>
+             
+             <div className="space-y-3">
+               {sortedPayments.length === 0 ? (
+                 <p className="text-center py-4 text-xs text-gray-400 italic">No payments recorded yet.</p>
+               ) : (
+                 sortedPayments.slice(0, 5).map((p, i) => (
+                    <div key={p._id || i} className="flex items-center justify-between p-3 rounded-xl bg-gray-50 text-sm">
+                       <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-[10px] font-bold shrink-0">₹</div>
+                          <div>
+                            <p className="font-bold text-brand-dark">₹{p.amount.toLocaleString('en-IN')}</p>
+                            <p className="text-[10px] text-gray-400 uppercase">{new Date(p.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} • {p.method}</p>
+                          </div>
+                       </div>
+                    </div>
+                 ))
+               )}
+               {sortedPayments.length > 5 && (
+                 <p className="text-center text-[10px] text-primary font-bold uppercase cursor-pointer hover:underline">View All in History Modal</p>
+               )}
+             </div>
           </div>
-          <div className="pt-2">
-            <button disabled={loading} className="bg-emerald-600 hover:bg-emerald-700 text-white w-full py-3 rounded-2xl font-bold transition-all disabled:opacity-50">
-              {loading ? 'Recording...' : 'Record Payment'}
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
