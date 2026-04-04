@@ -111,7 +111,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/admin/auth', require('./routes/adminAuthRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
-app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/enquiries', require('./routes/enquiryRoutes'));
 app.use('/api/demo', require('./routes/demoRoutes'));
 app.use('/api/courses', require('./routes/courseRoutes'));

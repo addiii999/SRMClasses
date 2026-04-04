@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import {
   LayoutDashboard, Users, Calendar, BookOpen, GraduationCap, Trophy,
   Image, Bell, LogOut, Menu, X, Upload, Trash2, CheckCircle,
-  AlertCircle, Clock, TrendingUp, FileText, Plus, Search, Filter, CreditCard
+  AlertCircle, Clock, TrendingUp, FileText, Plus, Search, Filter, CreditCard, ShieldCheck
 } from 'lucide-react';
 import AdminFeeManagement from './AdminFeeManagement';
 import AdminFaculty from './AdminFaculty';
