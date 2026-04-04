@@ -26,7 +26,6 @@ const seedData = async () => {
     const courseCount = await Course.countDocuments();
     if (courseCount === 0) {
       const courses = [
-        { className: '5', subjects: ['Mathematics', 'Science', 'English', 'Hindi', 'Social Science'], duration: '1 Year', batchTimings: ['7:00 AM - 8:30 AM', '4:00 PM - 5:30 PM'] },
         { className: '6', subjects: ['Mathematics', 'Science', 'English', 'Hindi', 'Social Science'], duration: '1 Year', batchTimings: ['7:00 AM - 8:30 AM', '4:00 PM - 5:30 PM'] },
         { className: '7', subjects: ['Mathematics', 'Science', 'English', 'Hindi', 'Social Science'], duration: '1 Year', batchTimings: ['8:30 AM - 10:00 AM', '5:30 PM - 7:00 PM'] },
         { className: '8', subjects: ['Mathematics', 'Science', 'English', 'Hindi', 'Social Science'], duration: '1 Year', batchTimings: ['8:30 AM - 10:00 AM', '5:30 PM - 7:00 PM'] },

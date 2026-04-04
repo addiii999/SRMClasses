@@ -22,7 +22,7 @@ const userSchema = new mongoose.Schema({
   studentClass: {
     type: String,
     required: [true, 'Class is required'],
-    enum: ['5', '6', '7', '8', '9', '10', '11', '12'],
+    enum: ['6', '7', '8', '9', '10', '11', '12'],
   },
   password: {
     type: String,

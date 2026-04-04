@@ -74,7 +74,7 @@ export default function Register() {
               <select className="input-field" value={form.studentClass}
                 onChange={e => setForm({ ...form, studentClass: e.target.value })} required>
                 <option value="">Select your class</option>
-                {['5','6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+                {['6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
               </select>
             </div>
             <div>

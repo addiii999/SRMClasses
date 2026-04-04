@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { BookOpen, X, GraduationCap } from 'lucide-react';
 
 const cbseClasses = [
-  { name: '5', label: 'Class 5', subjects: 'All Subjects', board: 'CBSE' },
   { name: '6', label: 'Class 6', subjects: 'All Subjects', board: 'CBSE' },
   { name: '7', label: 'Class 7', subjects: 'All Subjects', board: 'CBSE' },
   { name: '8', label: 'Class 8', subjects: 'All Subjects', board: 'CBSE' },

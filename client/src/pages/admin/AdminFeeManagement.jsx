@@ -109,7 +109,7 @@ export default function AdminFeeManagement() {
           onChange={(e) => setFilterClass(e.target.value)}
         >
           <option value="all">All Classes</option>
-          {['5','6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+          {['6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
         </select>
         <select 
           className="input-field py-2 w-auto"

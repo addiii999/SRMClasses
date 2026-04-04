@@ -27,7 +27,6 @@ const testimonials = [
 ];
 
 const cbseClasses = [
-  { name: '5', label: 'Class 5', subjects: 'All Subjects', board: 'CBSE' },
   { name: '6', label: 'Class 6', subjects: 'All Subjects', board: 'CBSE' },
   { name: '7', label: 'Class 7', subjects: 'All Subjects', board: 'CBSE' },
   { name: '8', label: 'Class 8', subjects: 'All Subjects', board: 'CBSE' },
@@ -127,7 +126,7 @@ export default function Home() {
               {' '}in Ranchi – SRM Classes
             </h1>
             <p className="text-lg md:text-xl text-white/70 mb-8 max-w-xl leading-relaxed animate-fade-in">
-              Premium coaching for Class 5–12. Small batches, expert faculty, proven results. Join 2,500+ students who trusted SRM Classes.
+              Premium coaching for Class 6–12. Small batches, expert faculty, proven results. Join 2,500+ students who trusted SRM Classes.
             </p>
             <div className="flex flex-wrap gap-4 mb-4 animate-fade-in">
               <Link to="/register" className="btn-primary text-base px-8 py-4 flex items-center gap-2">
@@ -190,7 +189,7 @@ export default function Home() {
                 { value: '2,500+', label: 'Students', color: 'bg-gradient-brand' },
                 { value: '10+', label: 'Years', color: 'bg-brand-dark' },
                 { value: '98%', label: 'Success Rate', color: 'bg-primary/10' },
-                { value: '8', label: 'Classes (5–12)', color: 'bg-brand-bg' },
+                { value: '7', label: 'Classes (6–12)', color: 'bg-brand-bg' },
               ].map(({ value, label, color }) => (
                 <div key={label} className={`${color} rounded-2xl p-6 flex flex-col justify-center items-center text-center shadow-card`}>
                   <div className={`text-3xl font-display font-bold mb-1 ${color.includes('gradient') || color.includes('dark') ? 'text-white' : 'text-brand-dark'}`}>{value}</div>
@@ -208,7 +207,7 @@ export default function Home() {
           <div className="text-center mb-12">
             <div className="text-primary font-semibold text-sm tracking-wider uppercase mb-3">Our Programs</div>
             <h2 className="section-title">Courses We Offer</h2>
-            <p className="section-subtitle">Comprehensive coaching for Class 5 to 12 with subject-wise expertise</p>
+            <p className="section-subtitle">Comprehensive coaching for Class 6 to 12 with subject-wise expertise</p>
           </div>
           {/* Board Filter Tabs */}
           <div className="flex justify-center gap-4 mb-10">
@@ -373,7 +372,7 @@ export default function Home() {
                 <select className="input-field" value={enquiryForm.studentClass}
                   onChange={e => setEnquiryForm({ ...enquiryForm, studentClass: e.target.value })}>
                   <option value="">Select Class</option>
-                  {['5','6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+                  {['6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
                 </select>
               </div>
               <div>
