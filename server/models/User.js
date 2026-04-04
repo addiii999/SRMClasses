@@ -40,6 +40,32 @@ const userSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  // Fee Management Fields
+  feeType: {
+    type: String,
+    enum: ['Foundation', 'Advance', 'Math-Science', 'ICSE-Advance', 'None'],
+    default: 'None'
+  },
+  feeSnapshot: {
+    actualFee: { type: Number, default: 0 },
+    satPercentage: { type: Number, default: 0 },
+    installmentPlan: { type: Number, default: 1 },
+    updatedBy: { type: String },
+    updatedAt: { type: Date }
+  },
+  payments: [{
+    amount: { type: Number, required: true },
+    date: { type: Date, default: Date.now },
+    method: { type: String, enum: ['cash', 'upi', 'bank'], required: true }
+  }],
+  paymentLogs: [{
+    actionType: { type: String, enum: ['edit', 'delete'] },
+    paymentId: mongoose.Schema.Types.ObjectId,
+    oldValue: Object,
+    newValue: Object,
+    updatedBy: String,
+    updatedAt: { type: Date, default: Date.now }
+  }],
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

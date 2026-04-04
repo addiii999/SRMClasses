@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, Bell, FileText, Download, LogOut, GraduationCap, Menu, X, ChevronDown } from 'lucide-react';
+import { BookOpen, Bell, FileText, Download, LogOut, GraduationCap, Menu, X, ChevronDown, CreditCard } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
@@ -9,6 +9,7 @@ const tabs = [
   { id: 'materials', label: 'Study Materials', icon: BookOpen },
   { id: 'papers', label: 'Test Papers', icon: FileText },
   { id: 'announcements', label: 'Announcements', icon: Bell },
+  { id: 'fees', label: 'My Fees', icon: CreditCard },
 ];
 
 export default function StudentDashboard() {
@@ -17,6 +18,7 @@ export default function StudentDashboard() {
   const [materials, setMaterials] = useState([]);
   const [papers, setPapers] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
+  const [feeData, setFeeData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -36,6 +38,9 @@ export default function StudentDashboard() {
       } else if (activeTab === 'announcements') {
         const res = await api.get(`/announcements?studentClass=${user?.studentClass}`);
         setAnnouncements(res.data.data || []);
+      } else if (activeTab === 'fees') {
+        const res = await api.get('/fees/my-fee');
+        setFeeData(res.data.data || null);
       }
     } catch {
       toast.error('Failed to load data');
@@ -75,6 +80,92 @@ export default function StudentDashboard() {
         ))}
       </div>
     );
+
+    if (activeTab === 'fees') {
+      if (!feeData || !feeData.payableAmount) return (
+        <div className="text-center py-16">
+          <CreditCard className="w-16 h-16 mx-auto text-gray-200 mb-4" />
+          <h3 className="text-gray-500 font-semibold">No fee structure assigned.</h3>
+          <p className="text-gray-400 text-sm">Please contact the administration to set up your fee profile.</p>
+        </div>
+      );
+
+      const progress = Math.min(100, (feeData.paidAmount / feeData.payableAmount) * 100);
+
+      return (
+        <div className="space-y-6 animate-in fade-in duration-500">
+          {/* Main Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="card p-6 bg-gradient-to-br from-brand-dark to-[#3D375B] text-white">
+              <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">Total Payable</p>
+              <h3 className="text-3xl font-display font-bold">₹{feeData.payableAmount.toLocaleString('en-IN')}</h3>
+              <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center text-xs">
+                <span>SAT: {feeData.satPercentage}% ({feeData.satDiscountPercent}% off)</span>
+                <span>Plan: {feeData.installmentPlan} Mo.</span>
+              </div>
+            </div>
+            <div className="card p-6 bg-white border-2 border-primary/5">
+              <p className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-1">Balance Remaining</p>
+              <h3 className={`text-3xl font-display font-bold ${feeData.remainingAmount > 0 ? 'text-red-500' : 'text-green-500'}`}>
+                ₹{feeData.remainingAmount.toLocaleString('en-IN')}
+              </h3>
+              <p className="text-xs text-gray-400 mt-2">
+                {feeData.remainingAmount > 0 
+                  ? `👉 You need to pay ₹${feeData.remainingAmount.toLocaleString('en-IN')} more` 
+                  : "✅ All dues cleared. Thank you!"}
+              </p>
+            </div>
+          </div>
+
+          {/* Progress Bar */}
+          <div className="card p-5">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-sm font-bold text-brand-dark">Payment Progress</span>
+              <span className="text-sm font-bold text-primary">{Math.round(progress)}%</span>
+            </div>
+            <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-gradient-brand transition-all duration-1000 ease-out"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Installment Breakdown */}
+          <div>
+            <h4 className="text-sm font-bold text-brand-dark mb-4 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" /> Installment Breakdown
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {feeData.installments.map((inst) => (
+                <div key={inst.number} className={`card p-4 border-2 transition-all ${
+                  inst.status === 'Paid' ? 'bg-green-50 border-green-100' : 'bg-white border-gray-50'
+                }`}>
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="text-[10px] font-bold text-gray-400 uppercase">#0{inst.number}</span>
+                    {inst.status === 'Paid' ? (
+                      <span className="text-[10px] font-extrabold text-green-600 bg-green-100 px-2 py-0.5 rounded-full uppercase">PAID</span>
+                    ) : (
+                      <span className="text-[10px] font-extrabold text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full uppercase tracking-tighter">PENDING</span>
+                    )}
+                  </div>
+                  <p className="font-bold text-brand-dark text-lg">₹{inst.amount.toLocaleString('en-IN')}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Help Note */}
+          <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+            <div className="text-xs text-gray-500 leading-relaxed">
+              <p className="font-bold text-brand-dark mb-1">Important Note:</p>
+              All online payments must be verified by the office. If you've paid recently and it doesn't show up here, please provide your receipt to the front desk.
+            </div>
+          </div>
+        </div>
+      );
+    }
 
     const items = activeTab === 'materials' ? materials : papers;
     return (

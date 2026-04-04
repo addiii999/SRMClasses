@@ -6,8 +6,9 @@ import toast from 'react-hot-toast';
 import {
   LayoutDashboard, Users, Calendar, BookOpen, GraduationCap, Trophy,
   Image, Bell, LogOut, Menu, X, Upload, Trash2, CheckCircle,
-  AlertCircle, Clock, TrendingUp, FileText, Plus, Search, Filter
+  AlertCircle, Clock, TrendingUp, FileText, Plus, Search, Filter, CreditCard
 } from 'lucide-react';
+import AdminFeeManagement from './AdminFeeManagement';
 
 // ─── Sidebar nav items ────────────────────────────────────────────
 const navItems = [
@@ -19,6 +20,7 @@ const navItems = [
   { path: '/admin/results', label: 'Results', icon: Trophy },
   { path: '/admin/gallery', label: 'Gallery', icon: Image },
   { path: '/admin/announcements', label: 'Announcements', icon: Bell },
+  { path: '/admin/fees', label: 'Fee Management', icon: CreditCard },
 ];
 
 // ─── Admin Sidebar ─────────────────────────────────────────────────
@@ -696,6 +698,7 @@ export default function AdminDashboard() {
             <Route path="results" element={<ResultsAdmin />} />
             <Route path="gallery" element={<GalleryAdmin />} />
             <Route path="announcements" element={<AnnouncementsAdmin />} />
+            <Route path="fees" element={<AdminFeeManagement />} />
             <Route index element={<Overview />} />
           </Routes>
         </div>
