@@ -3,7 +3,7 @@ import api from '../../lib/api';
 import toast from 'react-hot-toast';
 import { 
   Search, Filter, Edit2, Plus, CreditCard, ChevronDown, 
-  History, Trash2, AlertTriangle, CheckCircle, Clock 
+  History, Trash2, AlertTriangle, CheckCircle, Clock, TrendingUp
 } from 'lucide-react';
 
 const FEE_TYPES = ['Foundation', 'Advance', 'Math-Science', 'ICSE-Advance', 'None'];

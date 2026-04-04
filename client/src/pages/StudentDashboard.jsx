@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, Bell, FileText, Download, LogOut, GraduationCap, Menu, X, ChevronDown, CreditCard } from 'lucide-react';
+import { BookOpen, Bell, FileText, Download, LogOut, GraduationCap, Menu, X, ChevronDown, CreditCard, Clock, AlertCircle } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
