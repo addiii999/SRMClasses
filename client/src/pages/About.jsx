@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Target, Eye, Award, Users, Sparkles, Star } from 'lucide-react';
+import { Target, Eye, Award, Users, Sparkles, Star, ChevronDown } from 'lucide-react';
 import { faculty } from '../data/faculty';
 
 const values = [
@@ -9,6 +10,11 @@ const values = [
 ];
 
 export default function About() {
+  const [isExpanded, setIsExpanded] = useState(false);
+  
+  // Show 4 teachers initially, or all if expanded
+  const visibleFaculty = isExpanded ? faculty : faculty.slice(0, 4);
+
   return (
     <div className="pt-36 overflow-x-hidden">
       {/* Hero */}
@@ -86,13 +92,13 @@ export default function About() {
             <h2 className="section-title">Meet Our Expert Faculty</h2>
             <p className="text-gray-400 text-sm mb-12 font-medium flex items-center justify-center gap-2">
                 <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-                The mentors behind our students success
+                Mentoring students towards academic excellence
             </p>
         </div>
 
         <div className="container-pad">
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {faculty.map(({ name, subject, exp, initial, rating }, idx) => (
+            {visibleFaculty.map(({ name, subject, exp, initial, rating }, idx) => (
               <div key={name} className="card p-8 text-center animate-fade-in group hover:border-primary/30 transition-all shadow-card hover:shadow-card-hover bg-white border border-gray-100"
                 style={{ animationDelay: `${idx * 0.05}s` }}>
                 <div className="relative w-20 h-20 mx-auto mb-5 translate-y-0 group-hover:-translate-y-1 transition-transform">
@@ -118,6 +124,21 @@ export default function About() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* Expansion Controller */}
+          <div className="mt-16 text-center">
+            <button 
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="group relative inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-brand-dark text-white font-bold transition-all hover:bg-[#1a1631] hover:shadow-[0_0_20px_rgba(151,135,243,0.4)] active:scale-95"
+            >
+              <span>{isExpanded ? 'Show Fewer Mentors' : 'Explore Full Faculty'}</span>
+              <ChevronDown className={`w-5 h-5 transition-transform duration-500 ${isExpanded ? 'rotate-180' : 'group-hover:translate-y-1'}`} />
+              
+              {!isExpanded && (
+                <div className="absolute inset-0 rounded-2xl bg-primary/20 animate-ping -z-10 group-hover:opacity-0" />
+              )}
+            </button>
           </div>
         </div>
       </section>
