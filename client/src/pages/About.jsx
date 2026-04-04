@@ -1,23 +1,6 @@
-import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle, Target, Eye, Award, Users, ChevronDown, Sparkles } from 'lucide-react';
-
-const team = [
-  { name: 'Mr. Ranjan Kumar Soni', subject: 'Mathematics & Physics', exp: '15 years + experience', initial: 'R' },
-  { name: 'Mr. Raghuwendra Kumar Soni', subject: 'Computer & AI', exp: '12 years + experience', initial: 'R' },
-  { name: 'Mr. Yuvraj Kumar', subject: 'Chemistry & Physics', exp: '6 years + experience', initial: 'Y' },
-  { name: 'Mr. Aayush Gupta', subject: 'Management', exp: '4+ years diverse expertise', initial: 'A' },
-  { name: 'Mr. Raj Kumar Ranjan', subject: 'Social Science & English', exp: '5 years + experience', initial: 'R' },
-  { name: 'Mrs. Kamla Sahu', subject: 'Accountant', exp: '5 years + experience', initial: 'K' },
-  { name: 'Miss Deepsikha Kumari', subject: 'English & Social Science', exp: '5 years + experience', initial: 'D' },
-  { name: 'Mrs. Vibha Sinha', subject: 'Hindi', exp: '5 years + experience', initial: 'V' },
-  { name: 'Mr. Aman Kumar', subject: 'English', exp: '5 years + experience', initial: 'A' },
-  { name: 'Mr. Ravi Kumar', subject: 'Mathematics', exp: '7 years + experience', initial: 'R' },
-  { name: 'Miss Priyanka Kumari', subject: 'Mathematics', exp: 'Fresher', initial: 'P' },
-  { name: 'Miss Deepanshu Kumari', subject: 'Social Science', exp: 'Fresher', initial: 'D' },
-  { name: 'Miss Priyanshu Kumari', subject: 'Biology', exp: 'Fresher', initial: 'P' },
-  { name: 'Mr. Adarsh Kumar', subject: 'English & History', exp: '4 years + experience', initial: 'A' },
-];
+import { Target, Eye, Award, Users, Sparkles, Star } from 'lucide-react';
+import { faculty } from '../data/faculty';
 
 const values = [
   { icon: Target, title: 'Our Mission', desc: 'To make quality education accessible to every student in Ranchi, nurturing analytical thinking and a love for learning.' },
@@ -26,17 +9,14 @@ const values = [
 ];
 
 export default function About() {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const visibleTeam = isExpanded ? team : team.slice(0, 3);
-
   return (
     <div className="pt-36 overflow-x-hidden">
       {/* Hero */}
       <section className="section-pad bg-gradient-hero relative overflow-hidden">
         <div className="absolute top-0 right-0 w-80 h-80 bg-primary/20 rounded-full blur-3xl" />
         <div className="container-pad relative z-10 text-center">
-          <h1 className="text-4xl md:text-6xl font-display font-bold text-white mb-5">About SRM Classes</h1>
-          <p className="text-white/70 text-lg max-w-2xl mx-auto">
+          <h1 className="text-4xl md:text-6xl font-display font-bold text-white mb-5 animate-in fade-in slide-in-from-bottom-4 duration-700">About SRM Classes</h1>
+          <p className="text-white/70 text-lg max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-1000">
             A decade of transforming young minds. Discover our story, our faculty, and our commitment to academic excellence.
           </p>
         </div>
@@ -87,7 +67,7 @@ export default function About() {
         <div className="container-pad">
           <div className="grid md:grid-cols-3 gap-6">
             {values.map(({ icon: Icon, title, desc }) => (
-              <div key={title} className="card p-8 text-center">
+              <div key={title} className="card p-8 text-center bg-white shadow-glass-sm border border-primary/5">
                 <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-brand flex items-center justify-center mb-5 shadow-glass">
                   <Icon className="w-8 h-8 text-white" />
                 </div>
@@ -101,49 +81,43 @@ export default function About() {
 
       {/* Faculty */}
       <section className="section-pad bg-white overflow-hidden">
-        <div className="container-pad">
-          <div className="text-center mb-12">
+        <div className="container-pad text-center mb-4">
             <div className="text-primary font-semibold text-sm tracking-wider uppercase mb-3">Our Team</div>
             <h2 className="section-title">Meet Our Expert Faculty</h2>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            {visibleTeam.map(({ name, subject, exp, initial }, idx) => (
-              <div key={name} className="card p-8 text-center animate-fade-in group hover:border-primary/30 transition-all shadow-card hover:shadow-card-hover"
-                style={{ animationDelay: `${idx * 0.1}s` }}>
+            <p className="text-gray-400 text-sm mb-12 font-medium flex items-center justify-center gap-2">
+                <Sparkles className="w-4 h-4 text-primary animate-pulse" />
+                The mentors behind our students success
+            </p>
+        </div>
+
+        <div className="container-pad">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {faculty.map(({ name, subject, exp, initial, rating }, idx) => (
+              <div key={name} className="card p-8 text-center animate-fade-in group hover:border-primary/30 transition-all shadow-card hover:shadow-card-hover bg-white border border-gray-100"
+                style={{ animationDelay: `${idx * 0.05}s` }}>
                 <div className="relative w-20 h-20 mx-auto mb-5 translate-y-0 group-hover:-translate-y-1 transition-transform">
                   <div className="w-20 h-20 rounded-full bg-gradient-brand flex items-center justify-center text-white font-display font-bold text-3xl shadow-glass">
                     {initial}
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-400 rounded-full border-2 border-white flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">✓</span>
+                  <div className="absolute -bottom-1 -right-1 w-7 h-7 bg-green-400 rounded-full border-2 border-white flex items-center justify-center shadow-sm">
+                    <span className="text-white text-[10px] font-black uppercase">Pro</span>
                   </div>
                 </div>
-                <h3 className="font-display font-bold text-xl text-brand-dark mb-1">{name}</h3>
-                <p className="text-primary text-sm font-semibold mb-1">{subject}</p>
-                <p className="text-gray-400 text-xs">{exp}</p>
+                <h3 className="font-display font-bold text-lg text-brand-dark mb-1 h-14 flex items-center justify-center">{name}</h3>
+                <p className="text-primary text-xs font-bold mb-1 uppercase tracking-tight">{subject}</p>
+                <p className="text-gray-400 text-[10px] uppercase font-bold tracking-widest mb-3">{exp}</p>
+                
+                {/* Rating Display */}
+                <div className="flex items-center justify-center gap-1.5 mb-2 py-1.5 bg-brand-bg rounded-lg mt-2">
+                   <div className="flex gap-0.5">
+                    {Array(5).fill(0).map((_, i) => (
+                        <Star key={i} className={`w-3 h-3 ${i < Math.floor(rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-200'}`} />
+                    ))}
+                   </div>
+                   <span className="text-[11px] font-bold text-brand-dark px-1.5">{rating}</span>
+                </div>
               </div>
             ))}
-          </div>
-
-          {/* Expansion Controller */}
-          <div className="mt-16 text-center">
-            <p className="text-gray-400 text-sm mb-4 font-medium flex items-center justify-center gap-2">
-              <Sparkles className="w-4 h-4 text-primary animate-pulse" />
-              Meet the mentors behind your success
-            </p>
-            <button 
-              onClick={() => setIsExpanded(!isExpanded)}
-              className="group relative inline-flex items-center gap-3 px-10 py-4 rounded-2xl bg-brand-dark text-white font-bold transition-all hover:bg-[#1a1631] hover:shadow-[0_0_20px_rgba(151,135,243,0.4)]"
-            >
-              <span>{isExpanded ? 'Show Less' : 'Explore Full Faculty'}</span>
-              <ChevronDown className={`w-5 h-5 transition-transform duration-500 ${isExpanded ? 'rotate-180' : 'group-hover:translate-y-1'}`} />
-              
-              {/* Pulsing glow background */}
-              {!isExpanded && (
-                <div className="absolute inset-0 rounded-2xl bg-primary/20 animate-ping -z-10 group-hover:opacity-0" />
-              )}
-            </button>
           </div>
         </div>
       </section>
@@ -153,7 +127,7 @@ export default function About() {
         <div className="container-pad">
           <h2 className="text-3xl font-display font-bold text-white mb-4">Ready to Join Our Family?</h2>
           <p className="text-white/80 mb-8">Start your academic journey with SRM Classes today.</p>
-          <Link to="/register" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary font-bold rounded-xl hover:bg-white/90 transition-all shadow-glass-lg">
+          <Link to="/register" className="inline-flex items-center gap-2 px-8 py-4 bg-white text-primary font-bold rounded-xl hover:bg-white/90 transition-all shadow-glass-lg active:scale-95">
             <Users className="w-5 h-5" /> Register Now
           </Link>
         </div>
