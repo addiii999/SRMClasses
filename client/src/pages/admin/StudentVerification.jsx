@@ -7,7 +7,8 @@ import {
 } from 'lucide-react';
 
 export default function StudentVerification() {
-  const [pending, setPending] = useState([]);
+  const [activeTab, setActiveTab] = useState('pending');
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showApproveModal, setShowApproveModal] = useState(false);
@@ -19,18 +20,19 @@ export default function StudentVerification() {
   });
 
   useEffect(() => {
-    fetchPending();
-  }, []);
+    fetchUsers();
+  }, [activeTab]);
 
-  const fetchPending = async () => {
+  const fetchUsers = async () => {
+    setLoading(true);
     try {
       const token = localStorage.getItem('srmAdminToken');
-      const { data } = await api.get('/admin/students/pending', {
+      const { data } = await api.get(`/admin/students/pending?status=${activeTab}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setPending(data.data);
+      setUsers(data.data || []);
     } catch (error) {
-      toast.error('Failed to fetch pending registrations');
+      toast.error('Failed to fetch registrations');
     } finally {
       setLoading(false);
     }
@@ -54,33 +56,33 @@ export default function StudentVerification() {
       });
       toast.success(`Approved! Student ID: ${data.data.studentId}`);
       setShowApproveModal(false);
-      fetchPending();
+      fetchUsers();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Approval failed');
     }
   };
 
   const handleReject = async (id) => {
-    if (!window.confirm('Are you sure you want to REJECT and PERMANENTLY DELETE this registration?')) return;
+    if (!window.confirm('Mark this registration as REJECTED? They will remain in the Rejected list.')) return;
     try {
       const token = localStorage.getItem('srmAdminToken');
       await api.delete(`/admin/students/reject/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      toast.success('Registration removed');
-      fetchPending();
+      toast.success('Registration rejected');
+      fetchUsers();
     } catch (error) {
       toast.error('Rejection failed');
     }
   };
 
-  const filtered = pending.filter(u => 
+  const filtered = users.filter(u => 
     u.name.toLowerCase().includes(search.toLowerCase()) ||
-    u.mobile.includes(search) ||
-    u.email.toLowerCase().includes(search.toLowerCase())
+    u.mobile?.includes(search) ||
+    u.email?.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) return (
+  if (loading && users.length === 0) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
     </div>
@@ -91,39 +93,58 @@ export default function StudentVerification() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-display font-bold text-brand-dark">Student Verification</h2>
-          <p className="text-gray-500 text-sm">Review and approve new student registrations</p>
+          <p className="text-gray-500 text-sm">Review registrations and approve coaching students</p>
         </div>
-        <div className="flex items-center gap-2 px-4 py-2 bg-primary/10 text-primary rounded-xl text-xs font-bold uppercase tracking-wider">
-           <ShieldCheck className="w-4 h-4" /> {pending.length} Pending
+        
+        <div className="flex bg-white p-1 rounded-2xl border border-gray-100 shadow-sm self-start md:self-center">
+           <button 
+             onClick={() => setActiveTab('pending')}
+             className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'pending' ? 'bg-brand-dark text-white shadow-glass-sm' : 'text-gray-400 hover:text-brand-dark'}`}
+           >
+             PENDING
+           </button>
+           <button 
+             onClick={() => setActiveTab('rejected')}
+             className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'rejected' ? 'bg-red-500 text-white shadow-glass-sm' : 'text-gray-400 hover:text-red-500'}`}
+           >
+             REJECTED
+           </button>
         </div>
       </div>
 
       <div className="relative group">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors group-focus-within:text-primary" />
         <input 
-          type="text" placeholder="Search by name, email, or mobile..."
+          type="text" placeholder={`Search in ${activeTab} registrations...`}
           className="input-field pl-12 py-4 shadow-sm"
           value={search} onChange={(e) => setSearch(e.target.value)}
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {filtered.length === 0 ? (
+        {loading ? (
+             Array(3).fill(0).map((_, i) => (
+                <div key={i} className="card p-6 h-32 animate-pulse bg-gray-50/50" />
+             ))
+        ) : filtered.length === 0 ? (
           <div className="text-center py-20 bg-white rounded-3xl border border-gray-100 shadow-sm">
              <div className="w-16 h-16 bg-brand-bg rounded-full flex items-center justify-center mx-auto mb-4">
-                <CheckCircle className="w-8 h-8 text-green-400" />
+                {activeTab === 'pending' ? <CheckCircle className="w-8 h-8 text-green-400" /> : <XCircle className="w-8 h-8 text-gray-300" />}
              </div>
-             <p className="text-gray-500 font-medium italic">All registrations have been processed!</p>
+             <p className="text-gray-500 font-medium italic">No {activeTab} registrations found.</p>
           </div>
         ) : (
           filtered.map((user) => (
             <div key={user._id} className="card p-6 flex flex-col md:flex-row items-center gap-6 group hover:border-primary/30 transition-all">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-brand flex items-center justify-center text-white font-display font-bold text-2xl shadow-glass">
+              <div className={`w-14 h-14 rounded-2xl flex items-center justify-center text-white font-display font-bold text-2xl shadow-glass ${activeTab === 'rejected' ? 'bg-gray-400' : 'bg-gradient-brand'}`}>
                 {user.name[0]}
               </div>
               
               <div className="flex-1 text-center md:text-left">
-                <h3 className="font-bold text-brand-dark text-lg">{user.name}</h3>
+                <div className="flex items-center justify-center md:justify-start gap-2">
+                  <h3 className="font-bold text-brand-dark text-lg">{user.name}</h3>
+                  {activeTab === 'rejected' && <span className="text-[10px] bg-red-100 text-red-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Rejected</span>}
+                </div>
                 <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-1">
                   <span className="text-xs text-gray-400 flex items-center gap-1.5 font-medium">
                     <Hash className="w-3 h-3" /> {user.mobile}
@@ -140,16 +161,18 @@ export default function StudentVerification() {
               <div className="flex gap-2 shrink-0">
                 <button 
                   onClick={() => handleOpenApprove(user)}
-                  className="px-6 py-2.5 bg-brand-dark text-white rounded-xl text-sm font-bold flex items-center gap-2 hover:bg-black transition-all shadow-sm active:scale-95"
+                  className={`px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm active:scale-95 ${activeTab === 'rejected' ? 'bg-primary text-white hover:bg-primary/90' : 'bg-brand-dark text-white hover:bg-black'}`}
                 >
-                  Approve <ArrowRight className="w-4 h-4" />
+                  {activeTab === 'rejected' ? 'Approve Now' : 'Approve'} <ArrowRight className="w-4 h-4" />
                 </button>
-                <button 
-                   onClick={() => handleReject(user._id)}
-                   className="p-2.5 text-red-400 hover:bg-red-50 rounded-xl transition-all"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
+                {activeTab === 'pending' && (
+                  <button 
+                    onClick={() => handleReject(user._id)}
+                    className="p-2.5 text-red-400 hover:bg-red-50 rounded-xl transition-all"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                )}
               </div>
             </div>
           ))
@@ -203,7 +226,7 @@ export default function StudentVerification() {
               <div className="p-4 bg-brand-bg rounded-2xl space-y-2">
                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">ID Preview</p>
                  <p className="text-xl font-display font-black text-brand-dark tracking-tighter">
-                   SRM–{approvalForm.sessionYear}–{approvalForm.studentClass.padStart(2, '0')}–###
+                   SRM–{approvalForm.sessionYear}–{approvalForm.studentClass?.padStart(2, '0') || '00'}–###
                  </p>
                  <p className="text-[10px] text-primary font-medium italic">* Sequence number auto-generated</p>
               </div>

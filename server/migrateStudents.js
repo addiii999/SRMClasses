@@ -10,7 +10,7 @@ async function migrate() {
 
     const result = await User.updateMany(
       {}, 
-      { $set: { isStudent: false } }
+      { $set: { isStudent: false, verificationStatus: 'pending' } }
     );
 
     console.log(`Successfully updated ${result.modifiedCount} users to isStudent: false`);

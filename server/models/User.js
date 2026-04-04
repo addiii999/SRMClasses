@@ -49,6 +49,11 @@ const userSchema = new mongoose.Schema({
     unique: true,
     sparse: true,
   },
+  verificationStatus: {
+    type: String,
+    enum: ['pending', 'approved', 'rejected'],
+    default: 'pending'
+  },
   // Fee Management Fields
   feeType: {
     type: String,

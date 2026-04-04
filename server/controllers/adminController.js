@@ -7,7 +7,8 @@ const User = require('../models/User');
  */
 exports.getPendingStudents = async (req, res) => {
   try {
-    const students = await User.find({ role: 'student', isStudent: false }).sort({ createdAt: -1 });
+    const { status = 'pending' } = req.query;
+    const students = await User.find({ role: 'student', verificationStatus: status }).sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: students.length, data: students });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -32,7 +33,7 @@ exports.approveStudent = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    if (student.isStudent) {
+    if (student.verificationStatus === 'approved') {
       return res.status(400).json({ success: false, message: 'User is already an approved student' });
     }
 
@@ -50,7 +51,8 @@ exports.approveStudent = async (req, res) => {
 
     student.isStudent = true;
     student.studentId = newStudentId;
-    student.studentClass = studentClass; // Update class if admin changed it during approval
+    student.studentClass = studentClass;
+    student.verificationStatus = 'approved';
     await student.save();
 
     res.status(200).json({ 
@@ -79,14 +81,17 @@ exports.rejectStudent = async (req, res) => {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Only allow rejecting unverified students
-    if (student.isStudent) {
+    if (student.verificationStatus === 'approved') {
       return res.status(400).json({ success: false, message: 'Cannot reject an already approved student' });
     }
 
-    await User.findByIdAndDelete(req.params.id);
-    res.status(200).json({ success: true, message: 'Registration rejected and removed successfully' });
+    student.verificationStatus = 'rejected';
+    student.isStudent = false; 
+    await student.save();
+
+    res.status(200).json({ success: true, message: 'Registration rejected. User will remain as a normal user.' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
