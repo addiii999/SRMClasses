@@ -13,7 +13,17 @@ export default function Faculty() {
   const fetchFaculty = async () => {
     try {
       const { data } = await api.get('/faculty');
-      setFaculty(data.data);
+      let sortedFaculty = data.data;
+
+      // Consistent sorting in frontend
+      sortedFaculty.sort((a, b) => {
+        if (a.priorityOrder && b.priorityOrder) return a.priorityOrder - b.priorityOrder;
+        if (a.priorityOrder) return -1;
+        if (b.priorityOrder) return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      setFaculty(sortedFaculty);
     } catch (error) {
       console.error('Failed to fetch faculty');
     } finally {
@@ -57,8 +67,12 @@ export default function Faculty() {
                     <div className="w-20 h-20 rounded-full bg-gradient-brand flex items-center justify-center text-white font-display font-bold text-3xl shadow-glass border-4 border-white">
                       {teacher.name[0]}
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-green-500 rounded-full border-2 border-white flex items-center justify-center shadow-md">
-                       <Sparkles className="w-4 h-4 text-white" />
+                    <div className={`absolute -bottom-1 -right-1 px-2.5 py-1 rounded-full border-2 border-white flex items-center justify-center shadow-md ${teacher.priorityOrder ? 'bg-brand-dark' : 'bg-green-500'}`}>
+                       {teacher.priorityOrder ? (
+                           <span className="text-white text-[8px] font-black uppercase tracking-tight">Core Team</span>
+                       ) : (
+                           <Sparkles className="w-3.5 h-3.5 text-white" />
+                       )}
                     </div>
                   </div>
 
