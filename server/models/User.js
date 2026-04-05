@@ -90,6 +90,7 @@ const userSchema = new mongoose.Schema({
     updatedBy: String,
     updatedAt: { type: Date, default: Date.now }
   }],
+  branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', required: true },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

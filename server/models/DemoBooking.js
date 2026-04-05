@@ -15,6 +15,7 @@ const demoBookingSchema = new mongoose.Schema({
     default: 'Pending',
   },
   notes: { type: String, default: '' },
+  branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', required: true },
 }, { timestamps: true });
 
 demoBookingSchema.plugin(softDeletePlugin);

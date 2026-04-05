@@ -19,6 +19,7 @@ const studyMaterialSchema = new mongoose.Schema({
   cloudinaryId: { type: String },
   fileName: { type: String },
   fileSize: { type: Number },
+  branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch' }, // Optional: null means global
   uploadedAt: { type: Date, default: Date.now },
 }, { timestamps: true });
 

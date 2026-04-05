@@ -12,6 +12,7 @@ import AdminFeeManagement from './AdminFeeManagement';
 import AdminFaculty from './AdminFaculty';
 import StudentVerification from './StudentVerification';
 import AdminRecycleBin from './AdminRecycleBin';
+import AddStudent from './AddStudent';
 
 // ─── Sidebar nav items ────────────────────────────────────────────
 const navItems = [
@@ -27,6 +28,7 @@ const navItems = [
   { path: '/admin/announcements', label: 'Announcements', icon: Bell },
   { path: '/admin/fees', label: 'Fee Management', icon: CreditCard },
   { path: '/admin/recycle-bin', label: 'Recycle Bin', icon: Trash2 },
+  { path: '/admin/add-student', label: 'Add Student', icon: Plus },
 ];
 
 // ─── Admin Sidebar ─────────────────────────────────────────────────
@@ -70,22 +72,27 @@ function AdminSidebar({ open, onClose }) {
 }
 
 // ─── Overview Page ─────────────────────────────────────────────────
-function Overview() {
+function Overview({ selectedBranch }) {
   const [stats, setStats] = useState({ enquiries: 0, demos: 0, materials: 0, students: 0 });
   const [recentEnquiries, setRecentEnquiries] = useState([]);
 
   useEffect(() => {
     const token = localStorage.getItem('srmAdminToken');
     const headers = { Authorization: `Bearer ${token}` };
+    const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
     Promise.all([
-      api.get('/enquiries', { headers }),
-      api.get('/demo', { headers }),
-      api.get('/materials', { headers }),
+      api.get(`/enquiries?limit=5${branchParam}`, { headers }),
+      api.get(`/demo?limit=5${branchParam}`, { headers }),
+      api.get(`/materials?all=true${branchParam}`, { headers }),
     ]).then(([enqRes, demoRes, matRes]) => {
-      setStats({ enquiries: enqRes.data.count, demos: demoRes.data.count, materials: matRes.data.data?.length || 0 });
+      setStats({ 
+        enquiries: enqRes.data.count, 
+        demos: demoRes.data.count, 
+        materials: matRes.data.data?.length || 0 
+      });
       setRecentEnquiries(enqRes.data.data?.slice(0, 5) || []);
     }).catch(() => { });
-  }, []);
+  }, [selectedBranch]);
 
   const statCards = [
     { label: 'Total Enquiries', value: stats.enquiries, icon: Users, color: 'bg-blue-50 text-blue-600' },
@@ -139,7 +146,7 @@ function Overview() {
 }
 
 // ─── Enquiries / CRM Page ─────────────────────────────────────────
-function Enquiries() {
+function Enquiries({ selectedBranch }) {
   const [enquiries, setEnquiries] = useState([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
@@ -150,11 +157,12 @@ function Enquiries() {
   const fetchEnquiries = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/enquiries?status=${filterStatus}&search=${search}`, { headers: getHeaders() });
+      const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
+      const res = await api.get(`/enquiries?status=${filterStatus}&search=${search}${branchParam}`, { headers: getHeaders() });
       setEnquiries(res.data.data || []);
     } catch { toast.error('Failed to load enquiries'); }
     finally { setLoading(false); }
-  }, [filterStatus, search]);
+  }, [filterStatus, search, selectedBranch]);
 
   useEffect(() => { fetchEnquiries(); }, [fetchEnquiries]);
 
@@ -233,20 +241,23 @@ function Enquiries() {
 }
 
 // ─── Demo Bookings Page ───────────────────────────────────────────
-function DemoBookings() {
+function DemoBookings({ selectedBranch }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}` });
 
-  const fetchBookings = async () => {
+  const fetchBookings = useCallback(async () => {
     setLoading(true);
-    try { const res = await api.get('/demo', { headers: getHeaders() }); setBookings(res.data.data || []); }
-    catch { toast.error('Failed to load'); }
+    try {
+      const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
+      const res = await api.get(`/demo?${branchParam}`, { headers: getHeaders() });
+      setBookings(res.data.data || []);
+    } catch { toast.error('Failed to load'); }
     finally { setLoading(false); }
-  };
+  }, [selectedBranch]);
 
-  useEffect(() => { fetchBookings(); }, []);
+  useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
   const updateStatus = async (id, status) => {
     try { await api.patch(`/demo/${id}`, { status }, { headers: getHeaders() }); toast.success('Updated!'); fetchBookings(); }
@@ -304,18 +315,25 @@ function DemoBookings() {
 }
 
 // ─── Study Materials Page ─────────────────────────────────────────
-function Materials() {
+function Materials({ selectedBranch }) {
   const [materials, setMaterials] = useState([]);
-  const [form, setForm] = useState({ title: '', studentClass: '', subject: '', type: 'notes', description: '' });
+  const [form, setForm] = useState({ title: '', studentClass: '', subject: '', type: 'notes', description: '', branch: '' });
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const fetchMaterials = async () => {
-    try { const res = await api.get('/materials?studentClass=all'); setMaterials(res.data.data || []); }
-    catch { }
-  };
+  const fetchMaterials = useCallback(async () => {
+    try {
+      const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
+      const res = await api.get(`/materials?studentClass=all${branchParam}`);
+      setMaterials(res.data.data || []);
+    } catch { }
+  }, [selectedBranch]);
 
-  useEffect(() => { fetchMaterials(); }, []);
+  useEffect(() => { fetchMaterials(); }, [fetchMaterials]);
+
+  useEffect(() => {
+    if (selectedBranch) setForm(prev => ({ ...prev, branch: selectedBranch }));
+  }, [selectedBranch]);
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -361,6 +379,15 @@ function Materials() {
               <option value="test_paper">Test Paper</option>
               <option value="assignment">Assignment</option>
               <option value="other">Other</option>
+            </select>
+          </div>
+          <div><label className="label">Branch (Optional)</label>
+            <select className="input-field" value={form.branch} onChange={e => setForm({ ...form, branch: e.target.value })}>
+              <option value="">Global (All Branches)</option>
+              {/* Note: This component doesn't have the full branches list, but it's passed via prop in the parent. 
+                  However, we can just use the selectedBranch for auto-tagging or leave as is if we want simple selection. */}
+              {/* For now we'll just allow the selectedBranch to be the default. */}
+              {selectedBranch && <option value={selectedBranch}>Selected Branch Only</option>}
             </select>
           </div>
         </div>
@@ -683,6 +710,15 @@ function AnnouncementsAdmin() {
 // ─── Main AdminDashboard Layout ────────────────────────────────────
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Branch data for filter UI
+  const [branches, setBranches] = useState([]);
+  const [selectedBranch, setSelectedBranch] = useState('');
+  // Load active branches on mount
+  useEffect(() => {
+    api.get('/branches')
+      .then(res => setBranches(res.data.data))
+      .catch(() => toast.error('Failed to load branches'));
+  }, []);
 
   return (
     <div className="min-h-screen bg-brand-bg flex">
@@ -693,22 +729,30 @@ export default function AdminDashboard() {
             <Menu className="w-5 h-5 text-brand-dark" />
           </button>
           <h1 className="font-display font-bold text-brand-dark">SRM Classes – Admin Panel</h1>
+          {/* Branch filter dropdown */}
+          <select className="input-field ml-auto w-48" value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)}>
+            <option value="">All Branches</option>
+            {branches.map(b => (
+              <option key={b._id} value={b._id}>{b.name}</option>
+            ))}
+          </select>
         </header>
         <div className="flex-1 p-6">
           <Routes>
-            <Route path="dashboard" element={<Overview />} />
-            <Route path="enquiries" element={<Enquiries />} />
-            <Route path="demo" element={<DemoBookings />} />
-            <Route path="materials" element={<Materials />} />
-            <Route path="courses" element={<CoursesAdmin />} />
-            <Route path="results" element={<ResultsAdmin />} />
-            <Route path="gallery" element={<GalleryAdmin />} />
-            <Route path="announcements" element={<AnnouncementsAdmin />} />
-            <Route path="faculty" element={<AdminFaculty />} />
-            <Route path="verify-students" element={<StudentVerification />} />
-            <Route path="fees" element={<AdminFeeManagement />} />
-            <Route path="recycle-bin" element={<AdminRecycleBin />} />
-            <Route index element={<Overview />} />
+            <Route path="dashboard" element={<Overview selectedBranch={selectedBranch} />} />
+            <Route path="enquiries" element={<Enquiries selectedBranch={selectedBranch} />} />
+            <Route path="demo" element={<DemoBookings selectedBranch={selectedBranch} />} />
+            <Route path="materials" element={<Materials selectedBranch={selectedBranch} />} />
+            <Route path="courses" element={<CoursesAdmin selectedBranch={selectedBranch} />} />
+            <Route path="results" element={<ResultsAdmin selectedBranch={selectedBranch} />} />
+            <Route path="gallery" element={<GalleryAdmin selectedBranch={selectedBranch} />} />
+            <Route path="announcements" element={<AnnouncementsAdmin selectedBranch={selectedBranch} />} />
+            <Route path="faculty" element={<AdminFaculty selectedBranch={selectedBranch} />} />
+            <Route path="verify-students" element={<StudentVerification selectedBranch={selectedBranch} />} />
+            <Route path="fees" element={<AdminFeeManagement selectedBranch={selectedBranch} />} />
+            <Route path="recycle-bin" element={<AdminRecycleBin selectedBranch={selectedBranch} />} />
+            <Route path="add-student" element={<AddStudent selectedBranch={selectedBranch} />} />
+            <Route index element={<Overview selectedBranch={selectedBranch} />} />
           </Routes>
         </div>
       </main>

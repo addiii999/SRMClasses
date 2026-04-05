@@ -61,6 +61,11 @@ export default function Home() {
   const [submitting, setSubmitting] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
   const [currentAlert, setCurrentAlert] = useState(null);
+  const [branches, setBranches] = useState([]);
+
+  useEffect(() => {
+    api.get('/branches').then(res => setBranches(res.data.data)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     const showRandomAlert = () => {
@@ -388,6 +393,60 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── OUR BRANCHES ── */}
+      <section className="section-pad bg-brand-bg/50" id="branches">
+        <div className="container-pad">
+          <div className="text-center mb-12">
+            <div className="text-primary font-semibold text-sm tracking-wider uppercase mb-3 text-center">📍 Our Presence</div>
+            <h2 className="section-title text-center">Our Coaching Branches</h2>
+            <p className="section-subtitle text-center">Visit your nearest SRM Classes centre for a free counselling session.</p>
+          </div>
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {branches.length > 0 ? branches.map((branch) => (
+              <div key={branch._id} className="card p-8 group hover:-translate-y-2 transition-all duration-300">
+                <div className="w-14 h-14 rounded-2xl bg-gradient-brand flex items-center justify-center mb-6 shadow-glass group-hover:rotate-6 transition-transform">
+                  <MapPin className="w-7 h-7 text-white" />
+                </div>
+                <h3 className="text-2xl font-display font-bold text-brand-dark mb-3">
+                  {branch.name}
+                </h3>
+                <div className="space-y-4 mb-8">
+                  <div className="flex items-start gap-3">
+                    <MapPin className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+                    <p className="text-gray-500 text-sm leading-relaxed">{branch.address}</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-5 h-5 text-primary shrink-0" />
+                    <a href={`tel:${branch.phone}`} className="text-brand-dark font-semibold hover:text-primary transition-colors">
+                      {branch.phone}
+                    </a>
+                  </div>
+                </div>
+                <div className="flex gap-4">
+                  <a 
+                    href={branch.googleMapsLink} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="btn-primary flex-1 py-3 text-sm flex items-center justify-center gap-2"
+                  >
+                    <MapPin className="w-4 h-4" /> View on Map
+                  </a>
+                  <Link 
+                    to="/contact#demo" 
+                    className="flex-1 py-3 text-sm border-2 border-primary/20 text-primary font-bold rounded-xl hover:bg-primary/5 flex items-center justify-center gap-2 transition-all"
+                  >
+                    Book Demo
+                  </Link>
+                </div>
+              </div>
+            )) : (
+              // Fallback if API fails or loading
+              <div className="col-span-2 text-center text-gray-400 py-12">Loading branches...</div>
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* ── DEMO CTA ── */}
       <section className="py-14 bg-gradient-brand">
         <div className="container-pad text-center">
@@ -404,37 +463,38 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ── GOOGLE MAP ── */}
+      {/* ── GOOGLE MAPS ── */}
       <section className="section-pad bg-white">
         <div className="container-pad">
           <div className="text-center mb-10">
-            <h2 className="section-title">Find Us in Ranchi</h2>
-            <p className="section-subtitle">Visit us at our coaching centre or reach out online</p>
+            <h2 className="section-title">Find Us on Google Maps</h2>
+            <p className="section-subtitle">Navigate to our centres directly using the maps below</p>
           </div>
-          <div className="relative group rounded-2xl overflow-hidden shadow-card-hover border border-primary/10 aspect-video">
-            <iframe
-              title="SRM Classes Location - Ranchi"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3661.8452668403957!2d85.26510447478121!3d23.393814302373514!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4de05a37f8591%3A0xd9b09379e246fa39!2sSrm%20Classes!5e0!3m2!1sen!2sin!4v1774293801590!5m2!1sen!2sin"
-              width="100%"
-              height="100%"
-              style={{ border: 0 }}
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
-
-            {/* Floating Map Button for Mobile/Multi-device Compatibility */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-              <a
-                href="https://maps.app.goo.gl/TFpjRggpozuA5TDPA"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="pointer-events-auto flex items-center gap-2 px-6 py-3 bg-white text-brand-dark font-bold rounded-full shadow-glass-lg hover:scale-105 transition-all"
-              >
-                <MapPin className="w-5 h-5 text-primary" />
-                <span>Open in Google Maps</span>
-              </a>
-            </div>
+          <div className="grid md:grid-cols-2 gap-8">
+            {branches.map((branch, idx) => (
+              <div key={branch._id} className="relative group rounded-3xl overflow-hidden shadow-card-hover border border-primary/10 aspect-[16/10]">
+                <iframe
+                  title={`SRM Classes - ${branch.name}`}
+                  src={idx === 0 ? "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3661.8452668403957!2d85.26510447478121!3d23.393814302373514!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4de05a37f8591%3A0xd9b09379e246fa39!2sSrm%20Classes!5e0!3m2!1sen!2sin!4v1774293801590!5m2!1sen!2sin" : "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14652.793616654!2d85.086395!3d23.336496!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDIwJzExLjQiTiA4NcKwMDUnMTEuMCJF!5e0!3m2!1sen!2sin!4v1620000000000!5m2!1sen!2sin"}
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="grayscale hover:grayscale-0 transition-all duration-700"
+                />
+                <div className="absolute bottom-4 left-4 right-4 p-4 bg-white/90 backdrop-blur-md rounded-2xl shadow-xl flex justify-between items-center transform translate-y-2 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-300">
+                  <div>
+                    <p className="text-xs font-bold text-primary uppercase tracking-tighter">Branch Location</p>
+                    <p className="font-display font-medium text-brand-dark">{branch.name}</p>
+                  </div>
+                  <a href={branch.googleMapsLink} target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white shadow-lg shadow-primary/30">
+                    <ArrowRight className="w-5 h-5 -rotate-45" />
+                  </a>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>

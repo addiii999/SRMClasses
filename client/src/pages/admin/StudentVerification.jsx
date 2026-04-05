@@ -6,9 +6,10 @@ import {
   GraduationCap, Hash, ShieldCheck, Trash2, ArrowRight
 } from 'lucide-react';
 
-export default function StudentVerification() {
+export default function StudentVerification({ selectedBranch }) {
   const [activeTab, setActiveTab] = useState('pending');
   const [users, setUsers] = useState([]);
+  const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [showApproveModal, setShowApproveModal] = useState(false);
@@ -16,18 +17,25 @@ export default function StudentVerification() {
   
   const [approvalForm, setApprovalForm] = useState({
     sessionYear: new Date().getFullYear().toString(),
-    studentClass: ''
+    studentClass: '',
+    branchId: ''
   });
 
   useEffect(() => {
+    // Load branches for selection in modal
+    api.get('/branches').then(res => setBranches(res.data.data)).catch(() => {});
+  }, []);
+
+  useEffect(() => {
     fetchUsers();
-  }, [activeTab]);
+  }, [activeTab, selectedBranch]);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('srmAdminToken');
-      const { data } = await api.get(`/admin/students/pending?status=${activeTab}`, {
+      const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
+      const { data } = await api.get(`/admin/students/pending?status=${activeTab}${branchParam}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUsers(data.data || []);
@@ -42,7 +50,8 @@ export default function StudentVerification() {
     setSelectedUser(user);
     setApprovalForm({
       sessionYear: new Date().getFullYear().toString(),
-      studentClass: user.studentClass || ''
+      studentClass: user.studentClass || '',
+      branchId: user.branch || selectedBranch || ''
     });
     setShowApproveModal(true);
   };
@@ -219,6 +228,21 @@ export default function StudentVerification() {
                 >
                    {['6','7','8','9','10','11','12'].map(c => (
                      <option key={c} value={c}>Class {c}</option>
+                   ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="label">Assign Branch</label>
+                <select 
+                  className="input-field mt-2" 
+                  value={approvalForm.branchId} 
+                  onChange={e => setApprovalForm({...approvalForm, branchId: e.target.value})}
+                  required
+                >
+                   <option value="">Select Branch</option>
+                   {branches.map(b => (
+                     <option key={b._id} value={b._id}>{b.name}</option>
                    ))}
                 </select>
               </div>

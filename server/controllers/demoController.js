@@ -18,7 +18,15 @@ const bookDemo = async (req, res) => {
       }
     }
 
-    const booking = await DemoBooking.create({ name, email, mobile, studentClass, preferredDate, preferredTime, subject });
+    // Assign branch: try from body, then default (RAVI01)
+    let branchId = req.body.branch;
+    if (!branchId) {
+      const Branch = require('../models/Branch');
+      const defaultBranch = await Branch.findOne({ branchCode: 'RAVI01', isActive: true });
+      branchId = defaultBranch ? defaultBranch._id : null;
+    }
+
+    const booking = await DemoBooking.create({ name, email, mobile, studentClass, preferredDate, preferredTime, subject, branch: branchId });
     res.status(201).json({ success: true, message: 'Demo class booked successfully', data: booking });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -27,11 +35,14 @@ const bookDemo = async (req, res) => {
 
 const getDemoBookings = async (req, res) => {
   try {
-    const { status } = req.query;
+    const { status, branch } = req.query;
     if (status && typeof status !== 'string') {
       return res.status(400).json({ success: false, message: 'Invalid status parameter' });
     }
     let query = {};
+    if (branch && mongoose.Types.ObjectId.isValid(branch)) {
+      query.branch = branch;
+    }
     if (status && typeof status === 'string' && status !== 'all') {
       query.status = status;
     }

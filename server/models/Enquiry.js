@@ -13,6 +13,7 @@ const enquirySchema = new mongoose.Schema({
     default: 'New',
   },
   notes: { type: String, default: '' },
+  branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', required: true },
 }, { timestamps: true });
 
 enquirySchema.plugin(softDeletePlugin);

@@ -19,7 +19,12 @@ const register = async (req, res) => {
     if (existingUser) {
       return res.status(400).json({ success: false, message: 'Email already registered' });
     }
-    const user = await User.create({ name, email, mobile, studentClass, password });
+    // Find the default branch by its unique branchCode (RAVI01)
+    const defaultBranch = await require('../models/Branch').findOne({ branchCode: 'RAVI01', isActive: true });
+    if (!defaultBranch) {
+      return res.status(500).json({ success: false, message: 'Default branch not configured' });
+    }
+    const user = await User.create({ name, email, mobile, studentClass, password, branch: defaultBranch._id });
     const token = generateToken(user._id);
     res.status(201).json({
       success: true,

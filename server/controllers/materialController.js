@@ -29,6 +29,7 @@ const uploadMaterial = async (req, res) => {
       cloudinaryId: result.publicId,
       fileName: req.file.originalname,
       fileSize: req.file.size,
+      branch: req.body.branch || null, // Optional: can be null for global
     });
     res.status(201).json({ success: true, data: material });
   } catch (error) {
@@ -38,13 +39,20 @@ const uploadMaterial = async (req, res) => {
 
 const getMaterials = async (req, res) => {
   try {
-    const { studentClass, type } = req.query;
+    const { studentClass, type, branch } = req.query;
     if ((studentClass && typeof studentClass !== 'string') || (type && typeof type !== 'string')) {
       return res.status(400).json({ success: false, message: 'Invalid query parameters' });
     }
     let query = {};
-    if (studentClass && typeof studentClass === 'string') {
-      query.$or = [{ studentClass }, { studentClass: 'all' }];
+    if (branch && mongoose.Types.ObjectId.isValid(branch)) {
+      query.$or = [{ branch: branch }, { branch: null }]; // Show branch-specific + global
+    } else if (branch === 'all') {
+      // Don't filter by branch, show all
+    } else {
+      // Default: show everything or filter if needed
+    }
+    if (studentClass && typeof studentClass === 'string' && studentClass !== 'all') {
+      query.$and = (query.$and || []).concat([{ $or: [{ studentClass }, { studentClass: 'all' }] }]);
     }
     if (type && typeof type === 'string') query.type = type;
     const materials = await StudyMaterial.find(query).sort({ uploadedAt: -1 });

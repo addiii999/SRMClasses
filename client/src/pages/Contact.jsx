@@ -17,8 +17,14 @@ export default function Contact() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [demoSubmitting, setDemoSubmitting] = useState(false);
+  const [branches, setBranches] = useState([]);
+  const [activeMapIndex, setActiveMapIndex] = useState(0);
   
   const { hash } = useLocation();
+
+  useEffect(() => {
+    api.get('/branches').then(res => setBranches(res.data.data)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (hash) {
@@ -66,24 +72,53 @@ export default function Contact() {
       <section className="section-pad bg-brand-bg">
         <div className="container-pad">
           <div className="grid lg:grid-cols-3 gap-8 mb-16">
-            {/* Info Cards */}
-            {[
-              { icon: Phone, title: 'Call Us', info: '+91 7488886903, 9508639773', sub: 'Mon–Sat, 7 AM – 8 PM', href: 'tel:+917488886903', cta: 'Call Now' },
-              { icon: Mail, title: 'Email Us', info: 'srmclasses01@gmail.com', sub: 'We reply within 24 hours', href: 'mailto:srmclasses01@gmail.com', cta: 'Send Email' },
-              { icon: MapPin, title: 'Visit Us', info: 'Kamre, Ranchi, Jharkhand', sub: 'SRM Classes, Ashram Rd', href: 'https://maps.app.goo.gl/TFpjRggpozuA5TDPA', cta: 'Open in Maps' },
-            ].map(({ icon: Icon, title, info, sub, href, cta }) => (
-              <a key={title} href={href} className="card p-6 flex gap-4 items-start group hover:border-primary/30 border border-transparent">
-                <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glass shrink-0 group-hover:scale-105 transition-transform">
-                  <Icon className="w-5 h-5 text-white" />
+            {/* Call Us Card */}
+            <div className="card p-6 flex gap-4 items-start border border-transparent">
+              <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glass shrink-0">
+                <Phone className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-brand-dark mb-1">Call Us</h3>
+                {branches.map(b => (
+                  <div key={b._id} className="mb-2 last:mb-0">
+                    <p className="text-gray-400 text-[10px] uppercase font-bold tracking-tighter">{b.name}</p>
+                    <a href={`tel:${b.phone}`} className="text-primary font-medium text-sm hover:underline">{b.phone}</a>
+                  </div>
+                ))}
+                <p className="text-gray-400 text-xs mt-2">Mon–Sat, 7 AM – 8 PM</p>
+              </div>
+            </div>
+
+            {/* Visit Us Card */}
+            <div className="card p-6 flex gap-4 items-start border border-transparent">
+              <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glass shrink-0">
+                <MapPin className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-display font-bold text-brand-dark mb-1">Visit Us</h3>
+                <div className="space-y-3">
+                  {branches.map((b, idx) => (
+                    <div key={b._id} className={`p-2 rounded-lg transition-colors cursor-pointer ${activeMapIndex === idx ? 'bg-primary/5 border border-primary/20' : 'hover:bg-gray-50'}`} onClick={() => setActiveMapIndex(idx)}>
+                      <p className="text-brand-dark font-bold text-xs">{b.name}</p>
+                      <p className="text-gray-500 text-[11px] leading-tight">{b.address}</p>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <h3 className="font-display font-bold text-brand-dark mb-1">{title}</h3>
-                  <p className="text-primary font-medium text-sm mb-0.5">{info}</p>
-                  <p className="text-gray-400 text-xs mb-3">{sub}</p>
-                  <span className="text-primary text-xs font-semibold flex items-center gap-1">{cta} <ArrowRight className="w-3 h-3" /></span>
-                </div>
-              </a>
-            ))}
+              </div>
+            </div>
+
+            {/* Email Card */}
+            <a href="mailto:srmclasses01@gmail.com" className="card p-6 flex gap-4 items-start group hover:border-primary/30 border border-transparent">
+              <div className="w-12 h-12 rounded-xl bg-white/10 flex items-center justify-center shadow-glass bg-gradient-hero shrink-0">
+                <Mail className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-display font-bold text-brand-dark mb-1">Email Us</h3>
+                <p className="text-primary font-medium text-sm mb-0.5">srmclasses01@gmail.com</p>
+                <p className="text-gray-400 text-xs mb-3">We reply within 24 hours</p>
+                <span className="text-primary text-xs font-semibold flex items-center gap-1">Send Email <ArrowRight className="w-3 h-3" /></span>
+              </div>
+            </a>
           </div>
 
           <div className="grid lg:grid-cols-2 gap-8">
@@ -180,14 +215,30 @@ export default function Contact() {
         </div>
       </section>
 
-      {/* Map */}
-      <section id="map" className="relative group overflow-hidden">
-        <div className="h-[450px] bg-gray-100">
-          <iframe
-            title="SRM Classes - Ranchi Location"
-            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3661.8452668403957!2d85.26510447478121!3d23.393814302373514!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4de05a37f8591%3A0xd9b09379e246fa39!2sSrm%20Classes!5e0!3m2!1sen!2sin!4v1774293801590!5m2!1sen!2sin"
-            width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-          />
+      <section id="map" className="relative group overflow-hidden border-t border-primary/10">
+        <div className="h-[500px] bg-gray-100 relative">
+          {branches.map((b, idx) => (
+            <iframe
+              key={b._id}
+              title={`SRM Classes - ${b.name}`}
+              className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${activeMapIndex === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+              src={idx === 0 ? "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3661.8452668403957!2d85.26510447478121!3d23.393814302373514!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4de05a37f8591%3A0xd9b09379e246fa39!2sSrm%20Classes!5e0!3m2!1sen!2sin!4v1774293801590!5m2!1sen!2sin" : "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14652.793616654!2d85.086395!3d23.336496!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDIwJzExLjQiTiA4NcKwMDUnMTEuMCJF!5e0!3m2!1sen!2sin!4v1620000000000!5m2!1sen!2sin"}
+              style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+            />
+          ))}
+          
+          {/* Branch Switching Overlay */}
+          <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+            {branches.map((b, idx) => (
+              <button 
+                key={b._id}
+                onClick={() => setActiveMapIndex(idx)}
+                className={`px-4 py-2 rounded-full text-xs font-bold shadow-xl transition-all ${activeMapIndex === idx ? 'bg-primary text-white scale-105' : 'bg-white/90 text-brand-dark backdrop-blur-md hover:bg-white'}`}
+              >
+                {b.name.split('-')[1] || b.name}
+              </button>
+            ))}
+          </div>
         </div>
         
         {/* Floating Map Button for Mobile/Multi-device Compatibility */}
@@ -196,15 +247,17 @@ export default function Contact() {
         </div>
         
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
-          <a 
-            href="https://maps.app.goo.gl/TFpjRggpozuA5TDPA" 
-            target="_blank" 
-            rel="noreferrer"
-            className="flex items-center gap-2 px-6 py-3 bg-white text-brand-dark font-bold rounded-full shadow-2xl hover:bg-primary hover:text-white transition-all transform hover:-translate-y-1"
-          >
-            <MapPin className="w-5 h-5 text-primary group-hover:text-white" />
-            Open in Google Maps
-          </a>
+          {branches[activeMapIndex] && (
+            <a 
+              href={branches[activeMapIndex].googleMapsLink} 
+              target="_blank" 
+              rel="noreferrer"
+              className="flex items-center gap-2 px-6 py-3 bg-white text-brand-dark font-bold rounded-full shadow-2xl hover:bg-primary hover:text-white transition-all transform hover:-translate-y-1"
+            >
+              <MapPin className="w-5 h-5 text-primary group-hover:text-white" />
+              Open {branches[activeMapIndex].name} on Maps
+            </a>
+          )}
         </div>
       </section>
     </div>

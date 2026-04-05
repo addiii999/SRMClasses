@@ -6,7 +6,11 @@ const mongoose = require('mongoose');
 const submitEnquiry = async (req, res) => {
   try {
     const { name, email, mobile, studentClass, message } = req.body;
-    const enquiry = await Enquiry.create({ name, email, mobile, studentClass, message });
+    // Find default branch (RAVI01) for public enquiries
+    const Branch = require('../models/Branch');
+    const defaultBranch = await Branch.findOne({ branchCode: 'RAVI01', isActive: true });
+    const branchId = defaultBranch ? defaultBranch._id : null;
+    const enquiry = await Enquiry.create({ name, email, mobile, studentClass, message, branch: branchId });
     res.status(201).json({ success: true, message: 'Enquiry submitted successfully', data: enquiry });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -17,8 +21,11 @@ const submitEnquiry = async (req, res) => {
 // @route   GET /api/enquiries
 const getEnquiries = async (req, res) => {
   try {
-    const { status, search } = req.query;
+    const { status, search, branch } = req.query;
     let query = {};
+    if (branch && mongoose.Types.ObjectId.isValid(branch)) {
+      query.branch = branch;
+    }
     if (status && typeof status === 'string' && status !== 'all') {
       query.status = status;
     }

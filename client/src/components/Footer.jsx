@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { GraduationCap, MapPin, Phone, Mail, Instagram, Youtube, Facebook, MessageCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import api from '../lib/api';
 
 const footerLinks = {
   'Quick Links': [
@@ -20,6 +20,12 @@ const footerLinks = {
 };
 
 export default function Footer() {
+  const [branches, setBranches] = useState([]);
+
+  useEffect(() => {
+    api.get('/branches').then(res => setBranches(res.data.data)).catch(() => {});
+  }, []);
+
   return (
     <footer className="bg-brand-dark text-white">
       <div className="container-pad py-16">
@@ -69,32 +75,34 @@ export default function Footer() {
 
           {/* Contact */}
           <div>
-            <h4 className="font-semibold text-white mb-4">Contact</h4>
-            <ul className="space-y-3">
-              <li className="flex items-start gap-3 text-sm text-white/60">
-                <MapPin className="w-4 h-4 text-primary mt-0.5 shrink-0" />
-                <a 
-                  href="https://maps.app.goo.gl/TFpjRggpozuA5TDPA" 
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="hover:text-primary transition-colors"
-                >
-                  Srm Classes, Kamre Ashram Rd, Ravi Steel, Tilta, Kamre, Ranchi, Jharkhand 835222
-                </a>
-              </li>
-              <li>
-                <a href="tel:+917488886903" className="flex items-center gap-3 text-sm text-white/60 hover:text-primary transition-colors">
-                  <Phone className="w-4 h-4 text-primary shrink-0" />
-                  <span>+91 7488886903, 9508639773</span>
-                </a>
-              </li>
-              <li>
-                <a href="mailto:srmclasses01@gmail.com" className="flex items-center gap-3 text-sm text-white/60 hover:text-primary transition-colors">
-                  <Mail className="w-4 h-4 text-primary shrink-0" />
+            <h4 className="font-semibold text-white mb-4">Our Presence</h4>
+            <div className="space-y-6">
+              {branches.map((branch) => (
+                <div key={branch._id} className="space-y-2.5">
+                  <p className="text-primary text-[10px] uppercase font-bold tracking-widest">{branch.name}</p>
+                  <ul className="space-y-2">
+                    <li className="flex items-start gap-3 text-xs text-white/50">
+                      <MapPin className="w-3.5 h-3.5 text-primary mt-0.5 shrink-0" />
+                      <a href={branch.googleMapsLink} target="_blank" rel="noreferrer" className="hover:text-primary transition-colors">
+                        {branch.address}
+                      </a>
+                    </li>
+                    <li className="flex items-center gap-3 text-xs text-white/50">
+                      <Phone className="w-3.5 h-3.5 text-primary shrink-0" />
+                      <a href={`tel:${branch.phone}`} className="hover:text-primary transition-colors">
+                        {branch.phone}
+                      </a>
+                    </li>
+                  </ul>
+                </div>
+              ))}
+              <div className="pt-2 border-t border-white/5">
+                <a href="mailto:srmclasses01@gmail.com" className="flex items-center gap-3 text-xs text-white/50 hover:text-primary transition-colors">
+                  <Mail className="w-3.5 h-3.5 text-primary shrink-0" />
                   <span>srmclasses01@gmail.com</span>
                 </a>
-              </li>
-            </ul>
+              </div>
+            </div>
           </div>
         </div>
       </div>

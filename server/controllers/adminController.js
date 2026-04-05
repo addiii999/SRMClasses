@@ -7,8 +7,12 @@ const User = require('../models/User');
  */
 exports.getPendingStudents = async (req, res) => {
   try {
-    const { status = 'pending' } = req.query;
-    const students = await User.find({ role: 'student', verificationStatus: status }).sort({ createdAt: -1 });
+    const { status = 'pending', branch } = req.query;
+    let query = { role: 'student', verificationStatus: status };
+    if (branch) {
+      query.branch = branch;
+    }
+    const students = await User.find(query).sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: students.length, data: students });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -22,10 +26,16 @@ exports.getPendingStudents = async (req, res) => {
  */
 exports.approveStudent = async (req, res) => {
   try {
-    const { sessionYear, studentClass } = req.body;
+    const { sessionYear, studentClass, branchId } = req.body;
     
-    if (!sessionYear || !studentClass) {
-      return res.status(400).json({ success: false, message: 'Session Year and Class are required for approval' });
+    if (!sessionYear || !studentClass || !branchId) {
+      return res.status(400).json({ success: false, message: 'Session Year, Class, and Branch are required for approval' });
+    }
+
+    const Branch = require('../models/Branch');
+    const branchDoc = await Branch.findById(branchId);
+    if (!branchDoc) {
+      return res.status(404).json({ success: false, message: 'Selected branch not found' });
     }
 
     const student = await User.findById(req.params.id);
@@ -37,17 +47,18 @@ exports.approveStudent = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User is already an approved student' });
     }
 
-    // Generate Student ID: SRM-YYYY-CC-SEQ (Gen-Z Style)
-    // Example: SRM-2026-10-001
+    // Generate Student ID: SRM-YYYY-BC-CC-SEQ
+    // BC = Branch Code (e.g. RAVI), CC = Class
     const yearPart = sessionYear;
+    const branchPart = branchDoc.branchCode.toUpperCase().substring(0, 4); // Use first 4 chars of code
     const classPart = studentClass.toString().padStart(2, '0');
     
-    // Find how many students already exist for this Year and Class to determine sequence
-    const pattern = new RegExp(`^SRM-${yearPart}-${classPart}-`);
+    // Find how many students already exist for this Year, Branch and Class to determine sequence
+    const pattern = new RegExp(`^SRM-${yearPart}-${branchPart}-${classPart}-`);
     const count = await User.countDocuments({ studentId: { $regex: pattern } });
     const sequence = (count + 1).toString().padStart(3, '0');
     
-    const newStudentId = `SRM-${yearPart}-${classPart}-${sequence}`;
+    const newStudentId = `SRM-${yearPart}-${branchPart}-${classPart}-${sequence}`;
 
     const adminName = req.user ? req.user.email : 'Admin';
 
@@ -55,6 +66,7 @@ exports.approveStudent = async (req, res) => {
     student.isEnrolled = true;
     student.studentId = newStudentId;
     student.studentClass = studentClass;
+    student.branch = branchDoc._id;
     student.verificationStatus = 'approved';
     student.enrollmentLogs.push({
       status: 'enrolled',

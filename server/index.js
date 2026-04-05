@@ -125,6 +125,7 @@ app.use('/api/results', require('./routes/resultRoutes'));
 app.use('/api/fees', require('./routes/feeRoutes'));
 app.use('/api/faculty', require('./routes/facultyRoutes'));
 app.use('/api/recycle-bin', require('./routes/recycleBinRoutes'));
+app.use('/api/branches', require('./routes/branchRoutes'));
 
 // Global error handler
 app.use((err, req, res, next) => {
