@@ -36,7 +36,28 @@ export default function AdminFaculty() {
       const { data } = await api.get('/faculty/admin', {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setFaculty(data.data);
+      
+      let sortedFaculty = data.data;
+
+      // Ensure consistent sorting in Admin too
+      sortedFaculty.sort((a, b) => {
+        // Step 1: Active first
+        if (a.isActive !== b.isActive) {
+          return b.isActive - a.isActive;
+        }
+
+        // Step 2: Priority faculty
+        if (a.priorityOrder && b.priorityOrder) {
+          return a.priorityOrder - b.priorityOrder;
+        }
+        if (a.priorityOrder) return -1;
+        if (b.priorityOrder) return 1;
+
+        // Step 3: Alphabetical order
+        return a.name.localeCompare(b.name);
+      });
+
+      setFaculty(sortedFaculty);
     } catch (error) {
       toast.error('Failed to fetch faculty');
     } finally {
