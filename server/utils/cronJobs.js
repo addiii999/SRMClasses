@@ -1,27 +1,35 @@
 const cron = require('node-cron');
-const User = require('../models/User');
-const Faculty = require('../models/Faculty');
-const Gallery = require('../models/Gallery');
-const Result = require('../models/Result');
-const StudyMaterial = require('../models/StudyMaterial');
-const Announcement = require('../models/Announcement');
-const DemoBooking = require('../models/DemoBooking');
-const Enquiry = require('../models/Enquiry');
-const Course = require('../models/Course');
+const mongoose = require('mongoose');
 const { deleteFromCloudinary } = require('./cloudinary');
 const cloudinary = require('cloudinary').v2;
 
-const MODEL_MAP = {
-  Student: User,
-  Faculty: Faculty,
-  Gallery: Gallery,
-  Result: Result,
-  Material: StudyMaterial,
-  Announcement: Announcement,
-  Booking: DemoBooking,
-  Enquiry: Enquiry,
-  Course: Course
+/**
+ * Dynamic Model Retrieval to avoid circular dependencies during startup/import
+ */
+const getModel = (name) => {
+  try {
+    return mongoose.model(name);
+  } catch (e) {
+    // Fallback: require if not registered
+    const modelPaths = {
+      Student: '../models/User',
+      Faculty: '../models/Faculty',
+      Gallery: '../models/Gallery',
+      Result: '../models/Result',
+      Material: '../models/StudyMaterial',
+      Announcement: '../models/Announcement',
+      Booking: '../models/DemoBooking',
+      Enquiry: '../models/Enquiry',
+      Course: '../models/Course'
+    };
+    return require(modelPaths[name]);
+  }
 };
+
+const MODEL_MAP = [
+  'Student', 'Faculty', 'Gallery', 'Result', 
+  'Material', 'Announcement', 'Booking', 'Enquiry', 'Course'
+];
 
 /**
  * Initialize all scheduled tasks
@@ -34,7 +42,7 @@ const initCronJobs = () => {
     // Default retention is 30 days
     let retentionDays = 30;
 
-    // Optional: Check storage usage (Cloudinary Example)
+    // Optional: Check storage usage (Cloudinary)
     try {
       const usage = await cloudinary.api.usage();
       const usagePercent = (usage.credits.used / usage.credits.limit) * 100;
@@ -49,8 +57,11 @@ const initCronJobs = () => {
     const cutoffDate = new Date();
     cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
-    for (const [type, Model] of Object.entries(MODEL_MAP)) {
+    for (const type of MODEL_MAP) {
       try {
+        const Model = getModel(type);
+        if (!Model) continue;
+
         // Find items to purge
         const itemsToPurge = await Model.find({
           isDeleted: true,
@@ -63,7 +74,8 @@ const initCronJobs = () => {
           for (const item of itemsToPurge) {
             // Storage Cleanup
             if (item.cloudinaryId) {
-              const isRaw = item.fileUrl && item.fileUrl.endsWith('.pdf');
+              const fileUrl = item.fileUrl || item.imageUrl || '';
+              const isRaw = fileUrl.endsWith('.pdf') || fileUrl.includes('/raw/upload/');
               await deleteFromCloudinary(item.cloudinaryId, isRaw ? 'raw' : 'image');
             }
           }

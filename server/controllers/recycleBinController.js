@@ -1,25 +1,33 @@
-const User = require('../models/User');
-const Faculty = require('../models/Faculty');
-const Gallery = require('../models/Gallery');
-const Result = require('../models/Result');
-const StudyMaterial = require('../models/StudyMaterial');
-const Announcement = require('../models/Announcement');
-const DemoBooking = require('../models/DemoBooking');
-const Enquiry = require('../models/Enquiry');
-const Course = require('../models/Course');
+const mongoose = require('mongoose');
 const { deleteFromCloudinary } = require('../utils/cloudinary');
 
-const MODEL_MAP = {
-  Student: User,
-  Faculty: Faculty,
-  Gallery: Gallery,
-  Result: Result,
-  Material: StudyMaterial,
-  Announcement: Announcement,
-  Booking: DemoBooking,
-  Enquiry: Enquiry,
-  Course: Course
+/**
+ * Dynamic Model Retrieval to avoid circular dependencies
+ */
+const getModel = (name) => {
+  try {
+    return mongoose.model(name);
+  } catch (e) {
+    // Fallback: require if not registered
+    const modelPaths = {
+      Student: '../models/User',
+      Faculty: '../models/Faculty',
+      Gallery: '../models/Gallery',
+      Result: '../models/Result',
+      Material: '../models/StudyMaterial',
+      Announcement: '../models/Announcement',
+      Booking: '../models/DemoBooking',
+      Enquiry: '../models/Enquiry',
+      Course: '../models/Course'
+    };
+    return require(modelPaths[name]);
+  }
 };
+
+const MODEL_NAMES = [
+  'Student', 'Faculty', 'Gallery', 'Result', 
+  'Material', 'Announcement', 'Booking', 'Enquiry', 'Course'
+];
 
 /**
  * @desc    Get all deleted items from all categories
@@ -30,32 +38,46 @@ exports.getDeletedItems = async (req, res) => {
   try {
     const deletedItems = [];
 
-    for (const [type, Model] of Object.entries(MODEL_MAP)) {
-      // We pass { isDeleted: true } to bypass the global filter middleware
-      const items = await Model.find({ isDeleted: true }).lean();
-      
-      items.forEach(item => {
-        // Calculate remaining days (30 days retention)
-        const deletedAt = new Date(item.deletedAt);
-        const now = new Date();
-        const diffTime = Math.abs(now - deletedAt);
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        const remainingDays = Math.max(0, 30 - diffDays);
+    for (const type of MODEL_NAMES) {
+      try {
+        const Model = getModel(type);
+        if (!Model) continue;
 
-        deletedItems.push({
-          _id: item._id,
-          name: item.name || item.title || item.studentName || item.className || 'Unnamed Item',
-          type,
-          deletedAt: item.deletedAt,
-          deletedBy: item.deletedBy || 'Admin',
-          remainingDays,
-          details: item
+        // Bypass global filter to find deleted items
+        const items = await Model.find({ isDeleted: true }).lean();
+        
+        items.forEach(item => {
+          // Safety: Skip if deletedAt is missing to prevent NaN errors
+          if (!item.deletedAt) return;
+
+          const deletedAt = new Date(item.deletedAt);
+          const now = new Date();
+          const diffTime = Math.abs(now - deletedAt);
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+          const remainingDays = Math.max(0, 30 - diffDays);
+
+          deletedItems.push({
+            _id: item._id,
+            name: item.name || item.title || item.studentName || item.className || 'Unnamed Item',
+            type,
+            deletedAt: item.deletedAt,
+            deletedBy: item.deletedBy || 'Admin',
+            remainingDays: isNaN(remainingDays) ? 30 : remainingDays,
+            details: item
+          });
         });
-      });
+      } catch (innerError) {
+        console.error(`RecycleBin fetch error for ${type}:`, innerError.message);
+        // Continue to other models even if one fails
+      }
     }
 
-    // Sort by most recently deleted
-    deletedItems.sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
+    // Sort by most recently deleted, safety for missing dates
+    deletedItems.sort((a, b) => {
+      const dateA = a.deletedAt ? new Date(a.deletedAt) : 0;
+      const dateB = b.deletedAt ? new Date(b.deletedAt) : 0;
+      return dateB - dateA;
+    });
 
     res.status(200).json({
       success: true,
@@ -63,49 +85,56 @@ exports.getDeletedItems = async (req, res) => {
       data: deletedItems
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('RecycleBin Global Error:', error);
+    res.status(500).json({ success: false, message: 'Failed to fetch recycle bin data' });
   }
 };
 
 /**
  * @desc    Restore a deleted item
- * @route   PATCH /api/recycle-bin/restore/:type/:id
- * @access  Private/Admin
  */
 exports.restoreItem = async (req, res) => {
   try {
     const { type, id } = req.params;
-    const Model = MODEL_MAP[type];
+    const Model = getModel(type);
 
     if (!Model) {
       return res.status(400).json({ success: false, message: 'Invalid entity type' });
     }
 
-    // Find including deleted
     const item = await Model.findOne({ _id: id, isDeleted: true });
 
     if (!item) {
       return res.status(404).json({ success: false, message: 'Item not found in Recycle Bin' });
     }
 
-    const adminEmail = req.admin ? req.admin.email : 'Admin';
-    await item.restore(adminEmail);
+    // Use admin email for log if available
+    const adminEmail = req.admin ? req.admin.email : (req.user ? req.user.email : 'Admin');
+    
+    if (typeof item.restore === 'function') {
+      await item.restore(adminEmail);
+    } else {
+      // Fallback if plugin method missing
+      item.isDeleted = false;
+      item.deletedAt = null;
+      item.deletedBy = null;
+      await item.save();
+    }
 
     res.status(200).json({ success: true, message: `${type} restored successfully` });
   } catch (error) {
+    console.error('Restore Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
 /**
  * @desc    Permanently delete an item (DB + Storage)
- * @route   DELETE /api/recycle-bin/permanent/:type/:id
- * @access  Private/Admin
  */
 exports.permanentlyDeleteItem = async (req, res) => {
   try {
     const { type, id } = req.params;
-    const Model = MODEL_MAP[type];
+    const Model = getModel(type);
 
     if (!Model) {
       return res.status(400).json({ success: false, message: 'Invalid entity type' });
@@ -120,25 +149,18 @@ exports.permanentlyDeleteItem = async (req, res) => {
     // Storage Cleanup
     try {
       if (item.cloudinaryId) {
-        // Check resource type (image or raw for PDFs)
-        const isRaw = item.fileUrl && item.fileUrl.endsWith('.pdf');
+        const isRaw = item.fileUrl && (item.fileUrl.endsWith('.pdf') || item.fileUrl.includes('/raw/upload/'));
         await deleteFromCloudinary(item.cloudinaryId, isRaw ? 'raw' : 'image');
-      } else if (item.imageUrl && item.imageUrl.includes('cloudinary')) {
-          // Fallback if cloudinaryId is missing but URL is cloudinary
-          const parts = item.imageUrl.split('/');
-          const lastPart = parts[parts.length - 1];
-          const publicId = lastPart.split('.')[0];
-          await deleteFromCloudinary(publicId);
       }
     } catch (storageError) {
       console.error(`Storage cleanup failed for ${type} ${id}:`, storageError.message);
-      // We continue with DB deletion even if storage fails to avoid zombie records in Bin
     }
 
     await Model.findByIdAndDelete(id);
 
-    res.status(200).json({ success: true, message: `${type} permanently deleted from database and storage` });
+    res.status(200).json({ success: true, message: `${type} permanently deleted` });
   } catch (error) {
+    console.error('Purge Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
