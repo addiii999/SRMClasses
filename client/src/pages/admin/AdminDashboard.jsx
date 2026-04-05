@@ -11,6 +11,7 @@ import {
 import AdminFeeManagement from './AdminFeeManagement';
 import AdminFaculty from './AdminFaculty';
 import StudentVerification from './StudentVerification';
+import AdminRecycleBin from './AdminRecycleBin';
 
 // ─── Sidebar nav items ────────────────────────────────────────────
 const navItems = [
@@ -25,6 +26,7 @@ const navItems = [
   { path: '/admin/gallery', label: 'Gallery', icon: Image },
   { path: '/admin/announcements', label: 'Announcements', icon: Bell },
   { path: '/admin/fees', label: 'Fee Management', icon: CreditCard },
+  { path: '/admin/recycle-bin', label: 'Recycle Bin', icon: Trash2 },
 ];
 
 // ─── Admin Sidebar ─────────────────────────────────────────────────
@@ -165,9 +167,9 @@ function Enquiries() {
   };
 
   const deleteEnquiry = async (id) => {
-    if (!confirm('Delete this enquiry?')) return;
-    try { await api.delete(`/enquiries/${id}`, { headers: getHeaders() }); toast.success('Deleted'); fetchEnquiries(); }
-    catch { toast.error('Delete failed'); }
+    if (!confirm('Move this enquiry to Recycle Bin?')) return;
+    try { await api.delete(`/enquiries/${id}`, { headers: getHeaders() }); toast.success('Moved to Recycle Bin'); fetchEnquiries(); }
+    catch { toast.error('Move failed'); }
   };
 
   const statusColors = { New: 'badge-new', Contacted: 'badge-contacted', Converted: 'badge-converted' };
@@ -252,8 +254,8 @@ function DemoBookings() {
   };
 
   const del = async (id) => {
-    if (!confirm('Delete this booking?')) return;
-    try { await api.delete(`/demo/${id}`, { headers: getHeaders() }); toast.success('Deleted'); fetchBookings(); }
+    if (!confirm('Move this booking to Recycle Bin?')) return;
+    try { await api.delete(`/demo/${id}`, { headers: getHeaders() }); toast.success('Moved to Recycle Bin'); fetchBookings(); }
     catch { toast.error('Failed'); }
   };
 
@@ -333,8 +335,8 @@ function Materials() {
   };
 
   const deleteMaterial = async (id) => {
-    if (!confirm('Delete?')) return;
-    try { await api.delete(`/materials/${id}`); toast.success('Deleted'); fetchMaterials(); }
+    if (!confirm('Move this material to Recycle Bin?')) return;
+    try { await api.delete(`/materials/${id}`); toast.success('Moved to Recycle Bin'); fetchMaterials(); }
     catch { toast.error('Failed'); }
   };
 
@@ -415,8 +417,8 @@ function CoursesAdmin() {
   };
 
   const deleteCourse = async (id) => {
-    if (!confirm('Delete?')) return;
-    try { await api.delete(`/courses/${id}`); toast.success('Deleted'); fetchCourses(); }
+    if (!confirm('Move this course to Recycle Bin?')) return;
+    try { await api.delete(`/courses/${id}`); toast.success('Moved to Recycle Bin'); fetchCourses(); }
     catch { toast.error('Failed'); }
   };
 
@@ -490,8 +492,8 @@ function ResultsAdmin() {
   };
 
   const del = async (id) => {
-    if (!confirm('Delete?')) return;
-    try { await api.delete(`/results/${id}`); toast.success('Deleted'); fetchResults(); } catch { toast.error('Failed'); }
+    if (!confirm('Move this result to Recycle Bin?')) return;
+    try { await api.delete(`/results/${id}`); toast.success('Moved to Recycle Bin'); fetchResults(); } catch { toast.error('Failed'); }
   };
 
   return (
@@ -562,8 +564,8 @@ function GalleryAdmin() {
   };
 
   const del = async (id) => {
-    if (!confirm('Delete?')) return;
-    try { await api.delete(`/gallery/${id}`); toast.success('Deleted'); fetchImages(); } catch { toast.error('Failed'); }
+    if (!confirm('Move this image to Recycle Bin?')) return;
+    try { await api.delete(`/gallery/${id}`); toast.success('Moved to Recycle Bin'); fetchImages(); } catch { toast.error('Failed'); }
   };
 
   return (
@@ -628,8 +630,8 @@ function AnnouncementsAdmin() {
   };
 
   const del = async (id) => {
-    if (!confirm('Delete?')) return;
-    try { await api.delete(`/announcements/${id}`); toast.success('Deleted'); fetchAnnouncements(); } catch { }
+    if (!confirm('Move this announcement to Recycle Bin?')) return;
+    try { await api.delete(`/announcements/${id}`); toast.success('Moved to Recycle Bin'); fetchAnnouncements(); } catch { }
   };
 
   const priorityColors = { high: 'bg-red-100 text-red-700', medium: 'bg-yellow-100 text-yellow-700', low: 'bg-green-100 text-green-700' };
@@ -705,6 +707,7 @@ export default function AdminDashboard() {
             <Route path="faculty" element={<AdminFaculty />} />
             <Route path="verify-students" element={<StudentVerification />} />
             <Route path="fees" element={<AdminFeeManagement />} />
+            <Route path="recycle-bin" element={<AdminRecycleBin />} />
             <Route index element={<Overview />} />
           </Routes>
         </div>

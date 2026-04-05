@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const softDeletePlugin = require('../utils/softDeletePlugin');
 
 const gallerySchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
@@ -12,5 +13,7 @@ const gallerySchema = new mongoose.Schema({
   cloudinaryId: { type: String },
   fileName: { type: String },
 }, { timestamps: true });
+
+gallerySchema.plugin(softDeletePlugin);
 
 module.exports = mongoose.model('Gallery', gallerySchema);

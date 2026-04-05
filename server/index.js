@@ -9,6 +9,9 @@ const Course = require('./models/Course');
 // Connect to MongoDB
 connectDB();
 
+const initCronJobs = require('./utils/cronJobs');
+initCronJobs();
+
 // Seeding Logic
 const seedData = async () => {
   try {
@@ -121,6 +124,7 @@ app.use('/api/gallery', require('./routes/galleryRoutes'));
 app.use('/api/results', require('./routes/resultRoutes'));
 app.use('/api/fees', require('./routes/feeRoutes'));
 app.use('/api/faculty', require('./routes/facultyRoutes'));
+app.use('/api/recycle-bin', require('./routes/recycleBinRoutes'));
 
 // Global error handler
 app.use((err, req, res, next) => {

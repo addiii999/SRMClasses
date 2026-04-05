@@ -91,9 +91,12 @@ const deleteEnquiry = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
-    const enquiry = await Enquiry.findByIdAndDelete(new mongoose.Types.ObjectId(id));
+    const enquiry = await Enquiry.findById(id);
     if (!enquiry) return res.status(404).json({ success: false, message: 'Enquiry not found' });
-    res.json({ success: true, message: 'Enquiry deleted' });
+    
+    const adminEmail = req.user ? req.user.email : 'Admin';
+    await enquiry.softDelete(adminEmail);
+    res.json({ success: true, message: 'Enquiry moved to Recycle Bin' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

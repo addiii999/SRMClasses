@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const softDeletePlugin = require('../utils/softDeletePlugin');
 
 const facultySchema = new mongoose.Schema({
   name: {
@@ -40,5 +41,7 @@ const facultySchema = new mongoose.Schema({
     default: null,
   },
 }, { timestamps: true });
+
+facultySchema.plugin(softDeletePlugin);
 
 module.exports = mongoose.model('Faculty', facultySchema);

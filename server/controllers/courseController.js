@@ -61,8 +61,12 @@ const deleteCourse = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
-    await Course.findByIdAndDelete(new mongoose.Types.ObjectId(id));
-    res.json({ success: true, message: 'Course deleted' });
+    const course = await Course.findById(id);
+    if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
+    
+    const adminEmail = req.user ? req.user.email : 'Admin';
+    await course.softDelete(adminEmail);
+    res.json({ success: true, message: 'Course moved to Recycle Bin' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

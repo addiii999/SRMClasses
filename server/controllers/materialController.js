@@ -64,12 +64,10 @@ const deleteMaterial = async (req, res) => {
     if (!material) {
       return res.status(404).json({ success: false, message: 'Material not found' });
     }
-    if (material.cloudinaryId) {
-      const resourceType = material.fileUrl?.includes('/raw/') ? 'raw' : 'image';
-      await deleteFromCloudinary(material.cloudinaryId, resourceType);
-    }
-    await StudyMaterial.findByIdAndDelete(id);
-    res.json({ success: true, message: 'Material deleted' });
+    const adminEmail = req.user ? req.user.email : 'Admin';
+    await material.softDelete(adminEmail);
+
+    res.json({ success: true, message: 'Material moved to Recycle Bin' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

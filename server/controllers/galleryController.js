@@ -53,11 +53,10 @@ const deleteGalleryImage = async (req, res) => {
     if (!image) {
       return res.status(404).json({ success: false, message: 'Image not found' });
     }
-    if (image.cloudinaryId) {
-      await deleteFromCloudinary(image.cloudinaryId, 'image');
-    }
-    await Gallery.findByIdAndDelete(id);
-    res.json({ success: true, message: 'Image deleted' });
+    const adminEmail = req.user ? req.user.email : 'Admin';
+    await image.softDelete(adminEmail);
+
+    res.json({ success: true, message: 'Image moved to Recycle Bin' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

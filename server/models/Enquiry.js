@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const softDeletePlugin = require('../utils/softDeletePlugin');
 
 const enquirySchema = new mongoose.Schema({
   name: { type: String, required: true, trim: true },
@@ -13,5 +14,7 @@ const enquirySchema = new mongoose.Schema({
   },
   notes: { type: String, default: '' },
 }, { timestamps: true });
+
+enquirySchema.plugin(softDeletePlugin);
 
 module.exports = mongoose.model('Enquiry', enquirySchema);

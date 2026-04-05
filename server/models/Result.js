@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const softDeletePlugin = require('../utils/softDeletePlugin');
 
 const resultSchema = new mongoose.Schema({
   studentName: { type: String, required: true, trim: true },
@@ -12,5 +13,7 @@ const resultSchema = new mongoose.Schema({
   cloudinaryId: { type: String },
   fileName: { type: String },
 }, { timestamps: true });
+
+resultSchema.plugin(softDeletePlugin);
 
 module.exports = mongoose.model('Result', resultSchema);

@@ -98,10 +98,10 @@ exports.deleteFaculty = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Core faculty members cannot be deactivated' });
     }
 
-    faculty.isActive = false;
-    await faculty.save();
+    const adminEmail = req.user ? req.user.email : 'Admin';
+    await faculty.softDelete(adminEmail);
     
-    res.json({ success: true, message: 'Faculty deactivated successfully' });
+    res.json({ success: true, message: 'Faculty moved to Recycle Bin' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

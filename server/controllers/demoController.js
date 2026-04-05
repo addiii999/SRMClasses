@@ -69,8 +69,12 @@ const deleteDemoBooking = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
-    await DemoBooking.findByIdAndDelete(id);
-    res.json({ success: true, message: 'Booking deleted' });
+    const booking = await DemoBooking.findById(id);
+    if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
+    
+    const adminEmail = req.user ? req.user.email : 'Admin';
+    await booking.softDelete(adminEmail);
+    res.json({ success: true, message: 'Booking moved to Recycle Bin' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

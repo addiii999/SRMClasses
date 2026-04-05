@@ -107,6 +107,21 @@ export default function AdminFaculty() {
     }
   };
 
+  const handleDelete = async (teacher) => {
+    if (coreFacultyNames.includes(teacher.name)) {
+      toast.error('Core faculty members cannot be deleted');
+      return;
+    }
+    if (!window.confirm(`Move ${teacher.name} to Recycle Bin?`)) return;
+    try {
+      await api.delete(`/faculty/${teacher._id}`);
+      toast.success('Moved to Recycle Bin');
+      fetchFaculty();
+    } catch (error) {
+      toast.error('Delete failed');
+    }
+  };
+
   const openEdit = (teacher) => {
     setEditingTeacher(teacher);
     setForm({
@@ -184,16 +199,26 @@ export default function AdminFaculty() {
                 )}
               </div>
               <div className="flex gap-2">
-                <button onClick={() => openEdit(teacher)} className="p-2 hover:bg-primary/5 text-primary rounded-lg transition-colors">
+                <button onClick={() => openEdit(teacher)} className="p-2 hover:bg-primary/5 text-primary rounded-lg transition-colors" title="Edit">
                   <Edit2 className="w-4 h-4" />
                 </button>
                 <button 
                   onClick={() => handleToggleStatus(teacher)} 
                   disabled={isCore && teacher.isActive}
-                  className={`p-2 rounded-lg transition-colors ${isCore && teacher.isActive ? 'opacity-20 cursor-not-allowed' : teacher.isActive ? 'hover:bg-red-50 text-red-500' : 'hover:bg-green-50 text-green-500'}`}
+                  className={`p-2 rounded-lg transition-colors ${isCore && teacher.isActive ? 'opacity-20 cursor-not-allowed' : teacher.isActive ? 'hover:bg-amber-50 text-amber-500' : 'hover:bg-green-50 text-green-500'}`}
+                  title={teacher.isActive ? 'Deactivate (Hide from public)' : 'Activate (Show on public)'}
                 >
-                  {teacher.isActive ? <Trash2 className="w-4 h-4" /> : <History className="w-4 h-4" />}
+                  {teacher.isActive ? <Clock className="w-4 h-4" /> : <History className="w-4 h-4" />}
                 </button>
+                {!isCore && (
+                  <button 
+                    onClick={() => handleDelete(teacher)}
+                    className="p-2 hover:bg-red-50 text-red-500 rounded-lg transition-colors"
+                    title="Move to Recycle Bin"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </div>
 

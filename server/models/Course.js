@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const softDeletePlugin = require('../utils/softDeletePlugin');
 
 const courseSchema = new mongoose.Schema({
   className: {
@@ -13,5 +14,7 @@ const courseSchema = new mongoose.Schema({
   description: { type: String },
   isActive: { type: Boolean, default: true },
 }, { timestamps: true });
+
+courseSchema.plugin(softDeletePlugin);
 
 module.exports = mongoose.model('Course', courseSchema);

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const softDeletePlugin = require('../utils/softDeletePlugin');
 
 const studyMaterialSchema = new mongoose.Schema({
   title: { type: String, required: true, trim: true },
@@ -20,5 +21,7 @@ const studyMaterialSchema = new mongoose.Schema({
   fileSize: { type: Number },
   uploadedAt: { type: Date, default: Date.now },
 }, { timestamps: true });
+
+studyMaterialSchema.plugin(softDeletePlugin);
 
 module.exports = mongoose.model('StudyMaterial', studyMaterialSchema);

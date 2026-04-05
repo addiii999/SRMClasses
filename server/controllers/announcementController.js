@@ -34,8 +34,12 @@ const deleteAnnouncement = async (req, res) => {
     if (!mongoose.Types.ObjectId.isValid(id)) {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
-    await Announcement.findByIdAndDelete(id);
-    res.json({ success: true, message: 'Announcement deleted' });
+    const announcement = await Announcement.findById(id);
+    if (!announcement) return res.status(404).json({ success: false, message: 'Announcement not found' });
+    
+    const adminEmail = req.user ? req.user.email : 'Admin';
+    await announcement.softDelete(adminEmail);
+    res.json({ success: true, message: 'Announcement moved to Recycle Bin' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

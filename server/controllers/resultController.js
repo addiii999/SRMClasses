@@ -49,11 +49,10 @@ const deleteResult = async (req, res) => {
     if (!result) {
       return res.status(404).json({ success: false, message: 'Result not found' });
     }
-    if (result.cloudinaryId) {
-      await deleteFromCloudinary(result.cloudinaryId, 'image');
-    }
-    await Result.findByIdAndDelete(id);
-    res.json({ success: true, message: 'Result deleted' });
+    const adminEmail = req.user ? req.user.email : 'Admin';
+    await result.softDelete(adminEmail);
+
+    res.json({ success: true, message: 'Result moved to Recycle Bin' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
