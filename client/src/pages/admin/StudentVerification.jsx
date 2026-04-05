@@ -23,7 +23,7 @@ export default function StudentVerification({ selectedBranch }) {
 
   useEffect(() => {
     // Load branches for selection in modal
-    api.get('/branches').then(res => setBranches(res.data.data)).catch(() => {});
+    api.get('/branches').then(res => setBranches(res.data?.data || [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -241,7 +241,7 @@ export default function StudentVerification({ selectedBranch }) {
                   required
                 >
                    <option value="">Select Branch</option>
-                   {branches.map(b => (
+                   {(branches || []).map(b => (
                      <option key={b._id} value={b._id}>{b.name}</option>
                    ))}
                 </select>

@@ -64,7 +64,7 @@ export default function Home() {
   const [branches, setBranches] = useState([]);
 
   useEffect(() => {
-    api.get('/branches').then(res => setBranches(res.data.data)).catch(() => {});
+    api.get('/branches').then(res => setBranches(res.data?.data || [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -402,7 +402,7 @@ export default function Home() {
             <p className="section-subtitle text-center">Visit your nearest SRM Classes centre for a free counselling session.</p>
           </div>
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {branches.length > 0 ? branches.map((branch) => (
+            {branches && branches.length > 0 ? branches.map((branch) => (
               <div key={branch._id} className="card p-8 group hover:-translate-y-2 transition-all duration-300">
                 <div className="w-14 h-14 rounded-2xl bg-gradient-brand flex items-center justify-center mb-6 shadow-glass group-hover:rotate-6 transition-transform">
                   <MapPin className="w-7 h-7 text-white" />
@@ -471,7 +471,7 @@ export default function Home() {
             <p className="section-subtitle">Navigate to our centres directly using the maps below</p>
           </div>
           <div className="grid md:grid-cols-2 gap-8">
-            {branches.map((branch, idx) => (
+            {(branches || []).map((branch, idx) => (
               <div key={branch._id} className="relative group rounded-3xl overflow-hidden shadow-card-hover border border-primary/10 aspect-[16/10]">
                 <iframe
                   title={`SRM Classes - ${branch.name}`}

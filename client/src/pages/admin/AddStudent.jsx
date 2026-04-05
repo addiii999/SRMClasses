@@ -11,7 +11,7 @@ export default function AddStudent() {
 
   useEffect(() => {
     api.get('/branches')
-      .then(res => setBranches(res.data.data))
+      .then(res => setBranches(res.data?.data || []))
       .catch(() => toast.error('Failed to load branches'));
   }, []);
 
@@ -40,7 +40,9 @@ export default function AddStudent() {
         <input type="password" className="input-field" placeholder="Password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required />
         <select className="input-field" value={form.branch} onChange={e => setForm({ ...form, branch: e.target.value })} required>
           <option value="">Select Branch</option>
-          {branches.map(b => <option key={b._id} value={b._id}>{b.name}</option>)}
+          {(branches || []).map(b => (
+            <option key={b._id} value={b._id}>{b.name}</option>
+          ))}
         </select>
         <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2">
           <UserPlus className="w-4 h-4" /> Create Student <ArrowRight className="w-4 h-4" />

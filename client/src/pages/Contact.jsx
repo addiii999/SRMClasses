@@ -23,7 +23,7 @@ export default function Contact() {
   const { hash } = useLocation();
 
   useEffect(() => {
-    api.get('/branches').then(res => setBranches(res.data.data)).catch(() => {});
+    api.get('/branches').then(res => setBranches(res.data?.data || [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -72,14 +72,14 @@ export default function Contact() {
       <section className="section-pad bg-brand-bg">
         <div className="container-pad">
           <div className="grid lg:grid-cols-3 gap-8 mb-16">
-            {/* Call Us Card */}
+                {/* Call Us Card */}
             <div className="card p-6 flex gap-4 items-start border border-transparent">
               <div className="w-12 h-12 rounded-xl bg-gradient-brand flex items-center justify-center shadow-glass shrink-0">
                 <Phone className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h3 className="font-display font-bold text-brand-dark mb-1">Call Us</h3>
-                {branches.map(b => (
+                {(branches || []).map(b => (
                   <div key={b._id} className="mb-2 last:mb-0">
                     <p className="text-gray-400 text-[10px] uppercase font-bold tracking-tighter">{b.name}</p>
                     <a href={`tel:${b.phone}`} className="text-primary font-medium text-sm hover:underline">{b.phone}</a>
@@ -97,7 +97,7 @@ export default function Contact() {
               <div className="flex-1">
                 <h3 className="font-display font-bold text-brand-dark mb-1">Visit Us</h3>
                 <div className="space-y-3">
-                  {branches.map((b, idx) => (
+                  {(branches || []).map((b, idx) => (
                     <div key={b._id} className={`p-2 rounded-lg transition-colors cursor-pointer ${activeMapIndex === idx ? 'bg-primary/5 border border-primary/20' : 'hover:bg-gray-50'}`} onClick={() => setActiveMapIndex(idx)}>
                       <p className="text-brand-dark font-bold text-xs">{b.name}</p>
                       <p className="text-gray-500 text-[11px] leading-tight">{b.address}</p>
@@ -217,7 +217,7 @@ export default function Contact() {
 
       <section id="map" className="relative group overflow-hidden border-t border-primary/10">
         <div className="h-[500px] bg-gray-100 relative">
-          {branches.map((b, idx) => (
+          {(branches || []).map((b, idx) => (
             <iframe
               key={b._id}
               title={`SRM Classes - ${b.name}`}
@@ -229,7 +229,7 @@ export default function Contact() {
           
           {/* Branch Switching Overlay */}
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-            {branches.map((b, idx) => (
+            {(branches || []).map((b, idx) => (
               <button 
                 key={b._id}
                 onClick={() => setActiveMapIndex(idx)}

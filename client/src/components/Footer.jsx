@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { GraduationCap, MapPin, Phone, Mail, Instagram, Youtube, Facebook, MessageCircle } from 'lucide-react';
 import api from '../lib/api';
 
 const footerLinks = {
@@ -23,7 +25,7 @@ export default function Footer() {
   const [branches, setBranches] = useState([]);
 
   useEffect(() => {
-    api.get('/branches').then(res => setBranches(res.data.data)).catch(() => {});
+    api.get('/branches').then(res => setBranches(res.data?.data || [])).catch(() => {});
   }, []);
 
   return (
@@ -77,7 +79,7 @@ export default function Footer() {
           <div>
             <h4 className="font-semibold text-white mb-4">Our Presence</h4>
             <div className="space-y-6">
-              {branches.map((branch) => (
+              {(branches || []).map((branch) => (
                 <div key={branch._id} className="space-y-2.5">
                   <p className="text-primary text-[10px] uppercase font-bold tracking-widest">{branch.name}</p>
                   <ul className="space-y-2">

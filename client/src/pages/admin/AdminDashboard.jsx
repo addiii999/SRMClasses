@@ -716,7 +716,7 @@ export default function AdminDashboard() {
   // Load active branches on mount
   useEffect(() => {
     api.get('/branches')
-      .then(res => setBranches(res.data.data))
+      .then(res => setBranches(res.data?.data || []))
       .catch(() => toast.error('Failed to load branches'));
   }, []);
 
@@ -732,7 +732,7 @@ export default function AdminDashboard() {
           {/* Branch filter dropdown */}
           <select className="input-field ml-auto w-48" value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)}>
             <option value="">All Branches</option>
-            {branches.map(b => (
+            {(branches || []).map(b => (
               <option key={b._id} value={b._id}>{b.name}</option>
             ))}
           </select>
