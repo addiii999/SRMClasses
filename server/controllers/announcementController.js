@@ -37,7 +37,7 @@ const deleteAnnouncement = async (req, res) => {
     const announcement = await Announcement.findById(id);
     if (!announcement) return res.status(404).json({ success: false, message: 'Announcement not found' });
     
-    const adminEmail = req.user ? req.user.email : 'Admin';
+    const adminEmail = req.admin ? req.admin.email : 'Admin';
     await announcement.softDelete(adminEmail);
     res.json({ success: true, message: 'Announcement moved to Recycle Bin' });
   } catch (error) {

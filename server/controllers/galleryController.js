@@ -53,7 +53,7 @@ const deleteGalleryImage = async (req, res) => {
     if (!image) {
       return res.status(404).json({ success: false, message: 'Image not found' });
     }
-    const adminEmail = req.user ? req.user.email : 'Admin';
+    const adminEmail = req.admin ? req.admin.email : 'Admin';
     await image.softDelete(adminEmail);
 
     res.json({ success: true, message: 'Image moved to Recycle Bin' });

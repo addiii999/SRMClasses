@@ -64,7 +64,7 @@ const deleteMaterial = async (req, res) => {
     if (!material) {
       return res.status(404).json({ success: false, message: 'Material not found' });
     }
-    const adminEmail = req.user ? req.user.email : 'Admin';
+    const adminEmail = req.admin ? req.admin.email : 'Admin';
     await material.softDelete(adminEmail);
 
     res.json({ success: true, message: 'Material moved to Recycle Bin' });

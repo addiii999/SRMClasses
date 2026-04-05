@@ -94,7 +94,7 @@ const deleteEnquiry = async (req, res) => {
     const enquiry = await Enquiry.findById(id);
     if (!enquiry) return res.status(404).json({ success: false, message: 'Enquiry not found' });
     
-    const adminEmail = req.user ? req.user.email : 'Admin';
+    const adminEmail = req.admin ? req.admin.email : 'Admin';
     await enquiry.softDelete(adminEmail);
     res.json({ success: true, message: 'Enquiry moved to Recycle Bin' });
   } catch (error) {

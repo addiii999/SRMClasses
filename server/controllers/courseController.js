@@ -64,7 +64,7 @@ const deleteCourse = async (req, res) => {
     const course = await Course.findById(id);
     if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
     
-    const adminEmail = req.user ? req.user.email : 'Admin';
+    const adminEmail = req.admin ? req.admin.email : 'Admin';
     await course.softDelete(adminEmail);
     res.json({ success: true, message: 'Course moved to Recycle Bin' });
   } catch (error) {

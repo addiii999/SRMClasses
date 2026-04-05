@@ -72,7 +72,7 @@ const deleteDemoBooking = async (req, res) => {
     const booking = await DemoBooking.findById(id);
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
     
-    const adminEmail = req.user ? req.user.email : 'Admin';
+    const adminEmail = req.admin ? req.admin.email : 'Admin';
     await booking.softDelete(adminEmail);
     res.json({ success: true, message: 'Booking moved to Recycle Bin' });
   } catch (error) {

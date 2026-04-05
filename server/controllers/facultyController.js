@@ -98,7 +98,7 @@ exports.deleteFaculty = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Core faculty members cannot be deactivated' });
     }
 
-    const adminEmail = req.user ? req.user.email : 'Admin';
+    const adminEmail = req.admin ? req.admin.email : 'Admin';
     await faculty.softDelete(adminEmail);
     
     res.json({ success: true, message: 'Faculty moved to Recycle Bin' });

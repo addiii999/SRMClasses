@@ -5,10 +5,9 @@ const {
     restoreItem, 
     permanentlyDeleteItem 
 } = require('../controllers/recycleBinController');
-const { protect, admin } = require('../middleware/authMiddleware');
+const { adminProtect } = require('../middleware/adminAuth');
 
-router.use(protect);
-router.use(admin);
+router.use(adminProtect);
 
 router.get('/', getDeletedItems);
 router.patch('/restore/:type/:id', restoreItem);

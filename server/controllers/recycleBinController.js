@@ -88,7 +88,8 @@ exports.restoreItem = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Item not found in Recycle Bin' });
     }
 
-    await item.restore();
+    const adminEmail = req.admin ? req.admin.email : 'Admin';
+    await item.restore(adminEmail);
 
     res.status(200).json({ success: true, message: `${type} restored successfully` });
   } catch (error) {
