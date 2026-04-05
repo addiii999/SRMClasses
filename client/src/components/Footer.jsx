@@ -103,7 +103,11 @@ export default function Footer() {
       <div className="border-t border-white/10">
         <div className="container-pad py-5 flex flex-col md:flex-row justify-between items-center gap-3">
           <p className="text-white/40 text-sm">© {new Date().getFullYear()} SRM Classes. All rights reserved.</p>
-          <p className="text-white/40 text-sm">Designed with ❤️ for students in Ranchi</p>
+          <div className="flex items-center gap-4">
+             <Link to="/privacy-policy" className="text-white/40 hover:text-primary text-sm font-medium transition-colors hover:underline underline-offset-4">Privacy Policy</Link>
+             <p className="text-white/40 text-sm hidden md:block">•</p>
+             <p className="text-white/40 text-sm">Designed with ❤️ for students in Ranchi</p>
+          </div>
         </div>
       </div>
     </footer>
