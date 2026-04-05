@@ -18,7 +18,7 @@ const softDeletePlugin = (schema) => {
   // Middleware for find queries
   schema.pre(/^find/, function (next) {
     if (this.getFilter().isDeleted === undefined) {
-      this.where({ isDeleted: false });
+      this.where({ isDeleted: { $ne: true } });
     }
     next();
   });
@@ -26,14 +26,14 @@ const softDeletePlugin = (schema) => {
   // Middleware for countDocuments
   schema.pre('countDocuments', function (next) {
     if (this.getFilter().isDeleted === undefined) {
-      this.where({ isDeleted: false });
+      this.where({ isDeleted: { $ne: true } });
     }
     next();
   });
 
   // Middleware for aggregate (Note: This is a general match, can be overridden)
   schema.pre('aggregate', function (next) {
-    this.pipeline().unshift({ $match: { isDeleted: false } });
+    this.pipeline().unshift({ $match: { isDeleted: { $ne: true } } });
     next();
   });
 
