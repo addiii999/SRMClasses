@@ -5,7 +5,7 @@ const { protect } = require('../middleware/auth');
 const { adminProtect } = require('../middleware/adminAuth');
 const validateId = require('../middleware/validateId');
 
-router.get('/', protect, getAnnouncements);
+router.get('/', getAnnouncements);
 router.post('/', adminProtect, createAnnouncement);
 router.delete('/:id', adminProtect, validateId, deleteAnnouncement);
 
