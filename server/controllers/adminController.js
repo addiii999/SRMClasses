@@ -50,7 +50,8 @@ exports.approveStudent = async (req, res) => {
     // Generate Student ID: SRM-YYYY-BC-CC-SEQ
     // BC = Branch Code (e.g. RAVI), CC = Class
     const yearPart = sessionYear;
-    const branchPart = branchDoc.branchCode.toUpperCase().substring(0, 4); // Use first 4 chars of code
+    const codeRaw = branchDoc.branchCode.replace(/[0-9]/g, '').toUpperCase();
+    const branchPart = codeRaw.charAt(0) + codeRaw.charAt(codeRaw.length - 1); // First and Last letter (e.g. RI, MR)
     const classPart = studentClass.toString().padStart(2, '0');
     
     // Find how many students already exist for this Year, Branch and Class to determine sequence

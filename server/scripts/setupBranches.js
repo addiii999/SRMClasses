@@ -20,7 +20,7 @@ const setup = async () => {
     const branches = [
       {
         name: 'SRM Classes - Ravi Steel',
-        branchCode: 'RAVI01',
+        branchCode: 'RAVI',
         address: 'Ravi Steel, Ranchi, Jharkhand',
         googleMapsLink: 'https://maps.app.goo.gl/example1',
         phone: '9508266012',
@@ -28,7 +28,7 @@ const setup = async () => {
       },
       {
         name: 'SRM Classes - Mandar',
-        branchCode: 'MANDAR01',
+        branchCode: 'MANDAR',
         address: 'Mandar, Ranchi, Jharkhand',
         googleMapsLink: 'https://maps.app.goo.gl/we1AwFnC6nxAqSf7A',
         phone: '9508266012',
