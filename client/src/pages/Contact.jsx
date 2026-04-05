@@ -222,7 +222,9 @@ export default function Contact() {
               key={b._id}
               title={`SRM Classes - ${b.name}`}
               className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${activeMapIndex === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-              src={idx === 0 ? "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3661.8452668403957!2d85.26510447478121!3d23.393814302373514!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4de05a37f8591%3A0xd9b09379e246fa39!2sSrm%20Classes!5e0!3m2!1sen!2sin!4v1774293801590!5m2!1sen!2sin" : "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d14652.793616654!2d85.086395!3d23.336496!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjPCsDIwJzExLjQiTiA4NcKwMDUnMTEuMCJF!5e0!3m2!1sen!2sin!4v1620000000000!5m2!1sen!2sin"}
+              src={idx === 0 
+                ? "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3661.8452668403957!2d85.26510447478121!3d23.393814302373514!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4de05a37f8591%3A0xd9b09379e246fa39!2sSrm%20Classes!5e0!3m2!1sen!2sin!4v1774293801590!5m2!1sen!2sin" 
+                : "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3659.889708914041!2d85.08004571062635!3d23.46446739942484!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4d06f570ae8a3%3A0xfe8ccca9389d906a!2sF37J%2BQVQ%2C%20Mandar%2C%20Jharkhand%20835214!5e0!3m2!1sen!2sin!4v1743856108123!5m2!1sen!2sin"}
               style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
             />
           ))}

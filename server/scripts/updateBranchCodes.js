@@ -11,17 +11,20 @@ const update = async () => {
 
     // Update Ravi Steel
     await Branch.findOneAndUpdate(
-      { branchCode: 'RAVI01' },
-      { branchCode: 'RAVI' }
+      { branchCode: 'RAVI' },
+      { googleMapsLink: 'https://maps.app.goo.gl/TFpjRggpozuA5TDPA' }
     );
-    console.log('✅ Updated Ravi Steel code to RAVI (ID prefix: RI)');
+    console.log('✅ Updated Ravi Steel Google Maps link');
 
     // Update Mandar
     await Branch.findOneAndUpdate(
-      { branchCode: 'MANDAR01' },
-      { branchCode: 'MANDAR' }
+      { branchCode: 'MANDAR' },
+      { 
+        address: 'Mandar (Near Mission Hospital), Ranchi, Jharkhand 835214',
+        googleMapsLink: 'https://www.google.com/maps/search/?api=1&query=23.464467,85.080045' 
+      }
     );
-    console.log('✅ Updated Mandar code to MANDAR (ID prefix: MR)');
+    console.log('✅ Updated Mandar branch location and link');
 
     console.log('🎉 Branch codes updated successfully!');
     process.exit(0);

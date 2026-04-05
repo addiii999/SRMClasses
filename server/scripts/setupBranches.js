@@ -29,9 +29,8 @@ const setup = async () => {
       {
         name: 'SRM Classes - Mandar',
         branchCode: 'MANDAR',
-        address: 'Mandar, Ranchi, Jharkhand',
-        googleMapsLink: 'https://maps.app.goo.gl/we1AwFnC6nxAqSf7A',
-        phone: '9508266012',
+        address: 'Mandar (Near Mission Hospital), Ranchi, Jharkhand 835214',
+        googleMapsLink: 'https://www.google.com/maps/search/?api=1&query=23.464467,85.080045',
         isActive: true
       }
     ];
