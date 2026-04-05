@@ -24,7 +24,7 @@ export default function AdminFaculty() {
     priorityOrder: ''
   });
 
-  const coreFacultyNames = ['Mr. Ranjan Kumar Soni', 'Mr. Raghuwendra Kumar Soni', 'Mr. Yuvraj Kumar'];
+  const coreFacultyNames = ['Mr. Ranjan Kumar Soni', 'Mr. Raghuwendra Kumar Soni', 'Mr. Aayush Gupta'];
 
   useEffect(() => {
     fetchFaculty();
