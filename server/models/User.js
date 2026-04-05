@@ -54,6 +54,15 @@ const userSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending'
   },
+  isEnrolled: {
+    type: Boolean,
+    default: false
+  },
+  enrollmentLogs: [{
+    status: String, // 'enrolled', 'removed'
+    updatedBy: String,
+    updatedAt: { type: Date, default: Date.now }
+  }],
   // Fee Management Fields
   feeType: {
     type: String,

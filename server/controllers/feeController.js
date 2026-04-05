@@ -9,7 +9,16 @@ const mongoose = require('mongoose');
  */
 exports.getStudentsFeeStats = async (req, res) => {
   try {
-    const students = await User.find({ role: 'student', isStudent: true }).sort({ createdAt: -1 });
+    const { status = 'active' } = req.query;
+    const filter = { role: 'student', isStudent: true };
+    
+    if (status === 'removed') {
+      filter.isEnrolled = false;
+    } else {
+      filter.isEnrolled = true;
+    }
+
+    const students = await User.find(filter).sort({ createdAt: -1 });
     
     const studentsWithFees = students.map(student => {
       const feeDetails = calculateFeeDetails(student);
@@ -251,6 +260,78 @@ exports.getMyFeeStats = async (req, res) => {
         payments: student.payments
       }
     });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+/**
+ * @desc    Remove a student from Fee System (not delete)
+ * @route   PATCH /api/fees/remove/:id
+ * @access  Private/Admin
+ */
+exports.removeStudentFromFees = async (req, res) => {
+  try {
+    const student = await User.findById(req.params.id);
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    if (!student.isStudent) {
+      return res.status(400).json({ success: false, message: 'User is not a verified student' });
+    }
+
+    // Safety: Prevent admin self-removal or tampering if they are somehow a student
+    if (student.role === 'admin') {
+      return res.status(403).json({ success: false, message: 'Admin accounts cannot be removed from enrollment' });
+    }
+
+    const adminName = req.user ? req.user.email : 'Admin';
+
+    student.isEnrolled = false;
+    student.enrollmentLogs.push({
+      status: 'removed',
+      updatedBy: adminName,
+      updatedAt: Date.now()
+    });
+
+    await student.save();
+
+    res.status(200).json({ success: true, message: 'Student removed from Fee Management view' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * @desc    Restore a student to Fee System
+ * @route   PATCH /api/fees/restore/:id
+ * @access  Private/Admin
+ */
+exports.restoreStudentToFees = async (req, res) => {
+  try {
+    const student = await User.findById(req.params.id);
+
+    if (!student) {
+      return res.status(404).json({ success: false, message: 'Student not found' });
+    }
+
+    if (!student.isStudent) {
+      return res.status(400).json({ success: false, message: 'User is not a verified student' });
+    }
+
+    const adminName = req.user ? req.user.email : 'Admin';
+
+    student.isEnrolled = true;
+    student.enrollmentLogs.push({
+      status: 'enrolled',
+      updatedBy: adminName,
+      updatedAt: Date.now()
+    });
+
+    await student.save();
+
+    res.status(200).json({ success: true, message: 'Student restored to Fee Management' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

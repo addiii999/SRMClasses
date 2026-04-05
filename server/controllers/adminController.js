@@ -49,10 +49,19 @@ exports.approveStudent = async (req, res) => {
     
     const newStudentId = `SRM-${yearPart}-${classPart}-${sequence}`;
 
+    const adminName = req.user ? req.user.email : 'Admin';
+
     student.isStudent = true;
+    student.isEnrolled = true;
     student.studentId = newStudentId;
     student.studentClass = studentClass;
     student.verificationStatus = 'approved';
+    student.enrollmentLogs.push({
+      status: 'enrolled',
+      updatedBy: adminName,
+      updatedAt: Date.now()
+    });
+    
     await student.save();
 
     res.status(200).json({ 

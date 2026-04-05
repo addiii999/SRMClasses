@@ -3,7 +3,7 @@ import api from '../../lib/api';
 import toast from 'react-hot-toast';
 import { 
   Search, Filter, Edit2, Plus, CreditCard, ChevronDown, 
-  History, Trash2, AlertTriangle, CheckCircle, Clock, TrendingUp
+  History, Trash2, AlertTriangle, CheckCircle, Clock, TrendingUp, RotateCcw
 } from 'lucide-react';
 
 const FEE_TYPES = ['Foundation', 'Advance', 'Math-Science', 'ICSE-Advance', 'None'];
@@ -22,6 +22,7 @@ export default function AdminFeeManagement() {
   const [filterClass, setFilterClass] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortConfig, setSortConfig] = useState({ key: 'remainingAmount', direction: 'desc' });
+  const [enrollmentTab, setEnrollmentTab] = useState('active'); // active or removed
 
   // Modals
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -33,7 +34,7 @@ export default function AdminFeeManagement() {
     setLoading(true);
     try {
       const token = localStorage.getItem('srmAdminToken');
-      const res = await api.get('/fees/students', {
+      const res = await api.get(`/fees/students?status=${enrollmentTab}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStudents(res.data.data || []);
@@ -42,7 +43,7 @@ export default function AdminFeeManagement() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [enrollmentTab]);
 
   useEffect(() => {
     fetchStudents();
@@ -83,12 +84,55 @@ export default function AdminFeeManagement() {
     );
   };
 
+  const handleRemove = async (student) => {
+    if (!window.confirm(`Are you sure you want to remove ${student.name} from the active fee list? Their data will NOT be deleted.`)) return;
+    
+    try {
+      const token = localStorage.getItem('srmAdminToken');
+      await api.patch(`/fees/remove/${student._id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Student removed from active list');
+      fetchStudents();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Removal failed');
+    }
+  };
+
+  const handleRestore = async (student) => {
+    try {
+      const token = localStorage.getItem('srmAdminToken');
+      await api.patch(`/fees/restore/${student._id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Student restored successfully');
+      fetchStudents();
+    } catch (error) {
+      toast.error('Restoration failed');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-display font-bold text-brand-dark">Fee Management</h2>
           <p className="text-gray-500 text-sm mt-1">Track payments, scholarships, and installment plans.</p>
+        </div>
+        
+        <div className="flex bg-gray-100 p-1 rounded-xl">
+          <button 
+            onClick={() => setEnrollmentTab('active')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${enrollmentTab === 'active' ? 'bg-white text-primary shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Active Students
+          </button>
+          <button 
+            onClick={() => setEnrollmentTab('removed')}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${enrollmentTab === 'removed' ? 'bg-white text-red-500 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+          >
+            Removed Students
+          </button>
         </div>
       </div>
 
@@ -174,27 +218,55 @@ export default function AdminFeeManagement() {
                   <td className="px-4 py-3">{getStatusBadge(s.paymentStatus)}</td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex justify-end gap-1">
-                      <button 
-                        title="Edit Fee Settings"
-                        onClick={() => { setSelectedStudent(s); setShowFeeModal(true); }}
-                        className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        title="Add Payment"
-                        onClick={() => { setSelectedStudent(s); setShowPaymentModal(true); }}
-                        className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
-                      >
-                        <CreditCard className="w-4 h-4" />
-                      </button>
-                      <button 
-                        title="Payment History"
-                        onClick={() => { setSelectedStudent(s); setShowHistoryModal(true); }}
-                        className="p-1.5 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
-                      >
-                        <History className="w-4 h-4" />
-                      </button>
+                      {enrollmentTab === 'active' ? (
+                        <>
+                          <button 
+                            title="Edit Fee Settings"
+                            onClick={() => { setSelectedStudent(s); setShowFeeModal(true); }}
+                            className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button 
+                            title="Add Payment"
+                            onClick={() => { setSelectedStudent(s); setShowPaymentModal(true); }}
+                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+                          >
+                            <CreditCard className="w-4 h-4" />
+                          </button>
+                          <button 
+                            title="Payment History"
+                            onClick={() => { setSelectedStudent(s); setShowHistoryModal(true); }}
+                            className="p-1.5 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
+                          >
+                            <History className="w-4 h-4" />
+                          </button>
+                          <button 
+                            title="Remove from Fee System"
+                            onClick={() => handleRemove(s)}
+                            className="p-1.5 rounded-lg text-red-400 hover:bg-red-50 transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button 
+                            title="Payment History"
+                            onClick={() => { setSelectedStudent(s); setShowHistoryModal(true); }}
+                            className="p-1.5 rounded-lg text-purple-600 hover:bg-purple-50 transition-colors"
+                          >
+                            <History className="w-4 h-4" />
+                          </button>
+                          <button 
+                            title="Restore Student"
+                            onClick={() => handleRestore(s)}
+                            className="p-1.5 rounded-lg text-green-600 hover:bg-green-50 transition-colors"
+                          >
+                            <RotateCcw className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>
