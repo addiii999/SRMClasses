@@ -15,11 +15,11 @@ const softDeletePlugin = (schema) => {
     }
   });
 
-  // Most stable middleware approach for Queries
+  // Temporarily disabling middleware to check if it fixes global "failed to load"
+  /*
   schema.pre(/^find|countDocuments/, function (next) {
     if (this.getQuery && typeof this.getQuery === 'function') {
       const query = this.getQuery();
-      // Only apply if not searching for deleted items explicitly
       if (query && query.isDeleted === undefined) {
         this.where('isDeleted').ne(true);
       }
@@ -27,10 +27,8 @@ const softDeletePlugin = (schema) => {
     next();
   });
 
-  // Aggregation - More cautious unshift
   schema.pre('aggregate', function (next) {
     const pipeline = this.pipeline();
-    // Safely inject match stage if it doesn't break geoNear or similar stages
     if (pipeline.length > 0 && pipeline[0].$geoNear) {
       pipeline.splice(1, 0, { $match: { isDeleted: { $ne: true } } });
     } else {
@@ -38,6 +36,7 @@ const softDeletePlugin = (schema) => {
     }
     next();
   });
+  */
 
   // Soft delete method
   schema.methods.softDelete = function (adminEmail) {
