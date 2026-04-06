@@ -1,35 +1,74 @@
-const nodemailer = require('nodemailer');
+const axios = require('axios');
 const crypto = require('crypto');
 
 /**
- * Configure Nodemailer Transporter for Gmail
- * Optimized with explicit host and port for reliability
+ * Send OTP via Brevo API (HTTP)
+ * This is the ONLY way to send emails from Render Free Tier 
+ * because Render blocks SMTP ports (465, 587).
  */
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true, // Use SSL
-  family: 4, // Force IPv4 to prevent Render IPv6 ENETUNREACH issues
-  auth: {
-    user: process.env.EMAIL_USER || 'srmclasses01@gmail.com',
-    pass: process.env.EMAIL_PASS,
-  },
-  // Add timeout to prevent hanging
-  connectionTimeout: 10000, // 10 seconds
-  greetingTimeout: 10000,
-  socketTimeout: 10000,
-});
-
-/**
- * Verify transporter connection on startup
- */
-transporter.verify((error, success) => {
-  if (error) {
-    console.error('❌ Nodemailer Verification Failed:', error.message);
-  } else {
-    console.log('✅ Nodemailer is ready to send emails');
+const sendOTPviaEmail = async (email, mobile, otp) => {
+  const apiKey = process.env.BREVO_API_KEY;
+  
+  if (!apiKey) {
+    console.error('❌ BREVO_API_KEY is missing!');
+    throw new Error('Email service key not found.');
   }
-});
+
+  const data = {
+    sender: { 
+      name: 'SRM Classes Support', 
+      email: 'srmclasses01@gmail.com' // Must be a verified sender in Brevo!
+    },
+    to: [{ email }],
+    subject: `${otp} is your SRM Classes OTP`,
+    htmlContent: `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 500px; margin: 0 auto; padding: 30px; border: 1px solid #e0e0e0; border-radius: 20px; background-color: #ffffff; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
+        <div style="text-align: center; margin-bottom: 25px;">
+           <h1 style="color: #4f46e5; margin: 0; font-size: 28px;">SRM Classes</h1>
+           <p style="color: #6b7280; font-size: 14px; margin-top: 5px;">Secure Registration OTP</p>
+        </div>
+        
+        <p style="color: #374151; font-size: 16px; line-height: 1.5;">Hello,</p>
+        <p style="color: #374151; font-size: 16px; line-height: 1.5;">Please use the following One-Time Password (OTP) to verify your phone number <b>+91 ${mobile.slice(-4).padStart(10, '*')}</b>.</p>
+        
+        <div style="background: linear-gradient(135deg, #f5f3ff 0%, #ede9fe 100%); border-radius: 15px; padding: 30px; text-align: center; margin: 30px 0; border: 1px solid #ddd6fe;">
+          <span style="color: #7c3aed; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; display: block; margin-bottom: 10px;">Verification Code</span>
+          <div style="font-size: 42px; font-weight: 800; color: #1e1b4b; letter-spacing: 10px; margin: 0;">${otp}</div>
+        </div>
+        
+        <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px; margin-bottom: 25px;">
+          <p style="color: #92400e; font-size: 13px; margin: 0;">⏱ This code will expire in <b>5 minutes</b>.</p>
+        </div>
+
+        <p style="color: #9ca3af; font-size: 12px; text-align: center; border-top: 1px solid #f3f4f6; pt: 20px; margin-top: 20px;">
+          If you didn't request this code, please ignore this email.
+        </p>
+      </div>
+    `
+  };
+
+  try {
+    console.log(`📤 Sending Brevo API request to ${email}...`);
+    const response = await axios.post('https://api.brevo.com/v3/smtp/email', data, {
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      }
+    });
+    
+    console.log(`✅ Brevo API Success! Message ID: ${response.data.messageId}`);
+    return true;
+  } catch (error) {
+    const errorMsg = error.response?.data?.message || error.message;
+    console.error('❌ Brevo API Error:', errorMsg);
+    
+    if (errorMsg.includes('sender')) {
+      throw new Error('Sender email is not verified in Brevo dashboard.');
+    }
+    throw new Error(`Email delivery failed: ${errorMsg}`);
+  }
+};
 
 /**
  * Generate a secure 6-digit OTP
@@ -48,62 +87,14 @@ const generateOTP = () => {
 const validatePhone = (mobile) => {
   if (!/^\d{10}$/.test(mobile)) return false;
   if (/^(\d)\1{9}$/.test(mobile)) return false;
-  if (/^(0{10})$/.test(mobile)) return false;
   return true;
 };
 
 /**
- * Hash OTP before storing in DB
+ * Hash OTP before storing
  */
 const hashOTP = (otp) => {
   return crypto.createHash('sha256').update(otp).digest('hex');
-};
-
-/**
- * Send OTP via Email using Gmail (Nodemailer)
- */
-const sendOTPviaEmail = async (email, mobile, otp) => {
-  if (!process.env.EMAIL_PASS) {
-    console.error('❌ EMAIL_PASS is missing in environment variables!');
-    throw new Error('Email service not configured on server.');
-  }
-
-  const mailOptions = {
-    from: `"SRM Classes" <${process.env.EMAIL_USER || 'srmclasses01@gmail.com'}>`,
-    to: email,
-    subject: `${otp} is your SRM Classes OTP`,
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 24px; border: 1px solid #eee; border-radius: 16px; background-color: #ffffff;">
-        <h2 style="color: #2D274B; margin-bottom: 8px;">SRM Classes</h2>
-        <p style="color: #666; margin-bottom: 24px;">Verify your phone number to create your account.</p>
-        <div style="background-color: #F4F2FF; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
-          <p style="color: #9787F3; font-size: 13px; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;">Your OTP</p>
-          <div style="font-size: 36px; font-weight: 900; color: #2D274B; letter-spacing: 8px;">${otp}</div>
-        </div>
-        <p style="color: #999; font-size: 12px; text-align: center;">This OTP is valid for <strong>5 minutes</strong>.</p>
-        <div style="border-top: 1px solid #eee; padding-top: 16px; margin-top: 16px; color: #BBB; font-size: 11px; text-align: center;">
-          Sent to verify mobile: +91 ${mobile.replace(/(.{2}).+(.{2})/, '$1******$2')}
-        </div>
-      </div>
-    `,
-  };
-
-  try {
-    console.log(`📤 Attempting to send OTP to ${email}...`);
-    const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ OTP sent successfully! MessageID: ${info.messageId}`);
-    return true;
-  } catch (error) {
-    console.error('❌ Gmail sendMail error:', error.stack || error.message);
-    throw new Error(`Email delivery failed: ${error.message}`);
-  }
-};
-
-/**
- * Placeholder for future SMS integration
- */
-const sendOTPviaSMS = async (mobile, otp) => {
-  return true;
 };
 
 module.exports = {
@@ -111,5 +102,5 @@ module.exports = {
   validatePhone,
   hashOTP,
   sendOTPviaEmail,
-  sendOTPviaSMS,
+  sendOTPviaSMS: async () => true // Placeholder
 };
