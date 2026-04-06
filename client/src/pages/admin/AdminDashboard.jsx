@@ -444,7 +444,7 @@ function Materials({ selectedBranch }) {
             <select className="input-field" value={form.studentClass} onChange={e => setForm({ ...form, studentClass: e.target.value })} required>
               <option value="">Select Class</option>
               <option value="all">All Classes</option>
-              {['6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+              {['5', '6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
             </select>
           </div>
           <div><label className="label">Subject</label><input className="input-field" placeholder="e.g. Mathematics" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} /></div>
@@ -540,7 +540,7 @@ function CoursesAdmin() {
           <div><label className="label">Class</label>
             <select className="input-field" value={form.className} onChange={e => setForm({ ...form, className: e.target.value })} required>
               <option value="">Select</option>
-              {['6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+              {['5', '6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
             </select>
           </div>
           <div><label className="label">Duration</label><input className="input-field" value={form.duration} onChange={e => setForm({ ...form, duration: e.target.value })} /></div>
@@ -608,7 +608,7 @@ function ResultsAdmin() {
           <div><label className="label">Class</label>
             <select className="input-field" value={form.studentClass} onChange={e => setForm({ ...form, studentClass: e.target.value })} required>
               <option value="">Select</option>
-              {['6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+              {['5', '6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
             </select>
           </div>
           <div><label className="label">Score</label><input className="input-field" placeholder="e.g. 95% or AIR 4200" value={form.score} onChange={e => setForm({ ...form, score: e.target.value })} /></div>
@@ -749,7 +749,7 @@ function AnnouncementsAdmin() {
           <div><label className="label">Target Class</label>
             <select className="input-field" value={form.targetClass} onChange={e => setForm({ ...form, targetClass: e.target.value })}>
               <option value="all">All Classes</option>
-              {['6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+              {['5', '6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
             </select>
           </div>
           <div><label className="label">Priority</label>

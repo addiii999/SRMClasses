@@ -204,7 +204,7 @@ export default function Contact() {
                   <label className="label">Class</label>
                   <select className="input-field" value={demoForm.studentClass} onChange={e => setDemoForm({ ...demoForm, studentClass: e.target.value })} required>
                     <option value="">Select</option>
-                    {['6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+                    {['5','6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
                   </select>
                 </div>
                 <div>

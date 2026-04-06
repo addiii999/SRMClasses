@@ -9,10 +9,10 @@ import {
 const FEE_TYPES = ['Foundation', 'Advance', 'Math-Science', 'ICSE-Advance', 'None'];
 
 const FEE_STRUCTURE = {
-  'Foundation': { '6': 7500, '7': 8500, '8': 9500, '9': 12000, '10': 14400 },
-  'Advance': { '6': 10000, '7': 12000, '8': 15000, '9': 18000, '10': 20000 },
+  'Foundation': { '5': 6500, '6': 7500, '7': 8500, '8': 9500, '9': 12000, '10': 14400 },
+  'Advance': { '5': 7500, '6': 10000, '7': 12000, '8': 15000, '9': 18000, '10': 20000 },
   'Math-Science': { '9': 8400, '10': 9600 },
-  'ICSE-Advance': { '7': 18000, '8': 20000, '9': 22000, '10': 25000 }
+  'ICSE-Advance': { '6': 15000, '7': 18000, '8': 20000, '9': 22000, '10': 25000 }
 };
 
 export default function AdminFeeManagement() {
