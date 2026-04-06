@@ -13,7 +13,8 @@ export default function Contact() {
     studentClass: '', 
     preferredDate: new Date().toISOString().split('T')[0], 
     preferredTime: '', 
-    subject: '' 
+    subject: '',
+    branch: ''
   });
   const [submitting, setSubmitting] = useState(false);
   const [demoSubmitting, setDemoSubmitting] = useState(false);
@@ -54,7 +55,7 @@ export default function Contact() {
     try {
       await api.post('/demo', demoForm);
       toast.success('Demo class booked! We\'ll confirm your slot.');
-      setDemoForm({ name: '', email: '', mobile: '', studentClass: '', preferredDate: '', preferredTime: '', subject: '' });
+      setDemoForm({ name: '', email: '', mobile: '', studentClass: '', preferredDate: new Date().toISOString().split('T')[0], preferredTime: '', subject: '', branch: '' });
     } catch { toast.error('Booking failed. Please try again.'); }
     finally { setDemoSubmitting(false); }
   };
@@ -174,6 +175,15 @@ export default function Contact() {
               <div>
                 <label className="label">Email</label>
                 <input type="email" className="input-field" placeholder="your@email.com" value={demoForm.email} onChange={e => setDemoForm({ ...demoForm, email: e.target.value })} required />
+              </div>
+              <div>
+                <label className="label">Preferred Branch</label>
+                <select className="input-field" value={demoForm.branch} onChange={e => setDemoForm({ ...demoForm, branch: e.target.value })} required>
+                  <option value="">Select Branch</option>
+                  {(branches || []).map(b => (
+                    <option key={b._id} value={b._id}>{b.name.replace('SRM Classes - ', '')}</option>
+                  ))}
+                </select>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
