@@ -358,7 +358,7 @@ function DemoBookings({ selectedBranch }) {
                       )}
 
                       {b.status === 'converted' && (
-                        <Link to="/admin/verify-students" className="px-3 py-1 bg-brand-bg text-brand-dark border border-primary/10 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                        <Link to="/admin/verify-students?status=approved" className="px-3 py-1 bg-brand-bg text-brand-dark border border-primary/10 rounded-lg text-[10px] font-bold flex items-center gap-1">
                           <CheckCircle className="w-3 h-3 text-green-500" /> View Student
                         </Link>
                       )}

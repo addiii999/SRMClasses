@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import api from '../../lib/api';
 import toast from 'react-hot-toast';
 import { 
@@ -7,7 +8,9 @@ import {
 } from 'lucide-react';
 
 export default function StudentVerification({ selectedBranch }) {
-  const [activeTab, setActiveTab] = useState('pending');
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('status') || 'pending';
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [users, setUsers] = useState([]);
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -106,18 +109,24 @@ export default function StudentVerification({ selectedBranch }) {
         </div>
         
         <div className="flex bg-white p-1 rounded-2xl border border-gray-100 shadow-sm self-start md:self-center">
-           <button 
-             onClick={() => setActiveTab('pending')}
-             className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'pending' ? 'bg-brand-dark text-white shadow-glass-sm' : 'text-gray-400 hover:text-brand-dark'}`}
-           >
-             PENDING
-           </button>
-           <button 
-             onClick={() => setActiveTab('rejected')}
-             className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'rejected' ? 'bg-red-500 text-white shadow-glass-sm' : 'text-gray-400 hover:text-red-500'}`}
-           >
-             REJECTED
-           </button>
+            <button 
+              onClick={() => setActiveTab('pending')}
+              className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'pending' ? 'bg-brand-dark text-white shadow-glass-sm' : 'text-gray-400 hover:text-brand-dark'}`}
+            >
+              PENDING
+            </button>
+            <button 
+              onClick={() => setActiveTab('approved')}
+              className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'approved' ? 'bg-green-600 text-white shadow-glass-sm' : 'text-gray-400 hover:text-green-600'}`}
+            >
+              APPROVED
+            </button>
+            <button 
+              onClick={() => setActiveTab('rejected')}
+              className={`px-6 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'rejected' ? 'bg-red-500 text-white shadow-glass-sm' : 'text-gray-400 hover:text-red-500'}`}
+            >
+              REJECTED
+            </button>
         </div>
       </div>
 
@@ -167,22 +176,35 @@ export default function StudentVerification({ selectedBranch }) {
                 </div>
               </div>
 
-              <div className="flex gap-2 shrink-0">
-                <button 
-                  onClick={() => handleOpenApprove(user)}
-                  className={`px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm active:scale-95 ${activeTab === 'rejected' ? 'bg-primary text-white hover:bg-primary/90' : 'bg-brand-dark text-white hover:bg-black'}`}
-                >
-                  {activeTab === 'rejected' ? 'Approve Now' : 'Approve'} <ArrowRight className="w-4 h-4" />
-                </button>
                 {activeTab === 'pending' && (
+                  <>
+                    <button 
+                      onClick={() => handleOpenApprove(user)}
+                      className="px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm active:scale-95 bg-brand-dark text-white hover:bg-black"
+                    >
+                      Approve <ArrowRight className="w-4 h-4" />
+                    </button>
+                    <button 
+                      onClick={() => handleReject(user._id)}
+                      className="p-2.5 text-red-400 hover:bg-red-50 rounded-xl transition-all"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+                {activeTab === 'rejected' && (
                   <button 
-                    onClick={() => handleReject(user._id)}
-                    className="p-2.5 text-red-400 hover:bg-red-50 rounded-xl transition-all"
+                    onClick={() => handleOpenApprove(user)}
+                    className="px-6 py-2.5 rounded-xl text-sm font-bold flex items-center gap-2 transition-all shadow-sm active:scale-95 bg-primary text-white hover:bg-primary/90"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    Approve Now <ArrowRight className="w-4 h-4" />
                   </button>
                 )}
-              </div>
+                {activeTab === 'approved' && (
+                  <div className="px-4 py-2 bg-green-50 text-green-600 rounded-xl text-xs font-bold flex items-center gap-2">
+                    <CheckCircle className="w-4 h-4" /> Verified
+                  </div>
+                )}
             </div>
           ))
         )}
