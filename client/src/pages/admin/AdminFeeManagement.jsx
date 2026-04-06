@@ -312,19 +312,21 @@ function FeeModal({ student, onClose, onSuccess }) {
   });
   const [loading, setLoading] = useState(false);
 
-  // Real-time Calculation Breakdown
+  // Real-time Calculation Breakdown (Synced with Doc April 2026)
   const yearlyFee = FEE_STRUCTURE[form.feeType]?.[student.studentClass] || 0;
   const satValue = Number(form.satPercentage) || 0;
-  const satDiscount = Number((satValue / 3).toFixed(2));
-  const satAmount = Math.round(yearlyFee * (satDiscount / 100));
+  
+  // SAT discount is capped at satValue / 3 %
+  const satDiscountPercent = satValue / 3;
+  const satAmount = Math.round(yearlyFee * (satDiscountPercent / 100));
   const afterSat = yearlyFee - satAmount;
   
   let instDiscountPercent = 0;
   if (form.installmentPlan === 1) instDiscountPercent = 10;
-  else if (form.installmentPlan === 2) instDiscountPercent = 5;
+  else if (form.installmentPlan === 3) instDiscountPercent = 5;
 
   const instAmount = Math.round(afterSat * (instDiscountPercent / 100));
-  const finalPayable = (afterSat - instAmount) + 500; // Adding ₹500 Admission Fee
+  const finalPayable = (afterSat - instAmount) + 500; // Adding ₹500 fixed Admission Fee
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -422,7 +424,7 @@ function FeeModal({ student, onClose, onSuccess }) {
                </div>
 
                <div className="flex justify-between text-gray-600 pt-2">
-                 <span>SAT Discount ({satValue}% → {satDiscount}%):</span>
+                 <span>SAT Discount ({satValue}% → {satDiscountPercent.toFixed(2)}%):</span>
                  <span className="text-red-500 font-medium">- ₹{satAmount.toLocaleString('en-IN')}</span>
                </div>
                <div className="flex justify-between text-xs text-gray-400 pb-3 border-b border-gray-200 italic">
@@ -447,8 +449,18 @@ function FeeModal({ student, onClose, onSuccess }) {
              </div>
           </div>
 
+          {yearlyFee === 0 && form.feeType !== 'None' && (
+            <div className="p-3 bg-red-50 rounded-xl border border-red-100 flex gap-3 text-red-700 text-xs font-bold">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <p>Warning: {form.feeType} fee is not defined for Class {student.studentClass} in the policy.</p>
+            </div>
+          )}
+
           <div className="pt-2">
-            <button disabled={loading} className="btn-primary w-full py-3">
+            <button 
+              disabled={loading || (yearlyFee === 0 && form.feeType !== 'None')} 
+              className="btn-primary w-full py-3 disabled:opacity-50"
+            >
               {loading ? 'Updating...' : 'Save Settings'}
             </button>
           </div>

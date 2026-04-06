@@ -51,19 +51,23 @@ const calculateFeeDetails = (user) => {
 
   // 1. SAT Scholarship Logic: discount = satPercentage / 3 %
   const satDiscountPercent = (satPercentage || 0) / 3;
-  const afterSat = actualFee - (actualFee * satDiscountPercent / 100);
+  const satAmount = Math.round(actualFee * (satDiscountPercent / 100));
+  const afterSat = actualFee - satAmount;
 
-  // 2. Installment Discount Logic
-  // 1 Installment -> 10% extra discount
-  // 2 Installments -> 5% extra discount
-  // 3-6 Installments -> No discount
+  // 2. Installment Discount Logic (Refined per Doc April 2026)
+  // 1 Installment -> 10% discount
+  // 3 Installments -> 5% discount
+  // Others -> 0% discount
   let planDiscountPercent = 0;
   if (installmentPlan === 1) planDiscountPercent = 10;
-  else if (installmentPlan === 2) planDiscountPercent = 5;
+  else if (installmentPlan === 3) planDiscountPercent = 5;
 
-  const finalPayable = Math.round(afterSat * (1 - planDiscountPercent / 100));
+  const instAmount = Math.round(afterSat * (planDiscountPercent / 100));
+  
+  // 3. Final Calculation including static ₹500 Admission Fee
+  const finalPayable = (afterSat - instAmount) + 500;
 
-  // 3. Payment Status Logic
+  // 4. Payment Status Logic
   const paidAmount = payments ? payments.reduce((sum, p) => sum + p.amount, 0) : 0;
   const remainingAmount = Math.max(0, finalPayable - paidAmount);
 
@@ -71,7 +75,7 @@ const calculateFeeDetails = (user) => {
   if (paidAmount >= finalPayable && finalPayable > 0) status = 'Paid';
   else if (paidAmount > 0) status = 'Partial';
 
-  // 4. Installment Breakdown Logic
+  // 5. Installment Breakdown Logic
   const installmentAmount = Math.round(finalPayable / (installmentPlan || 1));
   let tempPaid = paidAmount;
   const installments = Array.from({ length: installmentPlan || 1 }, (_, i) => {
@@ -80,8 +84,6 @@ const calculateFeeDetails = (user) => {
       instStatus = 'Paid';
       tempPaid -= installmentAmount;
     } else if (tempPaid > 0) {
-      // For visual clarity, even if it's partially covered, we can say Pending or show partial.
-      // The prompt says "Paid / Pending". We'll stick to full coverage = Paid.
       instStatus = 'Pending'; 
       tempPaid = 0;
     }
@@ -110,3 +112,4 @@ module.exports = {
   FEE_STRUCTURE,
   calculateFeeDetails
 };
+
