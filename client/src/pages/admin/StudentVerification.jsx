@@ -88,6 +88,19 @@ export default function StudentVerification({ selectedBranch }) {
     }
   };
 
+  const handleRestoreToFees = async (id) => {
+    try {
+      const token = localStorage.getItem('srmAdminToken');
+      await api.patch(`/fees/restore/${id}`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Student restored to Fee Management');
+      fetchUsers();
+    } catch (error) {
+      toast.error('Restoration failed');
+    }
+  };
+
   const filtered = users.filter(u => 
     u.name.toLowerCase().includes(search.toLowerCase()) ||
     u.mobile?.includes(search) ||
@@ -164,9 +177,15 @@ export default function StudentVerification({ selectedBranch }) {
                   {activeTab === 'rejected' && <span className="text-[10px] bg-red-100 text-red-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Rejected</span>}
                 </div>
                 <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-1">
-                  <span className="text-xs text-gray-400 flex items-center gap-1.5 font-medium">
-                    <Hash className="w-3 h-3" /> {user.mobile}
-                  </span>
+                  {user.studentId ? (
+                    <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-lg border border-green-100 flex items-center gap-1.5 font-bold">
+                      <ShieldCheck className="w-3.5 h-3.5" /> {user.studentId}
+                    </span>
+                  ) : (
+                    <span className="text-xs text-gray-400 flex items-center gap-1.5 font-medium">
+                      <Hash className="w-3 h-3" /> {user.mobile}
+                    </span>
+                  )}
                   <span className="text-xs text-gray-400 flex items-center gap-1.5 font-medium">
                     <GraduationCap className="w-3 h-3" /> Class {user.studentClass}
                   </span>
@@ -201,8 +220,18 @@ export default function StudentVerification({ selectedBranch }) {
                   </button>
                 )}
                 {activeTab === 'approved' && (
-                  <div className="px-4 py-2 bg-green-50 text-green-600 rounded-xl text-xs font-bold flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4" /> Verified
+                  <div className="flex items-center gap-3">
+                    {user.isEnrolled === false && (
+                      <button 
+                        onClick={() => handleRestoreToFees(user._id)}
+                        className="px-4 py-2 bg-yellow-50 text-yellow-700 border border-yellow-200 rounded-xl text-xs font-bold hover:bg-yellow-100 transition-all flex items-center gap-1.5"
+                      >
+                        <ArrowRight className="w-4 h-4" /> Enrol Now
+                      </button>
+                    )}
+                    <div className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 ${user.isEnrolled !== false ? 'bg-green-50 text-green-600' : 'bg-gray-50 text-gray-400'}`}>
+                      <CheckCircle className="w-4 h-4" /> {user.isEnrolled !== false ? 'Verified & Active' : 'Verified (Inactive)'}
+                    </div>
                   </div>
                 )}
             </div>
