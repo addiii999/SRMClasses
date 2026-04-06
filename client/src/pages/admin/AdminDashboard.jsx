@@ -328,7 +328,14 @@ function DemoBookings({ selectedBranch }) {
               ) : bookings.map(b => (
                 <tr key={b._id} className="hover:bg-brand-bg/30 transition-colors">
                   <td className="px-5 py-4">
-                    <div className="font-semibold text-brand-dark">{b.name}</div>
+                    <div className="flex items-center gap-2">
+                      <div className="font-semibold text-brand-dark">{b.name}</div>
+                      {b.confidenceStatus === 'Low' && (
+                        <span className="px-1.5 py-0.5 bg-red-50 border border-red-200 text-red-600 text-[9px] font-bold uppercase rounded flex items-center gap-1" title="Suspicious pattern detected">
+                          <AlertTriangle className="w-2.5 h-2.5" /> Low Confidence
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[10px] text-gray-400 truncate max-w-[150px]">{b.email}</div>
                   </td>
                   <td className="px-5 py-4 text-gray-600 font-medium">{b.mobile}</td>

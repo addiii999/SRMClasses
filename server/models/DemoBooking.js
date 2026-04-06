@@ -14,6 +14,11 @@ const demoBookingSchema = new mongoose.Schema({
     enum: ['pending', 'visited', 'converted', 'rejected'],
     default: 'pending',
   },
+  confidenceStatus: {
+    type: String,
+    enum: ['High', 'Low'],
+    default: 'High',
+  },
   isConverted: { type: Boolean, default: false },
   convertedStudentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   notes: { type: String, default: '' },

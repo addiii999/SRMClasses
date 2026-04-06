@@ -7,15 +7,11 @@ import toast from 'react-hot-toast';
 export default function Contact() {
   const [form, setForm] = useState({ name: '', email: '', mobile: '', studentClass: '', message: '' });
   const [demoForm, setDemoForm] = useState({ 
-    name: '', 
-    email: '', 
-    mobile: '', 
-    studentClass: '', 
-    preferredDate: new Date().toISOString().split('T')[0], 
-    preferredTime: '', 
-    subject: '',
-    branch: ''
+    name: '', email: '', mobile: '', confirmMobile: '', studentClass: '', 
+    preferredDate: new Date().toISOString().split('T')[0], preferredTime: '', subject: '', branch: ''
   });
+  const [captcha, setCaptcha] = useState({ a: Math.floor(Math.random() * 9) + 1, b: Math.floor(Math.random() * 9) + 1 });
+  const [userCaptcha, setUserCaptcha] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [demoSubmitting, setDemoSubmitting] = useState(false);
   const [branches, setBranches] = useState([]);
@@ -51,12 +47,24 @@ export default function Contact() {
 
   const handleDemo = async (e) => {
     e.preventDefault();
+    if (demoForm.mobile !== demoForm.confirmMobile) {
+      return toast.error('Mobile numbers do not match!');
+    }
+    if (Number(userCaptcha) !== captcha.a + captcha.b) {
+      setCaptcha({ a: Math.floor(Math.random() * 9) + 1, b: Math.floor(Math.random() * 9) + 1 });
+      setUserCaptcha('');
+      return toast.error('Incorrect math answer. Are you human?');
+    }
     setDemoSubmitting(true);
     try {
       await api.post('/demo', demoForm);
       toast.success('Demo class booked! We\'ll confirm your slot.');
-      setDemoForm({ name: '', email: '', mobile: '', studentClass: '', preferredDate: new Date().toISOString().split('T')[0], preferredTime: '', subject: '', branch: '' });
-    } catch { toast.error('Booking failed. Please try again.'); }
+      setDemoForm({ name: '', email: '', mobile: '', confirmMobile: '', studentClass: '', preferredDate: new Date().toISOString().split('T')[0], preferredTime: '', subject: '', branch: '' });
+      setUserCaptcha('');
+      setCaptcha({ a: Math.floor(Math.random() * 9) + 1, b: Math.floor(Math.random() * 9) + 1 });
+    } catch (error) { 
+      toast.error(error.response?.data?.message || 'Booking failed. Please try again.'); 
+    }
     finally { setDemoSubmitting(false); }
   };
 
@@ -165,16 +173,22 @@ export default function Contact() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Name</label>
-                  <input className="input-field" placeholder="Full name" value={demoForm.name} onChange={e => setDemoForm({ ...demoForm, name: e.target.value })} required />
+                  <input className="input-field" placeholder="Enter Full Name" value={demoForm.name} onChange={e => setDemoForm({ ...demoForm, name: e.target.value })} required />
                 </div>
                 <div>
-                  <label className="label">Mobile</label>
-                  <input className="input-field" placeholder="10-digit" value={demoForm.mobile} onChange={e => setDemoForm({ ...demoForm, mobile: e.target.value })} required />
+                  <label className="label">Email</label>
+                  <input type="email" className="input-field" placeholder="your@email.com" value={demoForm.email} onChange={e => setDemoForm({ ...demoForm, email: e.target.value })} required />
                 </div>
               </div>
-              <div>
-                <label className="label">Email</label>
-                <input type="email" className="input-field" placeholder="your@email.com" value={demoForm.email} onChange={e => setDemoForm({ ...demoForm, email: e.target.value })} required />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Mobile</label>
+                  <input className="input-field" placeholder="10-digit number" value={demoForm.mobile} onChange={e => setDemoForm({ ...demoForm, mobile: e.target.value })} required />
+                </div>
+                <div>
+                  <label className="label">Confirm Mobile</label>
+                  <input className="input-field" placeholder="Re-enter number" value={demoForm.confirmMobile} onChange={e => setDemoForm({ ...demoForm, confirmMobile: e.target.value })} required />
+                </div>
               </div>
               <div>
                 <label className="label">Preferred Branch</label>
@@ -216,6 +230,17 @@ export default function Contact() {
                     {['7:00 AM', '8:30 AM', '10:00 AM', '4:00 PM', '5:30 PM'].map(t => <option key={t}>{t}</option>)}
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="label text-gray-500">Human Verification: {captcha.a} + {captcha.b} = ?</label>
+                <input 
+                  type="number" 
+                  className="input-field font-semibold text-center" 
+                  placeholder="Answer" 
+                  value={userCaptcha} 
+                  onChange={e => setUserCaptcha(e.target.value)} 
+                  required 
+                />
               </div>
               <button type="submit" disabled={demoSubmitting} className="btn-primary w-full py-4 disabled:opacity-60">
                 {demoSubmitting ? 'Booking...' : '🎓 Book Free Demo Class'}
