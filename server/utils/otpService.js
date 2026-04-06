@@ -14,8 +14,8 @@ const sendOTPviaEmail = async (email, mobile, otp) => {
   }
 
   const data = {
-    // Note: Free tier uses onboarding@resend.dev until domain is verified
-    from: 'SRM Classes <onboarding@resend.dev>',
+    // Using the verified subdomain for maximum delivery success
+    from: 'SRM Classes <otp@send.srmclasses.in>',
     to: [email],
     subject: `${otp} is your SRM Classes OTP`,
     html: `
