@@ -11,9 +11,11 @@ const demoBookingSchema = new mongoose.Schema({
   subject: { type: String },
   status: {
     type: String,
-    enum: ['Pending', 'Confirmed', 'Completed', 'Cancelled'],
-    default: 'Pending',
+    enum: ['pending', 'visited', 'converted', 'rejected'],
+    default: 'pending',
   },
+  isConverted: { type: Boolean, default: false },
+  convertedStudentId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   notes: { type: String, default: '' },
   branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', required: true },
 }, { timestamps: true });

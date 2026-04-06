@@ -51,7 +51,13 @@ const login = async (req, res) => {
     res.json({
       success: true,
       token,
-      user: { id: user._id, name: user.name, email: user.email, studentClass: user.studentClass },
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        studentClass: user.studentClass,
+        shouldChangePassword: user.shouldChangePassword || false
+      },
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

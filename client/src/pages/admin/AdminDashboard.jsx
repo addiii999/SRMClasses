@@ -244,65 +244,133 @@ function Enquiries({ selectedBranch }) {
 function DemoBookings({ selectedBranch }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [localBranch, setLocalBranch] = useState(selectedBranch || '');
 
   const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}` });
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
     try {
-      const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
-      const res = await api.get(`/demo?${branchParam}`, { headers: getHeaders() });
+      const branchParam = localBranch ? `&branch=${localBranch}` : '';
+      const statusParam = filterStatus !== 'all' ? `&status=${filterStatus}` : '';
+      const res = await api.get(`/demo?${branchParam}${statusParam}`, { headers: getHeaders() });
       setBookings(res.data.data || []);
-    } catch { toast.error('Failed to load'); }
+    } catch { toast.error('Failed to load demo bookings'); }
     finally { setLoading(false); }
-  }, [selectedBranch]);
+  }, [localBranch, filterStatus]);
 
   useEffect(() => { fetchBookings(); }, [fetchBookings]);
 
-  const updateStatus = async (id, status) => {
-    try { await api.patch(`/demo/${id}`, { status }, { headers: getHeaders() }); toast.success('Updated!'); fetchBookings(); }
-    catch { toast.error('Failed'); }
+  useEffect(() => {
+    if (selectedBranch !== undefined) setLocalBranch(selectedBranch);
+  }, [selectedBranch]);
+
+  const handleAction = async (id, action) => {
+    try {
+      let res;
+      if (action === 'visited') res = await api.patch(`/demo/${id}/visited`, {}, { headers: getHeaders() });
+      else if (action === 'convert') res = await api.post(`/demo/${id}/convert`, {}, { headers: getHeaders() });
+      else if (action === 'reject') res = await api.patch(`/demo/${id}/reject`, {}, { headers: getHeaders() });
+      else if (action === 'delete') {
+        if (!confirm('Move to Recycle Bin?')) return;
+        res = await api.delete(`/demo/${id}`, { headers: getHeaders() });
+      }
+
+      toast.success(res.data.message || 'Action completed!');
+      fetchBookings();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Action failed');
+    }
   };
 
-  const del = async (id) => {
-    if (!confirm('Move this booking to Recycle Bin?')) return;
-    try { await api.delete(`/demo/${id}`, { headers: getHeaders() }); toast.success('Moved to Recycle Bin'); fetchBookings(); }
-    catch { toast.error('Failed'); }
+  const statusBadge = (s) => {
+    const map = {
+      pending: 'bg-gray-100 text-gray-600',
+      visited: 'bg-blue-100 text-blue-600',
+      converted: 'bg-green-100 text-green-700',
+      rejected: 'bg-red-100 text-red-600'
+    };
+    return <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${map[s] || 'bg-gray-100'}`}>{s}</span>;
   };
-
-  const statusColors = { Pending: 'badge bg-yellow-100 text-yellow-700', Confirmed: 'badge bg-blue-100 text-blue-600', Completed: 'badge bg-green-100 text-green-700', Cancelled: 'badge bg-red-100 text-red-600' };
 
   return (
     <div className="space-y-5">
-      <h2 className="text-2xl font-display font-bold text-brand-dark">Demo Class Bookings</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-display font-bold text-brand-dark">Demo Class Bookings</h2>
+        <div className="flex gap-2">
+          <select className="text-xs border rounded-lg px-3 py-1.5 bg-white outline-none focus:ring-1 focus:ring-primary"
+            value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
+            <option value="all">All Status</option>
+            <option value="pending">Pending</option>
+            <option value="visited">Visited</option>
+            <option value="converted">Converted</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </div>
+      </div>
+
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr className="border-b border-gray-100 bg-brand-bg">
-              {['Name', 'Mobile', 'Class', 'Subject', 'Preferred Date', 'Status', 'Actions'].map(h => (
-                <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase">{h}</th>
-              ))}
-            </tr></thead>
-            <tbody>
-              {loading ? Array(4).fill(0).map((_, i) => (
-                <tr key={i}>{Array(7).fill(0).map((_, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>)}</tr>
+            <thead>
+              <tr className="border-b border-gray-100 bg-brand-bg">
+                {['Student Info', 'Mobile', 'Branch/Class', 'Preferred Date', 'Status', 'Actions'].map(h => (
+                  <th key={h} className="px-5 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {loading ? Array(5).fill(0).map((_, i) => (
+                <tr key={i}>{Array(6).fill(0).map((_, j) => <td key={j} className="px-5 py-4"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>)}</tr>
               )) : bookings.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-10 text-gray-400">No bookings yet.</td></tr>
+                <tr><td colSpan={6} className="text-center py-12 text-gray-400">No bookings found.</td></tr>
               ) : bookings.map(b => (
-                <tr key={b._id} className="border-b border-gray-50 hover:bg-brand-bg/50">
-                  <td className="px-4 py-3 font-medium text-brand-dark">{b.name}</td>
-                  <td className="px-4 py-3 text-gray-600">{b.mobile}</td>
-                  <td className="px-4 py-3">Class {b.studentClass}</td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{b.subject || '–'}</td>
-                  <td className="px-4 py-3 text-xs text-gray-500">{b.preferredDate ? new Date(b.preferredDate).toLocaleDateString('en-IN') : '–'} {b.preferredTime}</td>
-                  <td className="px-4 py-3">
-                    <select value={b.status} onChange={e => updateStatus(b._id, e.target.value)}
-                      className="text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-primary bg-white">
-                      {['Pending', 'Confirmed', 'Completed', 'Cancelled'].map(s => <option key={s}>{s}</option>)}
-                    </select>
+                <tr key={b._id} className="hover:bg-brand-bg/30 transition-colors">
+                  <td className="px-5 py-4">
+                    <div className="font-semibold text-brand-dark">{b.name}</div>
+                    <div className="text-[10px] text-gray-400 truncate max-w-[150px]">{b.email}</div>
                   </td>
-                  <td className="px-4 py-3">
-                    <button onClick={() => del(b._id)} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+                  <td className="px-5 py-4 text-gray-600 font-medium">{b.mobile}</td>
+                  <td className="px-5 py-4">
+                    <div className="text-xs font-medium text-brand-dark">{b.branch?.name || 'Unknown'}</div>
+                    <div className="text-[10px] text-primary font-bold uppercase">Class {b.studentClass}</div>
+                  </td>
+                  <td className="px-5 py-4">
+                    <div className="text-xs font-medium text-gray-700">{b.preferredDate ? new Date(b.preferredDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) : '–'}</div>
+                    <div className="text-[10px] text-gray-400">{b.preferredTime || '–'}</div>
+                  </td>
+                  <td className="px-5 py-4">{statusBadge(b.status)}</td>
+                  <td className="px-5 py-4">
+                    <div className="flex items-center gap-2">
+                      {b.status === 'pending' && (
+                        <>
+                          <button onClick={() => handleAction(b._id, 'visited')} className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-[10px] font-bold hover:bg-blue-100 transition-colors">Mark Visited</button>
+                          <button onClick={() => handleAction(b._id, 'reject')} className="px-3 py-1 bg-red-50 text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors">Reject</button>
+                        </>
+                      )}
+                      
+                      {b.status === 'visited' && (
+                        <>
+                          <button onClick={() => handleAction(b._id, 'convert')} className="px-3 py-1 bg-green-600 text-white rounded-lg text-[10px] font-bold hover:bg-green-700 transition-shadow shadow-sm">Convert to Student</button>
+                          <button onClick={() => handleAction(b._id, 'reject')} className="px-3 py-1 bg-red-50 text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors">Reject</button>
+                        </>
+                      )}
+
+                      {b.status === 'converted' && (
+                        <Link to="/admin/verify-students" className="px-3 py-1 bg-brand-bg text-brand-dark border border-primary/10 rounded-lg text-[10px] font-bold flex items-center gap-1">
+                          <CheckCircle className="w-3 h-3 text-green-500" /> View Student
+                        </Link>
+                      )}
+
+                      {b.status === 'rejected' && (
+                        <button onClick={() => handleAction(b._id, 'visited')} className="px-3 py-1 bg-gray-100 text-gray-500 rounded-lg text-[10px] font-bold hover:bg-gray-200">Re-open</button>
+                      )}
+
+                      <button onClick={() => handleAction(b._id, 'delete')} className="p-1.5 text-gray-300 hover:text-red-400 transition-colors ml-auto">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

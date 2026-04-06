@@ -91,6 +91,10 @@ const userSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
   }],
   branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', required: true },
+  shouldChangePassword: {
+    type: Boolean,
+    default: false,
+  },
 }, { timestamps: true });
 
 userSchema.pre('save', async function (next) {

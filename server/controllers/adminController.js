@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { generateStudentId } = require('../utils/studentIdGenerator');
 
 /**
  * @desc    Get all pending student registrations (unverified)
@@ -47,19 +48,8 @@ exports.approveStudent = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User is already an approved student' });
     }
 
-    // Generate Student ID: SRM-YYYY-BC-CC-SEQ
-    // BC = Branch Code (e.g. RAVI), CC = Class
-    const yearPart = sessionYear;
-    const codeRaw = branchDoc.branchCode.replace(/[0-9]/g, '').toUpperCase();
-    const branchPart = codeRaw.charAt(0) + codeRaw.charAt(codeRaw.length - 1); // First and Last letter (e.g. RI, MR)
-    const classPart = studentClass.toString().padStart(2, '0');
-    
-    // Find how many students already exist for this Year, Branch and Class to determine sequence
-    const pattern = new RegExp(`^SRM-${yearPart}-${branchPart}-${classPart}-`);
-    const count = await User.countDocuments({ studentId: { $regex: pattern } });
-    const sequence = (count + 1).toString().padStart(3, '0');
-    
-    const newStudentId = `SRM-${yearPart}-${branchPart}-${classPart}-${sequence}`;
+    // Generate Student ID using utility
+    const newStudentId = await generateStudentId(sessionYear, studentClass, branchDoc);
 
     const adminName = req.user ? req.user.email : 'Admin';
 
