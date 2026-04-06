@@ -81,8 +81,6 @@ const limiter = rateLimit({
   skip: (req) => req.ip === '::1' || req.ip === '127.0.0.1' // Skip local dev
 });
 
-// Apply limiter to all routes
-app.use(limiter);
 
 // Middleware - Allow specific origins (CORS fix)
 const allowedOrigins = [
@@ -106,6 +104,10 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
 }));
+
+// Apply limiter to all routes
+app.use(limiter);
+
 
 app.use(express.json());
 
