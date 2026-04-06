@@ -93,18 +93,14 @@ const convertToStudent = async (req, res) => {
     const sessionYear = new Date().getFullYear().toString();
 
     if (user) {
-      // 2a. Update existing user
+      // 2a. Update existing user (mark as pending student for manual verification)
       user.isStudent = true;
-      user.isEnrolled = true;
-      user.verificationStatus = 'approved';
+      user.isEnrolled = false;
+      user.verificationStatus = 'pending';
       user.shouldChangePassword = true;
-      if (!user.studentId) {
-        user.studentId = await generateStudentId(sessionYear, booking.studentClass, booking.branch);
-      }
       await user.save();
     } else {
-      // 2b. Create new user
-      const studentId = await generateStudentId(sessionYear, booking.studentClass, booking.branch);
+      // 2b. Create new user as pending student
       user = await User.create({
         name: booking.name,
         email: booking.email,
@@ -113,10 +109,9 @@ const convertToStudent = async (req, res) => {
         password: booking.mobile, // Mobile as default password
         role: 'student',
         isStudent: true,
-        isEnrolled: true,
-        verificationStatus: 'approved',
+        isEnrolled: false,
+        verificationStatus: 'pending',
         shouldChangePassword: true,
-        studentId,
         branch: booking.branch._id
       });
     }
@@ -127,10 +122,8 @@ const convertToStudent = async (req, res) => {
     booking.status = 'converted';
     await booking.save();
 
-    // 4. Send Message (Placeholder)
-    await sendAdmissionNotification(user, booking.branch.name);
+    res.json({ success: true, message: 'Demo converted! Please approve the student in Verification tab.', data: { user, booking } });
 
-    res.json({ success: true, message: 'Demo converted to student successfully', data: { user, booking } });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
