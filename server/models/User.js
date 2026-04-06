@@ -91,7 +91,7 @@ const userSchema = new mongoose.Schema({
   payments: [{
     amount: { type: Number, required: true },
     date: { type: Date, default: Date.now },
-    method: { type: String, enum: ['cash', 'upi', 'bank'], required: true }
+    method: { type: String, enum: ['cash', 'upi', 'bank', 'cheque'], required: true }
   }],
   paymentLogs: [{
     actionType: { type: String, enum: ['edit', 'delete'] },

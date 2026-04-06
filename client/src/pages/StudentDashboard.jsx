@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, Bell, FileText, Download, LogOut, GraduationCap, Menu, X, ChevronDown, CreditCard, Clock, AlertCircle } from 'lucide-react';
+import { BookOpen, Bell, FileText, Download, LogOut, GraduationCap, Menu, X, ChevronDown, CreditCard, Clock, AlertCircle, History } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
@@ -91,6 +91,7 @@ export default function StudentDashboard() {
       );
 
       const progress = Math.min(100, (feeData.paidAmount / feeData.payableAmount) * 100);
+      const sortedPayments = [...(feeData.payments || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
 
       return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -154,6 +155,28 @@ export default function StudentDashboard() {
               ))}
             </div>
           </div>
+          
+          {/* Payment History */}
+          {sortedPayments.length > 0 && (
+            <div>
+              <h4 className="text-sm font-bold text-brand-dark mb-4 flex items-center gap-2">
+                <History className="w-4 h-4 text-emerald-600" /> Payment History
+              </h4>
+              <div className="space-y-3">
+                {sortedPayments.map((p, i) => (
+                  <div key={p._id || i} className="flex items-center justify-between p-4 rounded-xl bg-white border border-gray-100 shadow-sm">
+                     <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 font-bold shrink-0">₹</div>
+                        <div>
+                          <p className="font-bold text-brand-dark text-lg">₹{p.amount.toLocaleString('en-IN')}</p>
+                          <p className="text-xs text-gray-400 capitalize">{new Date(p.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })} • {p.method}</p>
+                        </div>
+                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           
           {/* Help Note */}
           <div className="p-4 rounded-2xl bg-primary/5 border border-primary/10 flex items-start gap-3">

@@ -128,7 +128,7 @@ exports.addPayment = async (req, res) => {
     }
 
     // Atomic update
-    await User.findByIdAndUpdate(req.params.id, {
+    const updatedUser = await User.findByIdAndUpdate(req.params.id, {
       $push: {
         payments: {
           amount,
@@ -136,11 +136,18 @@ exports.addPayment = async (req, res) => {
           date: Date.now()
         }
       }
-    });
+    }, { new: true }).select('-password');
+    
+    // Add the calculated dynamic fields to the response object
+    const finalStudentData = {
+      ...updatedUser.toObject(),
+      ...calculateFeeDetails(updatedUser)
+    };
 
     res.status(200).json({
       success: true,
-      message: 'Payment added successfully'
+      message: 'Payment added successfully',
+      data: finalStudentData
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -195,7 +202,12 @@ exports.editPayment = async (req, res) => {
 
     await student.save();
 
-    res.status(200).json({ success: true, message: 'Payment updated successfully' });
+    const finalStudentData = {
+      ...student.toObject(),
+      ...calculateFeeDetails(student)
+    };
+
+    res.status(200).json({ success: true, message: 'Payment updated successfully', data: finalStudentData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -234,7 +246,12 @@ exports.deletePayment = async (req, res) => {
     student.payments.pull(req.params.paymentId);
     await student.save();
 
-    res.status(200).json({ success: true, message: 'Payment deleted successfully' });
+    const finalStudentData = {
+      ...student.toObject(),
+      ...calculateFeeDetails(student)
+    };
+
+    res.status(200).json({ success: true, message: 'Payment deleted successfully', data: finalStudentData });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

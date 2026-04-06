@@ -288,14 +288,24 @@ export default function AdminFeeManagement() {
         <PaymentModal 
           student={selectedStudent} 
           onClose={() => setShowPaymentModal(false)} 
-          onSuccess={() => { setShowPaymentModal(false); fetchStudents(); }} 
+          onSuccess={(updatedStudent) => {
+             setStudents(prev => prev.map(s => s._id === updatedStudent._id ? updatedStudent : s));
+             setSelectedStudent(updatedStudent);
+          }} 
         />
       )}
       {showHistoryModal && (
         <HistoryModal 
           studentId={selectedStudent?._id} 
           onClose={() => setShowHistoryModal(false)} 
-          onRefresh={fetchStudents}
+          onRefresh={(updatedStudent) => {
+             if (updatedStudent) {
+               setStudents(prev => prev.map(s => s._id === updatedStudent._id ? updatedStudent : s));
+               setSelectedStudent(updatedStudent);
+             } else {
+               fetchStudents();
+             }
+          }}
         />
       )}
     </div>
@@ -502,11 +512,12 @@ function PaymentModal({ student, onClose, onSuccess }) {
     setLoading(true);
     try {
       const token = localStorage.getItem('srmAdminToken');
-      await api.post(`/fees/payment/${student._id}`, { ...form, amount: amt }, {
+      const res = await api.post(`/fees/payment/${student._id}`, { ...form, amount: amt }, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Payment recorded!');
-      onSuccess();
+      onSuccess(res.data.data);
+      setForm({ amount: '', method: 'cash' });
     } catch (error) {
       toast.error(error.response?.data?.message || 'Payment failed');
     } finally {
@@ -558,12 +569,12 @@ function PaymentModal({ student, onClose, onSuccess }) {
 
             <div>
               <label className="label">Payment Method</label>
-              <div className="grid grid-cols-3 gap-2">
-                {['cash', 'upi', 'bank'].map(m => (
+              <div className="grid grid-cols-4 gap-2">
+                {['cash', 'upi', 'bank', 'cheque'].map(m => (
                   <button 
                     key={m} type="button"
                     onClick={() => setForm({ ...form, method: m })}
-                    className={`py-2 rounded-xl text-xs font-semibold capitalize transition-all ${
+                    className={`py-2 rounded-xl text-[10px] font-semibold capitalize transition-all ${
                       form.method === m 
                       ? 'bg-emerald-600 text-white shadow-lg' 
                       : 'bg-gray-50 text-gray-500 hover:bg-gray-100'
@@ -646,10 +657,10 @@ function HistoryModal({ studentId, onClose, onRefresh }) {
     if (!confirm('Are you sure you want to delete this payment record? This will increase the remaining balance.')) return;
     try {
       const token = localStorage.getItem('srmAdminToken');
-      await api.delete(`/fees/payment/${studentId}/${pid}`, { headers: { Authorization: `Bearer ${token}` } });
+      const res = await api.delete(`/fees/payment/${studentId}/${pid}`, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Payment deleted');
-      fetchHistory();
-      onRefresh();
+      setData(res.data.data);
+      onRefresh(res.data.data);
     } catch { toast.error('Delete failed'); }
   };
 
@@ -657,14 +668,14 @@ function HistoryModal({ studentId, onClose, onRefresh }) {
     e.preventDefault();
     try {
       const token = localStorage.getItem('srmAdminToken');
-      await api.put(`/fees/payment/${studentId}/${editingPayment._id}`, {
+      const res = await api.put(`/fees/payment/${studentId}/${editingPayment._id}`, {
         amount: editingPayment.amount,
         method: editingPayment.method
       }, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Payment updated');
       setEditingPayment(null);
-      fetchHistory();
-      onRefresh();
+      setData(res.data.data);
+      onRefresh(res.data.data);
     } catch { toast.error('Edit failed'); }
   };
 
