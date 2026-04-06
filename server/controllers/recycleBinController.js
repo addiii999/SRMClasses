@@ -29,6 +29,11 @@ const MODEL_NAMES = [
   'Material', 'Announcement', 'Booking', 'Enquiry', 'Course'
 ];
 
+const modelForRecycleType = (type) => {
+  if (!type || !MODEL_NAMES.includes(type)) return null;
+  return getModel(type);
+};
+
 /**
  * @desc    Get all deleted items from all categories
  * @route   GET /api/recycle-bin
@@ -63,7 +68,6 @@ exports.getDeletedItems = async (req, res) => {
             deletedAt: item.deletedAt,
             deletedBy: item.deletedBy || 'Admin',
             remainingDays: isNaN(remainingDays) ? 30 : remainingDays,
-            details: item
           });
         });
       } catch (innerError) {
@@ -96,8 +100,10 @@ exports.getDeletedItems = async (req, res) => {
 exports.restoreItem = async (req, res) => {
   try {
     const { type, id } = req.params;
-    const Model = getModel(type);
-
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    }
+    const Model = modelForRecycleType(type);
     if (!Model) {
       return res.status(400).json({ success: false, message: 'Invalid entity type' });
     }
@@ -134,8 +140,10 @@ exports.restoreItem = async (req, res) => {
 exports.permanentlyDeleteItem = async (req, res) => {
   try {
     const { type, id } = req.params;
-    const Model = getModel(type);
-
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    }
+    const Model = modelForRecycleType(type);
     if (!Model) {
       return res.status(400).json({ success: false, message: 'Invalid entity type' });
     }

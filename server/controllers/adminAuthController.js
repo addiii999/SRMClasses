@@ -42,10 +42,12 @@ const adminForgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     if (typeof email !== 'string') return res.status(400).json({ success: false, message: 'Invalid email' });
-    if (email !== process.env.ADMIN_EMAIL) {
+    const normalized = email.toLowerCase().trim();
+    const envAdmin = (process.env.ADMIN_EMAIL || '').toLowerCase().trim();
+    if (!envAdmin || normalized !== envAdmin) {
       return res.status(400).json({ success: false, message: 'Invalid admin email' });
     }
-    const admin = await Admin.findOne({ email });
+    const admin = await Admin.findOne({ email: { $regex: new RegExp(`^${normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i') } });
     if (!admin) {
       return res.status(404).json({ success: false, message: 'Admin not found' });
     }
@@ -56,7 +58,7 @@ const adminForgotPassword = async (req, res) => {
 
     await axios.post('https://api.brevo.com/v3/smtp/email', {
       sender: { name: "SRM Classes", email: process.env.EMAIL_USER },
-      to: [{ email: email }],
+      to: [{ email: admin.email }],
       subject: 'Admin Password Reset OTP - SRM Classes',
       htmlContent: `<p>Your admin OTP is: <strong>${otp}</strong></p><p>Valid for 10 minutes.</p>`
     }, {
@@ -81,7 +83,13 @@ const adminResetPassword = async (req, res) => {
     if (typeof email !== 'string' || typeof otp !== 'string') {
       return res.status(400).json({ success: false, message: 'Invalid input' });
     }
-    const admin = await Admin.findOne({ email, otp, otpExpiry: { $gt: Date.now() } });
+    const normalized = email.toLowerCase().trim();
+    const safe = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const admin = await Admin.findOne({
+      email: { $regex: new RegExp(`^${safe}$`, 'i') },
+      otp,
+      otpExpiry: { $gt: Date.now() },
+    });
     if (!admin) {
       return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
     }

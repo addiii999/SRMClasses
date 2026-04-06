@@ -303,7 +303,7 @@ exports.removeStudentFromFees = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Admin accounts cannot be removed from enrollment' });
     }
 
-    const adminName = req.user ? req.user.email : 'Admin';
+    const adminName = req.admin ? req.admin.email : 'Admin';
 
     student.isEnrolled = false;
     student.enrollmentLogs.push({
@@ -337,7 +337,7 @@ exports.restoreStudentToFees = async (req, res) => {
       return res.status(400).json({ success: false, message: 'User is not a verified student' });
     }
 
-    const adminName = req.user ? req.user.email : 'Admin';
+    const adminName = req.admin ? req.admin.email : 'Admin';
 
     student.isEnrolled = true;
     student.enrollmentLogs.push({

@@ -51,7 +51,7 @@ exports.approveStudent = async (req, res) => {
     // Generate Student ID using utility
     const newStudentId = await generateStudentId(sessionYear, studentClass, branchDoc);
 
-    const adminName = req.user ? req.user.email : 'Admin';
+    const adminName = req.admin ? req.admin.email : 'Admin';
 
     student.isStudent = true;
     student.isEnrolled = true;

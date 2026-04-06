@@ -20,6 +20,14 @@ const loginLimiter = rateLimit({
   message: { success: false, message: 'Too many login attempts. Please try again later.' },
 });
 
+const passwordResetLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  message: { success: false, message: 'Too many password reset attempts. Please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // OTP-based Registration flow
 router.post('/send-otp', otpLimiter, sendOTP);
 router.post('/verify-otp', otpLimiter, verifyOTP);
@@ -30,7 +38,7 @@ router.post('/login', loginLimiter, login);
 router.get('/me', protect, getMe);
 
 // Password reset
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/forgot-password', passwordResetLimiter, forgotPassword);
+router.post('/reset-password', passwordResetLimiter, resetPassword);
 
 module.exports = router;

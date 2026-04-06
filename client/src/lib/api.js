@@ -5,13 +5,13 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach JWT token from localStorage to every request
+// Attach JWT: admin area uses only admin token; everything else uses only student token (no cross-fallback)
 api.interceptors.request.use((config) => {
   if (!config.headers.Authorization) {
     const isAdminRoute = window.location.pathname.startsWith('/admin');
     const token = isAdminRoute
-      ? (localStorage.getItem('srmAdminToken') || localStorage.getItem('srmToken'))
-      : (localStorage.getItem('srmToken') || localStorage.getItem('srmAdminToken'));
+      ? localStorage.getItem('srmAdminToken')
+      : localStorage.getItem('srmToken');
 
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }

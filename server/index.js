@@ -15,14 +15,19 @@ initCronJobs();
 // Seeding Logic
 const seedData = async () => {
   try {
-    // Seed Admin
-    const adminExists = await Admin.findOne({ email: process.env.ADMIN_EMAIL || 'srmclasses01@gmail.com' });
-    if (!adminExists) {
-      await Admin.create({
-        email: process.env.ADMIN_EMAIL || 'srmclasses01@gmail.com',
-        password: process.env.ADMIN_PASSWORD || 'SRMAdmin@2026',
-      });
-      console.log('✅ Admin account seeded');
+    // Seed Admin — never use hardcoded passwords; require env (or skip)
+    const adminEmail = process.env.ADMIN_EMAIL ? String(process.env.ADMIN_EMAIL).toLowerCase().trim() : '';
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (adminEmail && adminPassword) {
+      const adminExists = await Admin.findOne({ email: adminEmail });
+      if (!adminExists) {
+        await Admin.create({ email: adminEmail, password: adminPassword });
+        console.log('✅ Admin account seeded');
+      }
+    } else if (process.env.NODE_ENV === 'production') {
+      console.warn('⚠️ Skipping admin seed: set ADMIN_EMAIL and ADMIN_PASSWORD in production.');
+    } else {
+      console.warn('⚠️ Admin not seeded: set ADMIN_EMAIL and ADMIN_PASSWORD in .env to create the first admin.');
     }
 
     // Seed Courses
@@ -57,17 +62,15 @@ app.get('/', (req, res) => {
   res.send('<h1>SRM Classes API is Running! 🚀🚀🚀</h1><p>The backend is fully live and connected to MongoDB Atlas.</p>');
 });
 
-// Health check
+// Health check (do not expose connection string fragments)
 app.get('/api/health', (req, res) => {
   const mongoose = require('mongoose');
-  const uri = process.env.MONGO_URI || 'NOT SET';
   res.json({
     status: 'OK',
     message: 'SRM Classes API is running',
     dbState: mongoose.connection.readyState,
-    mongoUriSet: uri !== 'NOT SET',
-    mongoUriStart: uri.substring(0, 30) + '...',
-    nodeEnv: process.env.NODE_ENV || 'not set'
+    mongoConfigured: Boolean(process.env.MONGO_URI),
+    nodeEnv: process.env.NODE_ENV || 'not set',
   });
 });
 

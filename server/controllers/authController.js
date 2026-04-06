@@ -273,7 +273,7 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     if (typeof email !== 'string') return res.status(400).json({ success: false, message: 'Invalid email' });
-    const user = await User.findOne({ email: String(email) }).select('+password');
+    const user = await User.findOne({ email: String(email).toLowerCase().trim() }).select('+password');
     if (!user || !(await user.matchPassword(password))) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
@@ -310,18 +310,24 @@ const forgotPassword = async (req, res) => {
   try {
     const { email } = req.body;
     if (typeof email !== 'string') return res.status(400).json({ success: false, message: 'Invalid email' });
-    const user = await User.findOne({ email });
+    const normalized = email.toLowerCase().trim();
+    if (!normalized.includes('@')) {
+      return res.status(400).json({ success: false, message: 'Invalid email' });
+    }
+    const user = await User.findOne({ email: normalized });
+    const genericMessage =
+      'If an account exists for this email, you will receive an OTP shortly.';
     if (!user) {
-      return res.status(404).json({ success: false, message: 'No account with that email' });
+      return res.json({ success: true, message: genericMessage });
     }
     const otp = generateOTP();
     user.resetOTP = otp;
     user.resetOTPExpiry = Date.now() + 10 * 60 * 1000;
     await user.save({ validateBeforeSave: false });
 
-    await sendOTPviaEmail(email, user.mobile, otp);
+    await sendOTPviaEmail(normalized, user.mobile, otp);
 
-    res.json({ success: true, message: 'OTP sent to your email' });
+    res.json({ success: true, message: genericMessage });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to send OTP. ' + error.message });
   }
@@ -337,7 +343,12 @@ const resetPassword = async (req, res) => {
     if (typeof email !== 'string' || typeof otp !== 'string') {
       return res.status(400).json({ success: false, message: 'Invalid input' });
     }
-    const user = await User.findOne({ email, resetOTP: otp, resetOTPExpiry: { $gt: Date.now() } });
+    const normalized = email.toLowerCase().trim();
+    const user = await User.findOne({
+      email: normalized,
+      resetOTP: otp,
+      resetOTPExpiry: { $gt: Date.now() },
+    });
     if (!user) {
       return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
     }
