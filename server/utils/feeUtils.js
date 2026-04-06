@@ -57,13 +57,13 @@ const calculateFeeDetails = (user) => {
   const satAmount = Math.round(actualFee * (satDiscountPercent / 100));
   const afterSat = actualFee - satAmount;
 
-  // 2. Installment Discount Logic (Refined per Doc April 2026)
+  // 2. Installment Discount Logic
   // 1 Installment -> 10% discount
-  // 3 Installments -> 5% discount
+  // 2 Installments -> 5% discount
   // Others -> 0% discount
   let planDiscountPercent = 0;
   if (installmentPlan === 1) planDiscountPercent = 10;
-  else if (installmentPlan === 3) planDiscountPercent = 5;
+  else if (installmentPlan === 2) planDiscountPercent = 5;
 
   const instAmount = Math.round(afterSat * (planDiscountPercent / 100));
   

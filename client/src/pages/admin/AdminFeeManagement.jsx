@@ -323,7 +323,7 @@ function FeeModal({ student, onClose, onSuccess }) {
   
   let instDiscountPercent = 0;
   if (form.installmentPlan === 1) instDiscountPercent = 10;
-  else if (form.installmentPlan === 3) instDiscountPercent = 5;
+  else if (form.installmentPlan === 2) instDiscountPercent = 5;
 
   const instAmount = Math.round(afterSat * (instDiscountPercent / 100));
   const finalPayable = (afterSat - instAmount) + 500; // Adding ₹500 fixed Admission Fee
