@@ -20,7 +20,7 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email already registered' });
     }
     // Find the default branch by its unique branchCode (RAVI01)
-    const defaultBranch = await require('../models/Branch').findOne({ branchCode: 'RAVI01', isActive: true });
+    const defaultBranch = await require('../models/Branch').findOne({ branchCode: 'RI', isActive: true });
     if (!defaultBranch) {
       return res.status(500).json({ success: false, message: 'Default branch not configured' });
     }

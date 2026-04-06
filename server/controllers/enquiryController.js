@@ -8,7 +8,7 @@ const submitEnquiry = async (req, res) => {
     const { name, email, mobile, studentClass, message } = req.body;
     // Find default branch (RAVI01) for public enquiries
     const Branch = require('../models/Branch');
-    const defaultBranch = await Branch.findOne({ branchCode: 'RAVI01', isActive: true });
+    const defaultBranch = await Branch.findOne({ branchCode: 'RI', isActive: true });
     const branchId = defaultBranch ? defaultBranch._id : null;
     const enquiry = await Enquiry.create({ name, email, mobile, studentClass, message, branch: branchId });
     res.status(201).json({ success: true, message: 'Enquiry submitted successfully', data: enquiry });

@@ -22,7 +22,7 @@ const bookDemo = async (req, res) => {
 
     let branchId = req.body.branch;
     if (!branchId) {
-      const defaultBranch = await Branch.findOne({ branchCode: 'RAVI01', isActive: true });
+      const defaultBranch = await Branch.findOne({ branchCode: 'RI', isActive: true });
       branchId = defaultBranch ? defaultBranch._id : null;
     }
 
