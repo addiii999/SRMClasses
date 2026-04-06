@@ -18,8 +18,19 @@ const userSchema = new mongoose.Schema({
   mobile: {
     type: String,
     required: [true, 'Mobile number is required'],
+    unique: true,
+    sparse: true,
     trim: true,
   },
+  mobileVerified: {
+    type: Boolean,
+    default: false,
+  },
+  phoneOTP: String,
+  phoneOTPExpiry: Date,
+  phoneOTPAttempts: { type: Number, default: 0 },
+  otpLastSentAt: Date,
+  createdByAdmin: { type: Boolean, default: false },
   studentClass: {
     type: String,
     required: [true, 'Class is required'],
