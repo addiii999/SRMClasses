@@ -64,7 +64,7 @@ exports.getDeletedItems = async (req, res) => {
 
           deletedItems.push({
             _id: item._id,
-            name: item.name || item.title || item.studentName || item.className || 'Unnamed Item',
+            name: item.name || item.title || item.studentName || item.className || item.testName || 'Unnamed Item',
             type,
             deletedAt: item.deletedAt,
             deletedBy: item.deletedBy || 'Admin',

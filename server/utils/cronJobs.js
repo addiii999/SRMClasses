@@ -20,7 +20,8 @@ const getModel = (name) => {
       Announcement: '../models/Announcement',
       Booking: '../models/DemoBooking',
       Enquiry: '../models/Enquiry',
-      Course: '../models/Course'
+      Course: '../models/Course',
+      WeeklyTest: '../models/WeeklyTest'
     };
     return require(modelPaths[name]);
   }
@@ -28,7 +29,7 @@ const getModel = (name) => {
 
 const MODEL_MAP = [
   'Student', 'Faculty', 'Gallery', 'Result', 
-  'Material', 'Announcement', 'Booking', 'Enquiry', 'Course'
+  'Material', 'Announcement', 'Booking', 'Enquiry', 'Course', 'WeeklyTest'
 ];
 
 /**
