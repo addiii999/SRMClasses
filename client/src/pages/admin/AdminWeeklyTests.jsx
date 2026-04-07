@@ -290,6 +290,17 @@ function TestDetailView({ testId, onBack }) {
     }
   };
 
+  const handleDeleteTest = async () => {
+    if (!window.confirm('Are you sure you want to delete this test? It will be moved to the Recycle Bin.')) return;
+    try {
+      await api.delete(`/weekly-tests/${testId}`);
+      toast.success('Test moved to Recycle Bin');
+      onBack();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete test');
+    }
+  };
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -359,6 +370,10 @@ function TestDetailView({ testId, onBack }) {
             <Send className="w-4 h-4" /> Publish Results
           </button>
         )}
+        <button onClick={handleDeleteTest}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-all ${test.isPublished ? 'ml-auto' : ''}`}>
+          <Trash2 className="w-4 h-4" /> Delete Test
+        </button>
       </div>
 
       {/* Manual Entry Form */}

@@ -3,7 +3,7 @@ import api from '../../lib/api';
 import toast from 'react-hot-toast';
 import { 
   Trash2, RotateCcw, Calendar, User, Image, FileText, 
-  Search, Filter, AlertTriangle, Clock, RefreshCw
+  Search, Filter, AlertTriangle, Clock, RefreshCw, ClipboardList
 } from 'lucide-react';
 
 const TYPE_ICONS = {
@@ -15,7 +15,8 @@ const TYPE_ICONS = {
   Announcement: <Clock className="w-4 h-4 text-cyan-500" />,
   Booking: <Calendar className="w-4 h-4 text-indigo-500" />,
   Enquiry: <Clock className="w-4 h-4 text-teal-500" />,
-  Course: <FileText className="w-4 h-4 text-rose-500" />
+  Course: <FileText className="w-4 h-4 text-rose-500" />,
+  WeeklyTest: <ClipboardList className="w-4 h-4 text-pink-500" />
 };
 
 export default function AdminRecycleBin() {
