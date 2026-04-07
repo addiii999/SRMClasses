@@ -6,13 +6,14 @@ import toast from 'react-hot-toast';
 import {
   LayoutDashboard, Users, Calendar, BookOpen, GraduationCap, Trophy,
   Image, Bell, LogOut, Menu, X, Upload, Trash2, CheckCircle,
-  AlertCircle, Clock, TrendingUp, FileText, Plus, Search, Filter, CreditCard, ShieldCheck
+  AlertCircle, Clock, TrendingUp, FileText, Plus, Search, Filter, CreditCard, ShieldCheck, ClipboardList
 } from 'lucide-react';
 import AdminFeeManagement from './AdminFeeManagement';
 import AdminFaculty from './AdminFaculty';
 import StudentVerification from './StudentVerification';
 import AdminRecycleBin from './AdminRecycleBin';
 import AddStudent from './AddStudent';
+import AdminWeeklyTests from './AdminWeeklyTests';
 
 // ─── Sidebar nav items ────────────────────────────────────────────
 const navItems = [
@@ -27,6 +28,7 @@ const navItems = [
   { path: '/admin/gallery', label: 'Gallery', icon: Image },
   { path: '/admin/announcements', label: 'Announcements', icon: Bell },
   { path: '/admin/fees', label: 'Fee Management', icon: CreditCard },
+  { path: '/admin/weekly-tests', label: 'Weekly Tests', icon: ClipboardList },
   { path: '/admin/recycle-bin', label: 'Recycle Bin', icon: Trash2 },
   { path: '/admin/add-student', label: 'Add Student', icon: Plus },
 ];
@@ -825,6 +827,7 @@ export default function AdminDashboard() {
             <Route path="faculty" element={<AdminFaculty selectedBranch={selectedBranch} />} />
             <Route path="verify-students" element={<StudentVerification selectedBranch={selectedBranch} />} />
             <Route path="fees" element={<AdminFeeManagement selectedBranch={selectedBranch} />} />
+            <Route path="weekly-tests" element={<AdminWeeklyTests selectedBranch={selectedBranch} />} />
             <Route path="recycle-bin" element={<AdminRecycleBin selectedBranch={selectedBranch} />} />
             <Route path="add-student" element={<AddStudent selectedBranch={selectedBranch} />} />
             <Route index element={<Overview selectedBranch={selectedBranch} />} />
