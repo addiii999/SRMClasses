@@ -241,7 +241,7 @@ export default function StudentDashboard() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-brand-bg">
-                    {['Test Name', 'Subject', 'Date', 'Marks', 'Percentage', 'Status'].map((h) => (
+                    {['Test Name', 'Subject', 'Board', 'Date', 'Marks', 'Percentage', 'Status'].map((h) => (
                       <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
                     ))}
                   </tr>
@@ -252,6 +252,9 @@ export default function StudentDashboard() {
                       <td className="px-4 py-3 font-medium text-brand-dark">{r.testId?.testName}</td>
                       <td className="px-4 py-3">
                         <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">{r.testId?.subject}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-bold border border-amber-100 uppercase">{r.testId?.board || 'CBSE'}</span>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-500">
                         {r.testId?.date ? new Date(r.testId.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—'}

@@ -15,13 +15,31 @@ const path = require('path');
 // @route   POST /api/weekly-tests
 const createTest = async (req, res) => {
   try {
-    const { testName, subject, date, totalMarks, batch } = req.body;
+    const { testName, subject, date, totalMarks, batch, board } = req.body;
 
     if (!testName || !subject || !date || !totalMarks || !batch) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
 
-    const test = await WeeklyTest.create({ testName, subject, date, totalMarks: Number(totalMarks), batch });
+    // Validation logic for Class 11-12 (Commerce only)
+    if (['11', '12'].includes(batch)) {
+      const allowedCommerceSubjects = ['Accountancy', 'Business Studies', 'Economics', 'Mathematics', 'English', 'Computer Science'];
+      if (!allowedCommerceSubjects.includes(subject)) {
+        return res.status(400).json({
+          success: false,
+          message: `For Class ${batch}, only Commerce subjects are allowed: ${allowedCommerceSubjects.join(', ')}`,
+        });
+      }
+    }
+
+    const test = await WeeklyTest.create({
+      testName,
+      subject,
+      date,
+      totalMarks: Number(totalMarks),
+      batch,
+      board: board || 'ALL',
+    });
     res.status(201).json({ success: true, data: test, message: 'Test created successfully' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -29,12 +47,14 @@ const createTest = async (req, res) => {
 };
 
 // @desc    Get all tests with optional filters
-// @route   GET /api/weekly-tests?batch=X&subject=Y
+// @route   GET /api/weekly-tests?batch=X&subject=Y&board=Z
 const getAllTests = async (req, res) => {
   try {
-    const { batch, subject } = req.query;
+    const { batch, subject, board } = req.query;
     const query = {};
     if (batch) query.batch = batch;
+    if (board && board !== 'ALL') query.board = board;
+    if (board === 'ALL') query.board = 'ALL';
     if (subject) query.subject = { $regex: subject, $options: 'i' };
 
     const tests = await WeeklyTest.find(query).sort({ date: -1 });
@@ -473,12 +493,16 @@ const getMyResults = async (req, res) => {
   try {
     // Student identity from JWT ONLY — never from URL params
     const studentId = req.user._id;
+    const studentBoard = req.user.board || 'CBSE';
 
     const results = await TestResult.find({ studentId })
       .populate({
         path: 'testId',
-        match: { isPublished: true }, // Only show published test results
-        select: 'testName subject date totalMarks batch isPublished',
+        match: {
+          isPublished: true,
+          board: { $in: [studentBoard, 'ALL'] }, // Visibility logic
+        },
+        select: 'testName subject date totalMarks batch board isPublished',
       })
       .sort({ createdAt: -1 });
 
@@ -511,9 +535,18 @@ const getMyNotifications = async (req, res) => {
   try {
     const studentId = req.user._id;
     const studentClass = req.user.studentClass;
+    const studentBoard = req.user.board || 'CBSE';
 
     const notifications = await Notification.find({
-      $or: [{ targetBatch: studentClass }, { targetBatch: 'all' }],
+      $and: [
+        { $or: [{ targetBatch: studentClass }, { targetBatch: 'all' }] },
+        {
+          $or: [
+            { type: { $ne: 'test_result' } }, // Non-test notifications shown to all
+            { relatedId: { $in: await WeeklyTest.find({ board: { $in: [studentBoard, 'ALL'] } }).distinct('_id') } }
+          ]
+        }
+      ]
     })
       .sort({ createdAt: -1 })
       .limit(20)

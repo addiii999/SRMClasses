@@ -102,6 +102,12 @@ const userSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
   }],
   branch: { type: mongoose.Schema.Types.ObjectId, ref: 'Branch', required: true },
+  board: {
+    type: String,
+    enum: ['CBSE', 'ICSE', 'JAC'],
+    default: 'CBSE',
+    index: true,
+  },
   shouldChangePassword: {
     type: Boolean,
     default: false,

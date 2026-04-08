@@ -8,7 +8,15 @@ import {
 } from 'lucide-react';
 
 const BATCHES = ['5', '6', '7', '8', '9', '10', '11', '12'];
-const SUBJECTS = ['Mathematics', 'Science', 'Physics', 'Chemistry', 'Biology', 'English', 'Hindi', 'Social Science', 'Computer Science'];
+const BOARDS = ['CBSE', 'ICSE', 'JAC', 'ALL'];
+const SUBJECTS = [
+  'Mathematics', 'Science', 'Physics', 'Chemistry', 'Biology', 
+  'English', 'Hindi', 'Social Science', 'Computer Science',
+  'Accountancy', 'Business Studies', 'Economics'
+];
+
+const COMMERCE_SUBJECTS = ['Accountancy', 'Business Studies', 'Economics', 'Mathematics', 'English', 'Computer Science'];
+const SCHOOL_SUBJECTS = ['Mathematics', 'Science', 'Physics', 'Chemistry', 'Biology', 'English', 'Hindi', 'Social Science', 'Computer Science'];
 
 function getPercentageColor(percentage) {
   if (percentage === null || percentage === undefined) return 'bg-gray-100 text-gray-500';
@@ -27,7 +35,7 @@ function getRowBg(percentage, isAbsent) {
 
 // ─── Create Test Modal ──────────────────────────────────────────────
 function CreateTestModal({ onClose, onCreated }) {
-  const [form, setForm] = useState({ testName: '', subject: '', date: '', totalMarks: '', batch: '' });
+  const [form, setForm] = useState({ testName: '', subject: '', date: '', totalMarks: '', batch: '', board: 'ALL' });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -64,19 +72,28 @@ function CreateTestModal({ onClose, onCreated }) {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="label">Subject</label>
-              <select className="input-field" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} required>
-                <option value="">Select Subject</option>
-                {SUBJECTS.map((s) => <option key={s} value={s}>{s}</option>)}
-              </select>
-            </div>
-            <div>
               <label className="label">Batch (Class)</label>
-              <select className="input-field" value={form.batch} onChange={(e) => setForm({ ...form, batch: e.target.value })} required>
+              <select className="input-field" value={form.batch} onChange={(e) => setForm({ ...form, batch: e.target.value, subject: '' })} required>
                 <option value="">Select Class</option>
                 {BATCHES.map((b) => <option key={b} value={b}>Class {b}</option>)}
               </select>
             </div>
+            <div>
+              <label className="label">Board</label>
+              <select className="input-field" value={form.board} onChange={(e) => setForm({ ...form, board: e.target.value })} required>
+                {BOARDS.map((b) => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="label">Subject</label>
+            <select className="input-field" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} required>
+              <option value="">Select Subject</option>
+              {form.batch && (['11', '12'].includes(form.batch) ? COMMERCE_SUBJECTS : SCHOOL_SUBJECTS).map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+              {!form.batch && <option disabled>Select a class first</option>}
+            </select>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
@@ -328,6 +345,7 @@ function TestDetailView({ testId, onBack }) {
           <div className="flex items-center gap-3 mt-1 flex-wrap">
             <span className="text-xs bg-primary/10 text-primary px-3 py-1 rounded-full font-semibold">{test.subject}</span>
             <span className="text-xs bg-brand-bg text-brand-dark px-3 py-1 rounded-full font-semibold">Class {test.batch}</span>
+            <span className="text-xs bg-amber-50 text-amber-700 px-3 py-1 rounded-full font-semibold border border-amber-100">{test.board}</span>
             <span className="text-xs text-gray-400">{new Date(test.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
             <span className="text-xs font-bold text-gray-500">Total: {test.totalMarks}</span>
             {test.isLocked && (
@@ -531,6 +549,7 @@ export default function AdminWeeklyTests() {
   const [selectedTest, setSelectedTest] = useState(null);
   const [filterBatch, setFilterBatch] = useState('');
   const [filterSubject, setFilterSubject] = useState('');
+  const [filterBoard, setFilterBoard] = useState('');
 
   const fetchTests = useCallback(async () => {
     setLoading(true);
@@ -538,6 +557,7 @@ export default function AdminWeeklyTests() {
       const params = [];
       if (filterBatch) params.push(`batch=${filterBatch}`);
       if (filterSubject) params.push(`subject=${filterSubject}`);
+      if (filterBoard) params.push(`board=${filterBoard}`);
       const query = params.length ? `?${params.join('&')}` : '';
       const res = await api.get(`/weekly-tests${query}`);
       setTests(res.data.data || []);
@@ -546,7 +566,7 @@ export default function AdminWeeklyTests() {
     } finally {
       setLoading(false);
     }
-  }, [filterBatch, filterSubject]);
+  }, [filterBatch, filterSubject, filterBoard]);
 
   useEffect(() => { fetchTests(); }, [fetchTests]);
 
@@ -579,11 +599,11 @@ export default function AdminWeeklyTests() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
         <div className="flex items-center gap-2 bg-white rounded-xl border border-primary/10 px-3 py-1.5">
-          <Filter className="w-4 h-4 text-gray-400" />
+          <ClipboardList className="w-4 h-4 text-gray-400" />
           <select className="bg-transparent text-sm outline-none text-brand-dark font-medium min-w-28"
-            value={filterBatch} onChange={(e) => setFilterBatch(e.target.value)}>
-            <option value="">All Classes</option>
-            {BATCHES.map((b) => <option key={b} value={b}>Class {b}</option>)}
+            value={filterBoard} onChange={(e) => setFilterBoard(e.target.value)}>
+            <option value="">All Boards</option>
+            {BOARDS.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2 bg-white rounded-xl border border-primary/10 px-3 py-1.5">
@@ -630,8 +650,9 @@ export default function AdminWeeklyTests() {
               </div>
               <h4 className="font-semibold text-brand-dark group-hover:text-primary transition-colors">{t.testName}</h4>
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full font-medium">{t.subject}</span>
-                <span className="text-xs bg-brand-bg text-brand-dark px-2 py-0.5 rounded-full font-medium">Class {t.batch}</span>
+                <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase">{t.subject}</span>
+                <span className="text-[10px] bg-brand-bg text-brand-dark px-2 py-0.5 rounded-full font-bold uppercase">Class {t.batch}</span>
+                <span className="text-[10px] bg-amber-50 text-amber-600 px-2 py-0.5 rounded-full font-bold uppercase border border-amber-100">{t.board}</span>
               </div>
               <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-50">
                 <div className="flex items-center gap-1.5 text-xs text-gray-400">

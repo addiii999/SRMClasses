@@ -26,6 +26,12 @@ const weeklyTestSchema = new mongoose.Schema({
     required: [true, 'Batch (class) is required'],
     enum: ['5', '6', '7', '8', '9', '10', '11', '12'],
   },
+  board: {
+    type: String,
+    enum: ['CBSE', 'ICSE', 'JAC', 'ALL'],
+    default: 'ALL',
+    index: true,
+  },
   isLocked: {
     type: Boolean,
     default: false,

@@ -44,6 +44,11 @@ export default function AddStudent() {
             <option key={b._id} value={b._id}>{b.name}</option>
           ))}
         </select>
+        <select className="input-field" value={form.board || 'CBSE'} onChange={e => setForm({ ...form, board: e.target.value })} required>
+          <option value="CBSE">CBSE Board</option>
+          <option value="ICSE">ICSE Board</option>
+          <option value="JAC">JAC Board</option>
+        </select>
         <button type="submit" className="btn-primary w-full flex items-center justify-center gap-2">
           <UserPlus className="w-4 h-4" /> Create Student <ArrowRight className="w-4 h-4" />
         </button>
