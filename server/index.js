@@ -12,6 +12,9 @@ connectDB();
 const initCronJobs = require('./utils/cronJobs');
 initCronJobs();
 
+const startKeepAlive = require('./utils/keepAlive');
+startKeepAlive();
+
 // Seeding Logic
 const seedData = async () => {
   try {
@@ -66,7 +69,7 @@ app.get('/', (req, res) => {
 app.get('/api/health', (req, res) => {
   const mongoose = require('mongoose');
   res.json({
-    status: 'OK',
+    status: 'ok',
     message: 'SRM Classes API is running',
     dbState: mongoose.connection.readyState,
     mongoConfigured: Boolean(process.env.MONGO_URI),

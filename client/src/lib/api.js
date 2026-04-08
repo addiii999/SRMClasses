@@ -22,7 +22,16 @@ api.interceptors.request.use((config) => {
 // Handle 401 globally - clear token and redirect
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    const config = error.config;
+    
+    // Auto-retry once for network errors/timeouts (cold start mitigation)
+    if (config && !config._retried && (!error.response || error.code === 'ECONNABORTED' || error.message.includes('Network Error'))) {
+      config._retried = true;
+      console.warn('Network issue detected (likely server cold start). Retrying in 3s...');
+      await new Promise(resolve => setTimeout(resolve, 3000));
+      return api(config);
+    }
     if (error.response?.status === 401) {
       const isAdminRoute = window.location.pathname.startsWith('/admin');
       if (isAdminRoute) {
