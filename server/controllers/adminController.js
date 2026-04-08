@@ -191,3 +191,34 @@ exports.createUser = async (req, res) => {
   }
 };
 
+/**
+ * @desc    Get total and active students count for the dashboard
+ * @route   GET /api/admin/student-stats
+ * @access  Private/Admin
+ */
+exports.getStudentStats = async (req, res) => {
+  try {
+    const { branch } = req.query;
+    
+    let totalQuery = { isStudent: true };
+    let activeQuery = { isStudent: true, isEnrolled: true };
+    
+    if (branch) {
+      totalQuery.branch = branch;
+      activeQuery.branch = branch;
+    }
+
+    const totalStudents = await User.countDocuments(totalQuery);
+    const activeStudents = await User.countDocuments(activeQuery);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalStudents,
+        activeStudents
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

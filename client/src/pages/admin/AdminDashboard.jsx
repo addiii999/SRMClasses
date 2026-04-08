@@ -86,21 +86,22 @@ function Overview({ selectedBranch }) {
       api.get(`/enquiries?limit=5${branchParam}`, { headers }),
       api.get(`/demo?limit=5${branchParam}`, { headers }),
       api.get(`/materials?all=true${branchParam}`, { headers }),
-      api.get(`/fees/students?status=active${branchParam}`, { headers }),
-    ]).then(([enqRes, demoRes, matRes, stdRes]) => {
+      api.get(`/admin/student-stats?${branchParam}`, { headers }),
+    ]).then(([enqRes, demoRes, matRes, statsRes]) => {
       setStats({ 
         enquiries: enqRes.data.count, 
         demos: demoRes.data.count, 
         materials: matRes.data.data?.length || 0,
-        students: stdRes.data.count || 0
+        totalStudents: statsRes.data.data?.totalStudents || 0,
+        activeStudents: statsRes.data.data?.activeStudents || 0
       });
       setRecentEnquiries(enqRes.data.data?.slice(0, 5) || []);
     }).catch(() => { });
   }, [selectedBranch]);
 
   const statCards = [
-    { label: 'Active Students', value: stats.students, icon: GraduationCap, color: 'bg-emerald-50 text-emerald-600' },
-    { label: 'Total Enquiries', value: stats.enquiries, icon: Users, color: 'bg-blue-50 text-blue-600' },
+    { label: 'Total Students', value: stats.totalStudents, icon: Users, color: 'bg-blue-50 text-blue-600' },
+    { label: 'Active Students', value: stats.activeStudents, icon: GraduationCap, color: 'bg-emerald-50 text-emerald-600' },
     { label: 'Demo Bookings', value: stats.demos, icon: Calendar, color: 'bg-purple-50 text-purple-600' },
     { label: 'Study Materials', value: stats.materials, icon: BookOpen, color: 'bg-amber-50 text-amber-600' },
   ];

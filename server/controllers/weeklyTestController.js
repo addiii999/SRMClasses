@@ -133,21 +133,31 @@ const getTestById = async (req, res) => {
       return obj;
     });
 
-    // Get all enrolled students of this batch who DON'T have results yet
+    // Get all verified/enrolled students of this batch who DON'T have results yet
     const studentsWithResults = results.map((r) => r.studentId?._id?.toString());
-    const allBatchStudents = await User.find({
+    const studentQuery = {
       studentClass: test.batch,
-      isStudent: true,
-      isEnrolled: true,
+      role: 'student',
+      isStudent: true, // This covers 'Verified' (approved) students
       _id: { $nin: studentsWithResults },
-    }).select('name studentId studentClass email');
+    };
+
+    if (!test.isAllBranches && test.branch) {
+      studentQuery.branch = test.branch;
+    }
+
+    if (test.board !== 'ALL') {
+      studentQuery.board = test.board;
+    }
+
+    const eligibleStudents = await User.find(studentQuery).select('name studentId studentClass email board branch');
 
     res.json({
       success: true,
       data: {
         test,
         results: resultsWithPercentage,
-        pendingStudents: allBatchStudents,
+        eligibleStudents,
       },
     });
   } catch (error) {
@@ -219,9 +229,17 @@ const enterMarks = async (req, res) => {
       return res.status(403).json({ success: false, message: 'Test is locked — cannot edit marks' });
     }
 
-    // Validate student
+    // Validate student and test constraints
     const student = await User.findById(studentId);
     if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
+    if (!student.isStudent) return res.status(400).json({ success: false, message: 'Student is not verified' });
+    if (student.studentClass !== test.batch) return res.status(400).json({ success: false, message: `Student class (${student.studentClass}) does not match test batch (${test.batch})` });
+    if (!test.isAllBranches && test.branch && student.branch?.toString() !== test.branch.toString()) {
+      return res.status(400).json({ success: false, message: 'Student branch does not match test branch' });
+    }
+    if (test.board !== 'ALL' && student.board !== test.board) {
+      return res.status(400).json({ success: false, message: `Student board (${student.board}) does not match test board (${test.board})` });
+    }
 
     // Validate marks
     const marks = String(marksObtained).trim().toUpperCase();
@@ -331,6 +349,46 @@ const bulkImportMarks = async (req, res) => {
           continue;
         }
 
+        if (!student.isStudent) {
+          finalFailed.push({
+            row: item.rowNumber,
+            studentId: item.studentIdVal,
+            name: item.studentName,
+            reason: 'Student is not verified',
+          });
+          continue;
+        }
+
+        if (student.studentClass !== test.batch) {
+          finalFailed.push({
+            row: item.rowNumber,
+            studentId: item.studentIdVal,
+            name: item.studentName,
+            reason: `Student class (${student.studentClass}) does not match test batch`,
+          });
+          continue;
+        }
+
+        if (!test.isAllBranches && test.branch && student.branch?.toString() !== test.branch.toString()) {
+          finalFailed.push({
+            row: item.rowNumber,
+            studentId: item.studentIdVal,
+            name: item.studentName,
+            reason: 'Student branch does not match test branch',
+          });
+          continue;
+        }
+
+        if (test.board !== 'ALL' && student.board !== test.board) {
+          finalFailed.push({
+            row: item.rowNumber,
+            studentId: item.studentIdVal,
+            name: item.studentName,
+            reason: `Student board (${student.board}) does not match test board`,
+          });
+          continue;
+        }
+
         // Parse marks
         let finalMarks;
         if (item.marksVal === 'AB') {
@@ -417,12 +475,20 @@ const downloadTemplate = async (req, res) => {
     const test = await WeeklyTest.findById(id);
     if (!test) return res.status(404).json({ success: false, message: 'Test not found' });
 
-    // Get all enrolled students of this batch
-    const students = await User.find({
+    // Get eligible students of this batch
+    const studentQuery = {
       studentClass: test.batch,
+      role: 'student',
       isStudent: true,
-      isEnrolled: true,
-    }).select('name studentId').sort({ name: 1 });
+    };
+    if (!test.isAllBranches && test.branch) {
+      studentQuery.branch = test.branch;
+    }
+    if (test.board !== 'ALL') {
+      studentQuery.board = test.board;
+    }
+
+    const students = await User.find(studentQuery).select('name studentId').sort({ name: 1 });
 
     // Build Excel workbook
     const workbook = new ExcelJS.Workbook();

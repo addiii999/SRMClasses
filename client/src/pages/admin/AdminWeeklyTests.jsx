@@ -238,7 +238,7 @@ function ImportSummaryModal({ data, onClose }) {
 function TestDetailView({ testId, onBack }) {
   const [test, setTest] = useState(null);
   const [results, setResults] = useState([]);
-  const [pendingStudents, setPendingStudents] = useState([]);
+  const [eligibleStudents, setEligibleStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [markForm, setMarkForm] = useState({ studentId: '', marks: '' });
   const [savingMark, setSavingMark] = useState(false);
@@ -251,7 +251,7 @@ function TestDetailView({ testId, onBack }) {
       const res = await api.get(`/weekly-tests/${testId}`);
       setTest(res.data.data.test);
       setResults(res.data.data.results);
-      setPendingStudents(res.data.data.pendingStudents);
+      setEligibleStudents(res.data.data.eligibleStudents || res.data.data.pendingStudents || []);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to load test details');
     } finally {
@@ -454,8 +454,8 @@ function TestDetailView({ testId, onBack }) {
               <select className="input-field py-2 text-sm" value={markForm.studentId}
                 onChange={(e) => setMarkForm({ ...markForm, studentId: e.target.value })}>
                 <option value="">Select Student</option>
-                {/* Show pending students first, then existing */}
-                {pendingStudents.map((s) => (
+                {/* Show eligible students first, then existing */}
+                {eligibleStudents.map((s) => (
                   <option key={s._id} value={s._id}>
                     {s.studentId ? `[${s.studentId}] ` : ''}{s.name} (pending)
                   </option>

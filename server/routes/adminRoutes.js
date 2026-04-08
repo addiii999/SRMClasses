@@ -7,6 +7,7 @@ const { adminProtect } = require('../middleware/adminAuth');
 router.use(adminProtect);
 
 router.get('/students/pending', getPendingStudents);
+router.get('/student-stats', require('../controllers/adminController').getStudentStats);
 router.put('/students/approve/:id', approveStudent);
 router.delete('/students/reject/:id', rejectStudent);
 router.post('/users/create', createUser);
