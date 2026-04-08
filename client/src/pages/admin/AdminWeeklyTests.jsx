@@ -103,14 +103,24 @@ function CreateTestModal({ onClose, onCreated, branches, defaultBranch }) {
 
             <div>
               <label className="label">Board</label>
-              <select className="input-field" value={form.board} onChange={(e) => setForm({ ...form, board: e.target.value })} required>
-                {BOARDS.map((b) => <option key={b} value={b}>{b}</option>)}
+              <select className="input-field" value={form.board} onChange={(e) => setForm({ ...form, board: e.target.value, batch: '' })} required>
+                {BOARDS.filter(b => {
+                  if (form.batch && ['5', '6', '7', '8', '9', '10'].includes(form.batch) && b === 'JAC') return false;
+                  if (form.batch && ['11', '12'].includes(form.batch) && b === 'ICSE') return false;
+                  return true;
+                }).map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
 
             <div>
               <label className="label">Batch (Class)</label>
-              <select className="input-field" value={form.batch} onChange={(e) => setForm({ ...form, batch: e.target.value, subject: '' })} required>
+              <select className="input-field" value={form.batch} onChange={(e) => {
+                 let updatedBoard = form.board;
+                 const newBatch = e.target.value;
+                 if (newBatch && ['5','6','7','8','9','10'].includes(newBatch) && updatedBoard === 'JAC') updatedBoard = 'CBSE';
+                 if (newBatch && ['11','12'].includes(newBatch) && updatedBoard === 'ICSE') updatedBoard = 'CBSE';
+                 setForm({ ...form, batch: newBatch, subject: '', board: updatedBoard });
+              }} required>
                 <option value="">Select Class</option>
                 {BATCHES.filter(batch => {
                    if (form.board === 'ICSE') return ['6','7','8','9','10'].includes(batch);
@@ -669,7 +679,11 @@ export default function AdminWeeklyTests() {
           <select className="bg-transparent text-sm outline-none text-brand-dark font-medium min-w-28"
             value={filterBoard} onChange={(e) => setFilterBoard(e.target.value)}>
             <option value="">All Boards</option>
-            {BOARDS.map((b) => <option key={b} value={b}>{b}</option>)}
+            {BOARDS.filter(b => {
+              if (filterBatch && ['5', '6', '7', '8', '9', '10'].includes(filterBatch) && b === 'JAC') return false;
+              if (filterBatch && ['11', '12'].includes(filterBatch) && b === 'ICSE') return false;
+              return true;
+            }).map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
         </div>
         <div className="flex items-center gap-2 bg-white rounded-xl border border-primary/10 px-3 py-1.5 focus-within:ring-2 focus-within:ring-primary/20 transition-all">

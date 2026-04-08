@@ -411,7 +411,7 @@ export default function Register() {
                       if (!form.studentClass) return true;
                       const c = parseInt(form.studentClass);
                       if (b === 'ICSE') return c >= 6 && c <= 10;
-                      if (b === 'JAC') return c >= 9 && c <= 12;
+                      if (b === 'JAC') return c >= 11 && c <= 12;
                       return true; // CBSE 6-12 covers everything
                     }).map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
@@ -429,7 +429,7 @@ export default function Register() {
                     {['6','7','8','9','10','11','12'].filter(c => {
                       const cls = parseInt(c);
                       if (form.board === 'ICSE') return cls >= 6 && cls <= 10;
-                      if (form.board === 'JAC') return cls >= 9 && cls <= 12;
+                      if (form.board === 'JAC') return cls >= 11 && cls <= 12;
                       return true; // CBSE covers all available classes
                     }).map(c => <option key={c} value={c}>Class {c}</option>)}
                   </select>

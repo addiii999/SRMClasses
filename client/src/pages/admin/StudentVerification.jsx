@@ -179,13 +179,19 @@ export default function StudentVerification({ selectedBranch }) {
                   {activeTab === 'rejected' && <span className="text-[10px] bg-red-100 text-red-500 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Rejected</span>}
                 </div>
                 <div className="flex flex-wrap justify-center md:justify-start gap-4 mt-1">
-                  {user.studentId ? (
+                  {user.studentId && (
                     <span className="text-xs bg-green-50 text-green-700 px-2 py-0.5 rounded-lg border border-green-100 flex items-center gap-1.5 font-bold">
                       <ShieldCheck className="w-3.5 h-3.5" /> {user.studentId}
                     </span>
-                  ) : (
-                    <span className="text-xs text-gray-400 flex items-center gap-1.5 font-medium">
+                  )}
+                  {user.mobile && (
+                    <span className="text-xs text-gray-500 flex items-center gap-1.5 font-medium">
                       <Hash className="w-3 h-3" /> {user.mobile}
+                    </span>
+                  )}
+                  {user.email && (
+                    <span className="text-xs text-gray-500 flex items-center gap-1.5 font-medium">
+                       {user.email}
                     </span>
                   )}
                   <span className="text-xs text-gray-400 flex items-center gap-1.5 font-medium">
@@ -194,6 +200,18 @@ export default function StudentVerification({ selectedBranch }) {
                   <span className="text-xs text-gray-400 flex items-center gap-1.5 font-medium">
                     <Calendar className="w-3 h-3" /> Joined {new Date(user.createdAt).toLocaleDateString('en-IN')}
                   </span>
+                </div>
+                <div className="flex flex-wrap justify-center md:justify-start gap-2 mt-2">
+                  {user.branch && (
+                     <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">
+                       {user.branch.name || user.branch}
+                     </span>
+                  )}
+                  {user.board && (
+                     <span className="text-[10px] bg-amber-50 text-amber-700 px-2 py-0.5 rounded-full font-bold border border-amber-100">
+                       {user.board}
+                     </span>
+                  )}
                 </div>
               </div>
 

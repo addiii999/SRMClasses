@@ -14,7 +14,9 @@ exports.getPendingStudents = async (req, res) => {
     if (branch) {
       query.branch = branch;
     }
-    const students = await User.find(query).sort({ createdAt: -1 });
+    const students = await User.find(query)
+      .populate('branch', 'name')
+      .sort({ createdAt: -1 });
     res.status(200).json({ success: true, count: students.length, data: students });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
