@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Branch = require('../models/Branch');
 const { generateStudentId } = require('../utils/studentIdGenerator');
 
 /**
@@ -115,6 +116,75 @@ exports.rejectStudent = async (req, res) => {
     res.status(200).json({ success: true, message: 'Registration rejected. User will remain as a normal user.' });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+/**
+ * @desc    Manual Student Creation by Admin
+ * @route   POST /api/admin/users/create
+ * @access  Private/Admin
+ */
+exports.createUser = async (req, res) => {
+  try {
+    const { name, email, mobile, studentClass, password, branch, board } = req.body;
+
+    if (!name || !email || !mobile || !studentClass || !password || !branch) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    // Board-Class Validation
+    const validBoardClass = {
+      'CBSE': ['5', '6', '7', '8', '9', '10', '11', '12'],
+      'ICSE': ['6', '7', '8', '9', '10'],
+      'JAC': ['11', '12']
+    };
+
+    const studentBoard = board || 'CBSE';
+    if (!validBoardClass[studentBoard].includes(studentClass)) {
+      return res.status(400).json({
+        success: false,
+        message: `Board ${studentBoard} is only allowed for classes: ${validBoardClass[studentBoard].join(', ')}`,
+      });
+    }
+
+    const branchDoc = await Branch.findById(branch);
+    if (!branchDoc) return res.status(404).json({ success: false, message: 'Branch not found' });
+
+    // Check if user exists
+    const existing = await User.findOne({ $or: [{ email: email.toLowerCase() }, { mobile }] });
+    if (existing) return res.status(400).json({ success: false, message: 'Email or Mobile already registered' });
+
+    // Generate Student ID (using current year for simplicity)
+    const sessionYear = new Date().getFullYear().toString();
+    const studentId = await generateStudentId(sessionYear, studentClass, branchDoc);
+
+    const adminName = req.admin ? req.admin.email : 'Admin';
+
+    const user = await User.create({
+      name,
+      email: email.toLowerCase(),
+      mobile,
+      studentClass,
+      password,
+      branch,
+      board: studentBoard,
+      studentId,
+      isStudent: true,
+      isEnrolled: true,
+      verificationStatus: 'approved',
+      mobileVerified: true,
+      shouldChangePassword: true,
+      createdByAdmin: true,
+      enrollmentLogs: [{
+        status: 'enrolled',
+        updatedBy: adminName,
+        updatedAt: Date.now()
+      }]
+    });
+
+    res.status(201).json({ success: true, data: user, message: 'Student created successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
