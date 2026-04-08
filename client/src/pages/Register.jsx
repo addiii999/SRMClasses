@@ -95,12 +95,27 @@ export default function Register() {
   const [otpError, setOtpError] = useState('');
 
   // Step 3 state
-  const [form, setForm] = useState({ name: '', studentClass: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({ name: '', studentClass: '', board: '', branch: '', password: '', confirmPassword: '' });
   const [showPwd, setShowPwd] = useState(false);
   const [registering, setRegistering] = useState(false);
+  const [branches, setBranches] = useState([]);
+  const [branchError, setBranchError] = useState('');
 
   const { login } = useAuth();
   const navigate = useNavigate();
+
+  // Fetch branches on mount
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const res = await api.get('/branches');
+        setBranches(res.data.data.filter(b => b.isActive));
+      } catch (err) {
+        setBranchError('Unable to load branches, please refresh');
+      }
+    };
+    fetchBranches();
+  }, []);
 
   // Cooldown timer
   useEffect(() => {
@@ -181,6 +196,8 @@ export default function Register() {
         name: form.name,
         email,
         studentClass: form.studentClass,
+        board: form.board,
+        branch: form.branch,
         password: form.password,
         otpToken,
       });
@@ -362,16 +379,61 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="label">Your Class</label>
-                <select
-                  className="input-field"
-                  value={form.studentClass}
-                  onChange={e => setForm({ ...form, studentClass: e.target.value })}
-                  required
-                >
-                  <option value="">Select your class</option>
-                  {['6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
-                </select>
+                <label className="label">Branch</label>
+                {branchError ? (
+                  <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl font-medium border border-red-100">{branchError}</div>
+                ) : (
+                  <select
+                    className="input-field"
+                    value={form.branch}
+                    onChange={e => setForm({ ...form, branch: e.target.value })}
+                    required
+                  >
+                    <option value="">Select your branch</option>
+                    {branches.map(b => (
+                      <option key={b._id} value={b._id}>{b.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Board</label>
+                  <select
+                    className="input-field"
+                    value={form.board}
+                    onChange={e => setForm({ ...form, board: e.target.value, studentClass: '' })}
+                    required
+                  >
+                    <option value="">Select Board</option>
+                    {['CBSE', 'ICSE', 'JAC'].filter(b => {
+                      if (!form.studentClass) return true;
+                      const c = parseInt(form.studentClass);
+                      if (b === 'ICSE') return c >= 6 && c <= 10;
+                      if (b === 'JAC') return c >= 9 && c <= 12;
+                      return true; // CBSE 6-12 covers everything
+                    }).map(b => <option key={b} value={b}>{b}</option>)}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label">Your Class</label>
+                  <select
+                    className="input-field"
+                    value={form.studentClass}
+                    onChange={e => setForm({ ...form, studentClass: e.target.value })}
+                    required
+                  >
+                    <option value="">Select Class</option>
+                    {['6','7','8','9','10','11','12'].filter(c => {
+                      const cls = parseInt(c);
+                      if (form.board === 'ICSE') return cls >= 6 && cls <= 10;
+                      if (form.board === 'JAC') return cls >= 9 && cls <= 12;
+                      return true; // CBSE covers all available classes
+                    }).map(c => <option key={c} value={c}>Class {c}</option>)}
+                  </select>
+                </div>
               </div>
 
               <div>

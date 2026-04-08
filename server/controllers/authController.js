@@ -199,9 +199,14 @@ const verifyOTP = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const register = async (req, res) => {
   try {
-    const { name, email, studentClass, password, otpToken } = req.body;
+    const { name, email, studentClass, password, otpToken, branch, board } = req.body;
 
-    // 1. Verify the OTP token
+    if (!branch) {
+      return res.status(400).json({ success: false, message: 'Please select a branch' });
+    }
+    if (!board) {
+      return res.status(400).json({ success: false, message: 'Please select a board' });
+    }
     let decoded;
     try {
       decoded = jwt.verify(otpToken, process.env.JWT_SECRET);
@@ -226,10 +231,11 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'This email is already registered.' });
     }
 
-    // 3. Get default branch
-    const defaultBranch = await require('../models/Branch').findOne({ branchCode: 'RI', isActive: true });
-    if (!defaultBranch) {
-      return res.status(500).json({ success: false, message: 'Default branch not configured' });
+    // 3. Verify Branch
+    const Branch = require('../models/Branch');
+    const selectedBranch = await Branch.findById(branch);
+    if (!selectedBranch || !selectedBranch.isActive) {
+      return res.status(400).json({ success: false, message: 'Invalid or inactive branch selected' });
     }
 
     // 4. Create account
@@ -239,7 +245,8 @@ const register = async (req, res) => {
       mobile,
       studentClass,
       password,
-      branch: defaultBranch._id,
+      branch: selectedBranch._id,
+      board,
       mobileVerified: true,
     });
 
@@ -249,7 +256,14 @@ const register = async (req, res) => {
       success: true,
       message: 'Account created successfully! Welcome to SRM Classes.',
       token,
-      user: { id: user._id, name: user.name, email: user.email, studentClass: user.studentClass },
+      user: { 
+        id: user._id, 
+        name: user.name, 
+        email: user.email, 
+        studentClass: user.studentClass,
+        branch: user.branch,
+        board: user.board
+      },
     });
   } catch (error) {
     if (error.code === 11000) {
