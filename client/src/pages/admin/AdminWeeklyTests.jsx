@@ -581,6 +581,10 @@ function EditableMarksCell({ currentMarks, totalMarks, onSave }) {
 
 // ─── Main Admin Weekly Tests Page ───────────────────────────────────
 export default function AdminWeeklyTests() {
+  const [tests, setTests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showCreate, setShowCreate] = useState(false);
+  const [selectedTest, setSelectedTest] = useState(null);
   const [filterBatch, setFilterBatch] = useState('');
   const [filterSubject, setFilterSubject] = useState('');
   const [filterBoard, setFilterBoard] = useState('');
