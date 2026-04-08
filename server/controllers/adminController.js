@@ -33,16 +33,27 @@ exports.approveStudent = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Session Year, Class, and Branch are required for approval' });
     }
 
-    const Branch = require('../models/Branch');
-    const branchDoc = await Branch.findById(branchId);
-    if (!branchDoc) {
-      return res.status(404).json({ success: false, message: 'Selected branch not found' });
-    }
-
     const student = await User.findById(req.params.id);
     if (!student) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
+
+    // NEW: Validation logic for Board-Class Relationship
+    const validBoardClass = {
+      'CBSE': ['5', '6', '7', '8', '9', '10', '11', '12'],
+      'ICSE': ['6', '7', '8', '9', '10'],
+      'JAC': ['11', '12']
+    };
+
+    const board = student.board || 'CBSE';
+    if (!validBoardClass[board].includes(studentClass)) {
+      return res.status(400).json({
+        success: false,
+        message: `Student's board (${board}) is only allowed for classes: ${validBoardClass[board].join(', ')}`,
+      });
+    }
+
+    const branchDoc = await Branch.findById(branchId);
 
     if (student.verificationStatus === 'approved') {
       return res.status(400).json({ success: false, message: 'User is already an approved student' });

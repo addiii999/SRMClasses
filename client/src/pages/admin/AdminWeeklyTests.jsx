@@ -81,7 +81,13 @@ function CreateTestModal({ onClose, onCreated }) {
             <div>
               <label className="label">Board</label>
               <select className="input-field" value={form.board} onChange={(e) => setForm({ ...form, board: e.target.value })} required>
-                {BOARDS.map((b) => <option key={b} value={b}>{b}</option>)}
+                {BOARDS.filter(b => {
+                  if (b === 'ALL') return true;
+                  if (b === 'CBSE') return ['5', '6', '7', '8', '9', '10', '11', '12'].includes(form.batch);
+                  if (b === 'ICSE') return ['6', '7', '8', '9', '10'].includes(form.batch);
+                  if (b === 'JAC') return ['11', '12'].includes(form.batch);
+                  return true;
+                }).map((b) => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
           </div>

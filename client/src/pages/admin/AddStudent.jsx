@@ -18,13 +18,21 @@ export default function AddStudent() {
   const handleSubmit = async e => {
     e.preventDefault();
     try {
-      await api.post('/admin/users/create', form);
+      await api.post('/admin/users/create', { ...form, board: form.board || 'CBSE' });
       toast.success('Student created');
       navigate('/admin/verify-students');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Creation failed');
     }
   };
+
+  const VALID_BOARD_CLASSES = {
+    'CBSE': ['5', '6', '7', '8', '9', '10', '11', '12'],
+    'ICSE': ['6', '7', '8', '9', '10'],
+    'JAC': ['11', '12']
+  };
+
+  const allowedClasses = VALID_BOARD_CLASSES[form.board || 'CBSE'] || [];
 
   return (
     <div className="card p-8 max-w-lg mx-auto">
@@ -35,7 +43,7 @@ export default function AddStudent() {
         <input className="input-field" placeholder="Mobile" value={form.mobile} onChange={e => setForm({ ...form, mobile: e.target.value })} required />
         <select className="input-field" value={form.studentClass} onChange={e => setForm({ ...form, studentClass: e.target.value })} required>
           <option value="">Select Class</option>
-          {['6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+          {allowedClasses.map(c => <option key={c} value={c}>Class {c}</option>)}
         </select>
         <input type="password" className="input-field" placeholder="Password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required />
         <select className="input-field" value={form.branch} onChange={e => setForm({ ...form, branch: e.target.value })} required>

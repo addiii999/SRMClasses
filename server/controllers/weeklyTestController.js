@@ -21,6 +21,21 @@ const createTest = async (req, res) => {
       return res.status(400).json({ success: false, message: 'All fields are required' });
     }
 
+    // NEW: Validation logic for Board-Class Relationship
+    const validBoardClass = {
+      'CBSE': ['5', '6', '7', '8', '9', '10', '11', '12'],
+      'ICSE': ['6', '7', '8', '9', '10'],
+      'JAC': ['11', '12'],
+      'ALL': ['5', '6', '7', '8', '9', '10', '11', '12']
+    };
+
+    if (board && board !== 'ALL' && !validBoardClass[board].includes(batch)) {
+      return res.status(400).json({
+        success: false,
+        message: `Board ${board} is only allowed for classes: ${validBoardClass[board].join(', ')}`,
+      });
+    }
+
     // Validation logic for Class 11-12 (Commerce only)
     if (['11', '12'].includes(batch)) {
       const allowedCommerceSubjects = ['Accountancy', 'Business Studies', 'Economics', 'Mathematics', 'English', 'Computer Science'];
