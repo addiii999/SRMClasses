@@ -34,8 +34,17 @@ function getRowBg(percentage, isAbsent) {
 }
 
 // ─── Create Test Modal ──────────────────────────────────────────────
-function CreateTestModal({ onClose, onCreated }) {
-  const [form, setForm] = useState({ testName: '', subject: '', date: '', totalMarks: '', batch: '', board: 'ALL' });
+function CreateTestModal({ onClose, onCreated, branches, defaultBranch }) {
+  const [form, setForm] = useState({ 
+    testName: '', 
+    subject: '', 
+    date: '', 
+    totalMarks: '', 
+    batch: '', 
+    board: 'ALL',
+    branch: defaultBranch && defaultBranch !== '' ? defaultBranch : '',
+    isAllBranches: false 
+  });
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
@@ -70,27 +79,48 @@ function CreateTestModal({ onClose, onCreated }) {
             <input className="input-field" placeholder="e.g. Weekly Test 5" value={form.testName}
               onChange={(e) => setForm({ ...form, testName: e.target.value })} required />
           </div>
+
           <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <label className="label">Branch</label>
+              <div className="flex gap-2">
+                <select className="input-field flex-1" value={form.branch} 
+                  onChange={(e) => setForm({ ...form, branch: e.target.value, isAllBranches: false })} 
+                  disabled={form.isAllBranches} required={!form.isAllBranches}>
+                  <option value="">Select Branch</option>
+                  {(branches || []).map(b => (
+                    <option key={b._id} value={b._id}>{b.name}</option>
+                  ))}
+                </select>
+                <div className="flex items-center gap-2 px-3 border border-gray-100 rounded-xl bg-gray-50/50">
+                  <input type="checkbox" id="allBranches" checked={form.isAllBranches}
+                    onChange={(e) => setForm({ ...form, isAllBranches: e.target.checked, branch: e.target.checked ? '' : form.branch })}
+                    className="w-4 h-4 text-primary rounded focus:ring-primary" />
+                  <label htmlFor="allBranches" className="text-xs font-bold text-gray-500 cursor-pointer">All</label>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="label">Board</label>
+              <select className="input-field" value={form.board} onChange={(e) => setForm({ ...form, board: e.target.value })} required>
+                {BOARDS.map((b) => <option key={b} value={b}>{b}</option>)}
+              </select>
+            </div>
+
             <div>
               <label className="label">Batch (Class)</label>
               <select className="input-field" value={form.batch} onChange={(e) => setForm({ ...form, batch: e.target.value, subject: '' })} required>
                 <option value="">Select Class</option>
-                {BATCHES.map((b) => <option key={b} value={b}>Class {b}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="label">Board</label>
-              <select className="input-field" value={form.board} onChange={(e) => setForm({ ...form, board: e.target.value })} required>
-                {BOARDS.filter(b => {
-                  if (b === 'ALL') return true;
-                  if (b === 'CBSE') return ['5', '6', '7', '8', '9', '10', '11', '12'].includes(form.batch);
-                  if (b === 'ICSE') return ['6', '7', '8', '9', '10'].includes(form.batch);
-                  if (b === 'JAC') return ['11', '12'].includes(form.batch);
-                  return true;
-                }).map((b) => <option key={b} value={b}>{b}</option>)}
+                {BATCHES.filter(batch => {
+                   if (form.board === 'ICSE') return ['6','7','8','9','10'].includes(batch);
+                   if (form.board === 'JAC') return ['11','12'].includes(batch);
+                   return true;
+                }).map((b) => <option key={b} value={b}>Class {b}</option>)}
               </select>
             </div>
           </div>
+
           <div>
             <label className="label">Subject</label>
             <select className="input-field" value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} required>
@@ -98,9 +128,10 @@ function CreateTestModal({ onClose, onCreated }) {
               {form.batch && (['11', '12'].includes(form.batch) ? COMMERCE_SUBJECTS : SCHOOL_SUBJECTS).map((s) => (
                 <option key={s} value={s}>{s}</option>
               ))}
-              {!form.batch && <option disabled>Select a class first</option>}
+              {!form.batch && <option disabled>Select class first</option>}
             </select>
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="label">Date</label>
@@ -113,7 +144,8 @@ function CreateTestModal({ onClose, onCreated }) {
                 onChange={(e) => setForm({ ...form, totalMarks: e.target.value })} required />
             </div>
           </div>
-          <button type="submit" disabled={loading} className="btn-primary w-full py-3 disabled:opacity-60">
+
+          <button type="submit" disabled={loading} className="btn-primary w-full py-3 disabled:opacity-60 mt-2">
             {loading ? 'Creating...' : 'Create Test'}
           </button>
         </form>
@@ -549,13 +581,23 @@ function EditableMarksCell({ currentMarks, totalMarks, onSave }) {
 
 // ─── Main Admin Weekly Tests Page ───────────────────────────────────
 export default function AdminWeeklyTests() {
-  const [tests, setTests] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showCreate, setShowCreate] = useState(false);
-  const [selectedTest, setSelectedTest] = useState(null);
   const [filterBatch, setFilterBatch] = useState('');
   const [filterSubject, setFilterSubject] = useState('');
   const [filterBoard, setFilterBoard] = useState('');
+  const [filterBranch, setFilterBranch] = useState('');
+  const [branches, setBranches] = useState([]);
+
+  useEffect(() => {
+    const fetchBranches = async () => {
+      try {
+        const res = await api.get('/branches');
+        setBranches(res.data.data || []);
+      } catch (err) {
+        console.error('Failed to fetch branches:', err);
+      }
+    };
+    fetchBranches();
+  }, []);
 
   const fetchTests = useCallback(async () => {
     setLoading(true);
@@ -564,6 +606,7 @@ export default function AdminWeeklyTests() {
       if (filterBatch) params.push(`batch=${filterBatch}`);
       if (filterSubject) params.push(`subject=${filterSubject}`);
       if (filterBoard) params.push(`board=${filterBoard}`);
+      if (filterBranch) params.push(`branch=${filterBranch}`);
       const query = params.length ? `?${params.join('&')}` : '';
       const res = await api.get(`/weekly-tests${query}`);
       setTests(res.data.data || []);
@@ -589,7 +632,12 @@ export default function AdminWeeklyTests() {
   return (
     <div className="space-y-6">
       {/* Create Modal */}
-      {showCreate && <CreateTestModal onClose={() => setShowCreate(false)} onCreated={fetchTests} />}
+      {showCreate && <CreateTestModal 
+        onClose={() => setShowCreate(false)} 
+        onCreated={fetchTests} 
+        branches={branches} 
+        defaultBranch={filterBranch}
+      />}
 
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -604,15 +652,31 @@ export default function AdminWeeklyTests() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
-        <div className="flex items-center gap-2 bg-white rounded-xl border border-primary/10 px-3 py-1.5">
+        <div className="flex items-center gap-2 bg-white rounded-xl border border-primary/10 px-3 py-1.5 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
           <ClipboardList className="w-4 h-4 text-gray-400" />
+          <select className="bg-transparent text-sm outline-none text-brand-dark font-medium min-w-28"
+            value={filterBranch} onChange={(e) => setFilterBranch(e.target.value)}>
+            <option value="">All Branches</option>
+            {branches.map((b) => <option key={b._id} value={b._id}>{b.name}</option>)}
+          </select>
+        </div>
+        <div className="flex items-center gap-2 bg-white rounded-xl border border-primary/10 px-3 py-1.5 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+          <Award className="w-4 h-4 text-gray-400" />
           <select className="bg-transparent text-sm outline-none text-brand-dark font-medium min-w-28"
             value={filterBoard} onChange={(e) => setFilterBoard(e.target.value)}>
             <option value="">All Boards</option>
             {BOARDS.map((b) => <option key={b} value={b}>{b}</option>)}
           </select>
         </div>
-        <div className="flex items-center gap-2 bg-white rounded-xl border border-primary/10 px-3 py-1.5">
+        <div className="flex items-center gap-2 bg-white rounded-xl border border-primary/10 px-3 py-1.5 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+          <Users className="w-4 h-4 text-gray-400" />
+          <select className="bg-transparent text-sm outline-none text-brand-dark font-medium min-w-28"
+            value={filterBatch} onChange={(e) => setFilterBatch(e.target.value)}>
+            <option value="">All Classes</option>
+            {BATCHES.map((b) => <option key={b} value={b}>Class {b}</option>)}
+          </select>
+        </div>
+        <div className="flex items-center gap-2 bg-white rounded-xl border border-primary/10 px-3 py-1.5 focus-within:ring-2 focus-within:ring-primary/20 transition-all">
           <Search className="w-4 h-4 text-gray-400" />
           <select className="bg-transparent text-sm outline-none text-brand-dark font-medium min-w-28"
             value={filterSubject} onChange={(e) => setFilterSubject(e.target.value)}>

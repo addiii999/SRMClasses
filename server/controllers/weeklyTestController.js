@@ -15,10 +15,14 @@ const path = require('path');
 // @route   POST /api/weekly-tests
 const createTest = async (req, res) => {
   try {
-    const { testName, subject, date, totalMarks, batch, board } = req.body;
+    const { testName, subject, date, totalMarks, batch, board, branch, isAllBranches } = req.body;
 
     if (!testName || !subject || !date || !totalMarks || !batch) {
       return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
+
+    if (!branch && !isAllBranches) {
+      return res.status(400).json({ success: false, message: 'Branch selection is required (or select All Branches)' });
     }
 
     // NEW: Validation logic for Board-Class Relationship
@@ -54,6 +58,8 @@ const createTest = async (req, res) => {
       totalMarks: Number(totalMarks),
       batch,
       board: board || 'ALL',
+      branch: isAllBranches ? undefined : branch,
+      isAllBranches: !!isAllBranches,
     });
     res.status(201).json({ success: true, data: test, message: 'Test created successfully' });
   } catch (error) {
@@ -62,12 +68,20 @@ const createTest = async (req, res) => {
 };
 
 // @desc    Get all tests with optional filters
-// @route   GET /api/weekly-tests?batch=X&subject=Y&board=Z
+// @route   GET /api/weekly-tests?batch=X&subject=Y&board=Z&branch=W
 const getAllTests = async (req, res) => {
   try {
-    const { batch, subject, board } = req.query;
+    const { batch, subject, board, branch } = req.query;
     const query = {};
     if (batch) query.batch = batch;
+    
+    if (branch === 'ALL') {
+      // No branch filter needed, or filter for isAllBranches?
+      // Usually, 'ALL' means see everything in the admin view
+    } else if (branch) {
+      query.$or = [{ branch }, { isAllBranches: true }];
+    }
+
     if (board && board !== 'ALL') query.board = board;
     if (board === 'ALL') query.board = 'ALL';
     if (subject) query.subject = { $regex: subject, $options: 'i' };
@@ -509,15 +523,17 @@ const getMyResults = async (req, res) => {
     // Student identity from JWT ONLY — never from URL params
     const studentId = req.user._id;
     const studentBoard = req.user.board || 'CBSE';
+    const studentBranch = req.user.branch;
 
     const results = await TestResult.find({ studentId })
       .populate({
         path: 'testId',
         match: {
           isPublished: true,
-          board: { $in: [studentBoard, 'ALL'] }, // Visibility logic
+          board: { $in: [studentBoard, 'ALL'] },
+          $or: [{ branch: studentBranch }, { isAllBranches: true }],
         },
-        select: 'testName subject date totalMarks batch board isPublished',
+        select: 'testName subject date totalMarks batch board isPublished branch isAllBranches',
       })
       .sort({ createdAt: -1 });
 
@@ -551,6 +567,13 @@ const getMyNotifications = async (req, res) => {
     const studentId = req.user._id;
     const studentClass = req.user.studentClass;
     const studentBoard = req.user.board || 'CBSE';
+    const studentBranch = req.user.branch;
+
+    // Fetch IDs of tests visible to this student (branch + board matching)
+    const visibleTestIds = await WeeklyTest.find({
+      board: { $in: [studentBoard, 'ALL'] },
+      $or: [{ branch: studentBranch }, { isAllBranches: true }]
+    }).distinct('_id');
 
     const notifications = await Notification.find({
       $and: [
@@ -558,7 +581,7 @@ const getMyNotifications = async (req, res) => {
         {
           $or: [
             { type: { $ne: 'test_result' } }, // Non-test notifications shown to all
-            { relatedId: { $in: await WeeklyTest.find({ board: { $in: [studentBoard, 'ALL'] } }).distinct('_id') } }
+            { relatedId: { $in: visibleTestIds } }
           ]
         }
       ]

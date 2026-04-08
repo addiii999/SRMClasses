@@ -32,6 +32,16 @@ const weeklyTestSchema = new mongoose.Schema({
     default: 'ALL',
     index: true,
   },
+  branch: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Branch',
+    index: true,
+  },
+  isAllBranches: {
+    type: Boolean,
+    default: false,
+    index: true,
+  },
   isLocked: {
     type: Boolean,
     default: false,
@@ -42,7 +52,8 @@ const weeklyTestSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-weeklyTestSchema.index({ batch: 1, subject: 1, date: -1 });
+weeklyTestSchema.index({ branch: 1, batch: 1, board: 1, date: -1 });
+weeklyTestSchema.index({ isAllBranches: 1, batch: 1, board: 1, date: -1 });
 
 weeklyTestSchema.plugin(softDeletePlugin);
 
