@@ -21,7 +21,8 @@ export default function StudentVerification({ selectedBranch }) {
   const [approvalForm, setApprovalForm] = useState({
     sessionYear: new Date().getFullYear().toString(),
     studentClass: '',
-    branchId: ''
+    branchId: '',
+    board: 'CBSE'
   });
 
   useEffect(() => {
@@ -54,7 +55,8 @@ export default function StudentVerification({ selectedBranch }) {
     setApprovalForm({
       sessionYear: new Date().getFullYear().toString(),
       studentClass: user.studentClass || '',
-      branchId: user.branch || selectedBranch || ''
+      branchId: user.branch || selectedBranch || '',
+      board: user.board || 'CBSE'
     });
     setShowApproveModal(true);
   };
@@ -254,18 +256,32 @@ export default function StudentVerification({ selectedBranch }) {
             </div>
             
             <form onSubmit={handleApprove} className="p-6 space-y-6">
-              <div>
-                <label className="label">Academic Session Year</label>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  {['2025', '2026', '2027', '2028'].map(year => (
-                    <button 
-                      key={year} type="button"
-                      onClick={() => setApprovalForm({...approvalForm, sessionYear: year})}
-                      className={`py-3 rounded-xl text-sm font-bold border transition-all ${approvalForm.sessionYear === year ? 'bg-primary border-primary text-white shadow-glass-sm' : 'bg-white border-gray-100 text-gray-500 hover:border-primary/30'}`}
-                    >
-                      Session {year}
-                    </button>
-                  ))}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Academic Session</label>
+                  <select 
+                    className="input-field mt-2" 
+                    value={approvalForm.sessionYear} 
+                    onChange={e => setApprovalForm({...approvalForm, sessionYear: e.target.value})}
+                    required
+                  >
+                    {['2025', '2026', '2027', '2028'].map(year => (
+                      <option key={year} value={year}>Session {year}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="label">Board</label>
+                  <select 
+                    className="input-field mt-2" 
+                    value={approvalForm.board} 
+                    onChange={e => setApprovalForm({...approvalForm, board: e.target.value, studentClass: ''})}
+                    required
+                  >
+                    <option value="CBSE">CBSE Board</option>
+                    <option value="ICSE">ICSE Board</option>
+                    <option value="JAC">JAC Board</option>
+                  </select>
                 </div>
               </div>
 
@@ -277,14 +293,14 @@ export default function StudentVerification({ selectedBranch }) {
                   onChange={e => setApprovalForm({...approvalForm, studentClass: e.target.value})}
                   required
                 >
+                   <option value="">Select Class</option>
                    {(() => {
-                     const board = selectedUser.board || 'CBSE';
                      const validBoardClass = {
                        'CBSE': ['5', '6', '7', '8', '9', '10', '11', '12'],
                        'ICSE': ['6', '7', '8', '9', '10'],
                        'JAC': ['11', '12']
                      };
-                     const allowed = validBoardClass[board] || [];
+                     const allowed = validBoardClass[approvalForm.board] || [];
                      return allowed.map(c => (
                        <option key={c} value={c}>Class {c}</option>
                      ));

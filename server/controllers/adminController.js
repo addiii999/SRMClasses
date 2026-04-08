@@ -28,7 +28,7 @@ exports.getPendingStudents = async (req, res) => {
  */
 exports.approveStudent = async (req, res) => {
   try {
-    const { sessionYear, studentClass, branchId } = req.body;
+    const { sessionYear, studentClass, branchId, board } = req.body;
     
     if (!sessionYear || !studentClass || !branchId) {
       return res.status(400).json({ success: false, message: 'Session Year, Class, and Branch are required for approval' });
@@ -46,11 +46,11 @@ exports.approveStudent = async (req, res) => {
       'JAC': ['11', '12']
     };
 
-    const board = student.board || 'CBSE';
-    if (!validBoardClass[board].includes(studentClass)) {
+    const studentBoard = board || student.board || 'CBSE';
+    if (!validBoardClass[studentBoard].includes(studentClass)) {
       return res.status(400).json({
         success: false,
-        message: `Student's board (${board}) is only allowed for classes: ${validBoardClass[board].join(', ')}`,
+        message: `Board (${studentBoard}) is only allowed for classes: ${validBoardClass[studentBoard].join(', ')}`,
       });
     }
 
@@ -69,6 +69,7 @@ exports.approveStudent = async (req, res) => {
     student.isEnrolled = true;
     student.studentId = newStudentId;
     student.studentClass = studentClass;
+    student.board = studentBoard;
     student.branch = branchDoc._id;
     student.verificationStatus = 'approved';
     student.enrollmentLogs.push({
