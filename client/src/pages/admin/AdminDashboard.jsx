@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import {
   LayoutDashboard, Users, Calendar, BookOpen, GraduationCap, Trophy,
   Image, Bell, LogOut, Menu, X, Upload, Trash2, CheckCircle,
-  AlertCircle, Clock, TrendingUp, FileText, Plus, Search, Filter, CreditCard, ShieldCheck, ClipboardList
+  AlertCircle, AlertTriangle, Clock, TrendingUp, FileText, Plus, Search, Filter, CreditCard, ShieldCheck, ClipboardList, History
 } from 'lucide-react';
 import AdminFeeManagement from './AdminFeeManagement';
 import AdminFaculty from './AdminFaculty';
@@ -14,12 +14,17 @@ import StudentVerification from './StudentVerification';
 import AdminRecycleBin from './AdminRecycleBin';
 import AddStudent from './AddStudent';
 import AdminWeeklyTests from './AdminWeeklyTests';
+import AdminAuditLogs from './AdminAuditLogs';
+import AdminManagement from './AdminManagement';
 
 // ─── Sidebar nav items ────────────────────────────────────────────
 const navItems = [
   { path: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
   { path: '/admin/enquiries', label: 'Enquiries (CRM)', icon: FileText },
-  { path: '/admin/verify-students', label: 'Student Verification', icon: ShieldCheck },
+  { path: '/admin/verify-students', label: 'Student Management', icon: ShieldCheck },
+  { path: '/admin/board-requests', label: 'Board Change Requests', icon: ClipboardList },
+  { path: '/admin/manage-admins', label: 'Admin Management', icon: ShieldCheck, superAdminOnly: true },
+  { path: '/admin/audit-logs', label: 'Audit Logs', icon: History },
   { path: '/admin/demo', label: 'Demo Bookings', icon: Calendar },
   { path: '/admin/faculty', label: 'Faculty Management', icon: Users },
   { path: '/admin/materials', label: 'Study Materials', icon: BookOpen },
@@ -34,7 +39,7 @@ const navItems = [
 ];
 
 // ─── Admin Sidebar ─────────────────────────────────────────────────
-function AdminSidebar({ open, onClose }) {
+function AdminSidebar({ open, onClose, adminRole }) {
   const { adminLogout } = useAuth();
   const navigate = useNavigate();
   const handleLogout = () => { adminLogout(); navigate('/admin/login'); };
@@ -55,7 +60,7 @@ function AdminSidebar({ open, onClose }) {
           </Link>
         </div>
         <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.map(({ path, label, icon: Icon }) => (
+          {navItems.filter(item => !item.superAdminOnly || adminRole === 'SUPER_ADMIN').map(({ path, label, icon: Icon }) => (
             <NavLink key={path} to={path} onClick={onClose}
               className={({ isActive }) => `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${isActive ? 'bg-gradient-brand text-white shadow-glass' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
               <Icon className="w-4 h-4 shrink-0" /> {label}
@@ -251,6 +256,10 @@ function DemoBookings({ selectedBranch }) {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
   const [localBranch, setLocalBranch] = useState(selectedBranch || '');
+  
+  const [quickConvertModal, setQuickConvertModal] = useState(null);
+  const [quickConvertForm, setQuickConvertForm] = useState({ feeType: 'None', satPercentage: 0, installmentPlan: 1, board: 'CBSE' });
+  const isDevMode = import.meta.env.MODE === 'development';
 
   const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}` });
 
@@ -289,6 +298,22 @@ function DemoBookings({ selectedBranch }) {
     }
   };
 
+  const handleQuickConvertSubmit = async (e) => {
+    e.preventDefault();
+    if (!quickConvertModal) return;
+    try {
+      const res = await api.post(`/demo/${quickConvertModal._id}/convert`, 
+        { isQuickConvert: true, ...quickConvertForm }, 
+        { headers: getHeaders() }
+      );
+      toast.success(res.data?.message || 'Quick Convert Success!');
+      setQuickConvertModal(null);
+      fetchBookings();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Quick Convert failed');
+    }
+  };
+
   const statusBadge = (s) => {
     const map = {
       pending: 'bg-gray-100 text-gray-600',
@@ -302,7 +327,10 @@ function DemoBookings({ selectedBranch }) {
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-display font-bold text-brand-dark">Demo Class Bookings</h2>
+        <h2 className="text-2xl font-display font-bold text-brand-dark flex items-center gap-3">
+           Demo Class Bookings
+           {isDevMode && <span className="px-2 py-1 bg-amber-100 text-amber-700 text-[10px] font-bold uppercase rounded-md tracking-wider flex items-center gap-1">⚠️ Test Mode Enabled</span>}
+        </h2>
         <div className="flex gap-2">
           <select className="text-xs border rounded-lg px-3 py-1.5 bg-white outline-none focus:ring-1 focus:ring-primary"
             value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
@@ -364,7 +392,13 @@ function DemoBookings({ selectedBranch }) {
                       
                       {b.status === 'visited' && (
                         <>
-                          <button onClick={() => handleAction(b._id, 'convert')} className="px-3 py-1 bg-green-600 text-white rounded-lg text-[10px] font-bold hover:bg-green-700 transition-shadow shadow-sm">Convert to Student</button>
+                          {isDevMode ? (
+                            <button onClick={() => { setQuickConvertModal(b); setQuickConvertForm({ feeType: 'None', satPercentage: 0, installmentPlan: 1, board: 'CBSE' }); }} className="px-3 py-1 bg-amber-500 text-white rounded-lg text-[10px] font-bold hover:bg-amber-600 transition-shadow shadow-sm flex items-center gap-1">
+                              ⚠️ Quick Convert (Test Mode)
+                            </button>
+                          ) : (
+                            <button onClick={() => handleAction(b._id, 'convert')} className="px-3 py-1 bg-green-600 text-white rounded-lg text-[10px] font-bold hover:bg-green-700 transition-shadow shadow-sm">Convert to Student</button>
+                          )}
                           <button onClick={() => handleAction(b._id, 'reject')} className="px-3 py-1 bg-red-50 text-red-400 rounded-lg text-[10px] font-bold hover:bg-red-100 transition-colors">Reject</button>
                         </>
                       )}
@@ -390,6 +424,59 @@ function DemoBookings({ selectedBranch }) {
           </table>
         </div>
       </div>
+
+      {/* Quick Convert Modal (Dev Only) */}
+      {isDevMode && quickConvertModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-gray-100">
+               <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">⚠️ Quick Convert Student</h3>
+               <p className="text-sm text-gray-500 mt-1">Pre-filled from demo booking. Assign fee directly.</p>
+            </div>
+            <form onSubmit={handleQuickConvertSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div><label className="label text-xs">Name</label><input className="input-field bg-gray-50 text-sm" value={quickConvertModal.name} disabled /></div>
+                <div><label className="label text-xs">Mobile</label><input className="input-field bg-gray-50 text-sm" value={quickConvertModal.mobile} disabled /></div>
+                <div><label className="label text-xs">Class</label><input className="input-field bg-gray-50 text-sm" value={`Class ${quickConvertModal.studentClass}`} disabled /></div>
+                <div>
+                   <label className="label text-xs">Board</label>
+                   <select className="input-field text-sm" value={quickConvertForm.board} onChange={e => setQuickConvertForm({...quickConvertForm, board: e.target.value})}>
+                     <option value="CBSE">CBSE</option>
+                     <option value="ICSE">ICSE</option>
+                     <option value="JAC">JAC</option>
+                   </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4 border-t border-gray-100 pt-4 mt-2">
+                <div>
+                  <label className="label text-xs">Fee Type</label>
+                  <select className="input-field text-sm" value={quickConvertForm.feeType} onChange={e => setQuickConvertForm({...quickConvertForm, feeType: e.target.value})}>
+                    <option value="None">None</option>
+                    <option value="Foundation">Foundation</option>
+                    <option value="Advance">Advance</option>
+                    <option value="Math-Science">Math-Science</option>
+                    <option value="ICSE-Advance">ICSE-Advance</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="label text-xs">SAT Percentage (0-100)</label>
+                  <input type="number" min="0" max="100" className="input-field text-sm" value={quickConvertForm.satPercentage} onChange={e => setQuickConvertForm({...quickConvertForm, satPercentage: e.target.value})} />
+                </div>
+                <div>
+                  <label className="label text-xs">Installment Plan</label>
+                  <select className="input-field text-sm" value={quickConvertForm.installmentPlan} onChange={e => setQuickConvertForm({...quickConvertForm, installmentPlan: e.target.value})}>
+                    {[1, 2, 3, 4, 5, 6].map(n => <option key={n} value={n}>{n} Installment{n>1?'s':''}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-end gap-3 pt-6 border-t border-gray-100 mt-4">
+                <button type="button" onClick={() => setQuickConvertModal(null)} className="px-5 py-2 text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-gradient-brand text-white rounded-xl text-sm font-medium shadow-brand hover:opacity-90 transition-opacity">Confirm Creation</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -787,12 +874,133 @@ function AnnouncementsAdmin() {
   );
 }
 
+// ─── Board Change Requests Page ────────────────────────────────
+function BoardChangeRequests() {
+  const [tab, setTab] = useState('pending');
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchRequests = useCallback(async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem('srmAdminToken');
+      const { data } = await api.get(`/admin/board-change-requests?status=${tab}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setRequests(data.data || []);
+    } catch { toast.error('Failed to fetch board change requests'); }
+    finally { setLoading(false); }
+  }, [tab]);
+
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
+
+  const handleAction = async (id, action, note) => {
+    const token = localStorage.getItem('srmAdminToken');
+    try {
+      await api.put(`/admin/board-change-requests/${id}/${action}`, { adminNote: note },
+        { headers: { Authorization: `Bearer ${token}` } });
+      toast.success(`Request ${action === 'approve' ? 'approved' : 'rejected'}`);
+      fetchRequests();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Action failed');
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-2xl font-display font-bold text-brand-dark">Board Change Requests</h2>
+        <p className="text-gray-500 text-sm">Review and action student board change requests</p>
+      </div>
+
+      <div className="flex bg-white p-1 rounded-2xl border border-gray-100 shadow-sm w-fit">
+        {['pending', 'approved', 'rejected'].map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            className={`px-5 py-2 rounded-xl text-xs font-bold capitalize transition-all ${
+              tab === t
+                ? t === 'pending' ? 'bg-amber-500 text-white' : t === 'approved' ? 'bg-green-600 text-white' : 'bg-red-500 text-white'
+                : 'text-gray-400 hover:text-brand-dark'
+            }`}>
+            {t}
+          </button>
+        ))}
+      </div>
+
+      {loading ? (
+        <div className="space-y-3">
+          {Array(4).fill(0).map((_, i) => <div key={i} className="card h-16 animate-pulse" />)}
+        </div>
+      ) : requests.length === 0 ? (
+        <div className="text-center py-16 bg-white rounded-3xl border border-gray-100">
+          <CheckCircle className="w-10 h-10 text-gray-200 mx-auto mb-3" />
+          <p className="text-gray-400">No {tab} requests</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {requests.map(req => (
+            <div key={req._id} className="card p-4 flex items-center gap-4 group hover:border-primary/30 transition-all">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center text-white font-bold shrink-0">
+                {req.student?.name?.[0] || '?'}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-brand-dark">{req.student?.name || 'Unknown'}</p>
+                <div className="flex items-center gap-2 text-xs text-gray-500 mt-0.5 whitespace-nowrap overflow-hidden text-ellipsis">
+                  <span className="font-mono bg-gray-50 px-1 py-0.5 rounded">{req.student?.studentId}</span>
+                  <span>•</span>
+                  <span className="text-red-500 line-through">{req.currentBoard}</span>
+                  <ArrowRight className="w-3 h-3 text-gray-400" />
+                  <span className="text-green-600 font-semibold">{req.requestedBoard}</span>
+                  <span>•</span>
+                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{new Date(req.requestedAt).toLocaleDateString('en-IN')}</span>
+                </div>
+                {req.adminNote && <p className="text-xs text-red-600 bg-red-50 px-2 py-1 flex w-fit rounded items-center gap-1 mt-2 font-medium">📋 Note: {req.adminNote}</p>}
+                {req.reason && <p className="text-xs text-gray-500 mt-1 italic w-fit text-ellipsis overflow-hidden">"{req.reason}"</p>}
+              </div>
+              {tab === 'pending' && (
+                <div className="flex gap-2 shrink-0">
+                  <button onClick={() => handleAction(req._id, 'approve', '')}
+                    className="px-4 py-2 bg-green-600 text-white rounded-xl text-xs font-bold hover:bg-green-700 transition-all flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" /> Approve
+                  </button>
+                  <button onClick={() => {
+                    const note = prompt('Rejection reason (optional):');
+                    if (note !== null) handleAction(req._id, 'reject', note);
+                  }}
+                    className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded-xl text-xs font-bold hover:bg-red-100 transition-all flex items-center gap-1">
+                    <XCircle className="w-4 h-4" /> Reject
+                  </button>
+                </div>
+              )}
+              {tab !== 'pending' && (
+                <span className={`text-[10px] border font-bold px-2.5 py-1 rounded-full ${
+                  tab === 'approved' ? 'bg-green-50 text-green-700 border-green-200' : 'bg-red-50 text-red-600 border-red-200'
+                }`}>
+                  {tab.toUpperCase()}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Main AdminDashboard Layout ────────────────────────────────────
 export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Branch data for filter UI
   const [branches, setBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState('');
+
+  // Decode admin role from JWT token
+  const adminRole = (() => {
+    try {
+      const token = localStorage.getItem('srmAdminToken');
+      if (!token) return null;
+      return JSON.parse(atob(token.split('.')[1]))?.role || null;
+    } catch { return null; }
+  })();
+
   // Load active branches on mount
   useEffect(() => {
     api.get('/branches')
@@ -802,13 +1010,16 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-brand-bg flex">
-      <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <AdminSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} adminRole={adminRole} />
       <main className="flex-1 flex flex-col">
-        <header className="bg-white border-b border-primary/10 px-6 py-4 flex items-center gap-4 sticky top-0 z-20">
+      <header className="bg-white border-b border-primary/10 px-6 py-4 flex items-center gap-4 sticky top-0 z-20">
           <button className="lg:hidden p-2 rounded-xl hover:bg-primary/10" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5 text-brand-dark" />
           </button>
           <h1 className="font-display font-bold text-brand-dark">SRM Classes – Admin Panel</h1>
+          {adminRole === 'SUPER_ADMIN' && (
+            <span className="px-2 py-0.5 bg-purple-100 text-purple-600 text-[10px] font-bold rounded-full border border-purple-200">SUPER_ADMIN</span>
+          )}
           {/* Branch filter dropdown */}
           <select className="input-field ml-auto w-48" value={selectedBranch} onChange={e => setSelectedBranch(e.target.value)}>
             <option value="">All Branches</option>
@@ -828,7 +1039,10 @@ export default function AdminDashboard() {
             <Route path="gallery" element={<GalleryAdmin selectedBranch={selectedBranch} />} />
             <Route path="announcements" element={<AnnouncementsAdmin selectedBranch={selectedBranch} />} />
             <Route path="faculty" element={<AdminFaculty selectedBranch={selectedBranch} />} />
-            <Route path="verify-students" element={<StudentVerification selectedBranch={selectedBranch} />} />
+            <Route path="verify-students" element={<StudentVerification selectedBranch={selectedBranch} adminRole={adminRole} />} />
+            <Route path="board-requests" element={<BoardChangeRequests />} />
+            <Route path="manage-admins" element={<AdminManagement adminRole={adminRole} />} />
+            <Route path="audit-logs" element={<AdminAuditLogs adminRole={adminRole} />} />
             <Route path="fees" element={<AdminFeeManagement selectedBranch={selectedBranch} />} />
             <Route path="weekly-tests" element={<AdminWeeklyTests selectedBranch={selectedBranch} />} />
             <Route path="recycle-bin" element={<AdminRecycleBin selectedBranch={selectedBranch} />} />

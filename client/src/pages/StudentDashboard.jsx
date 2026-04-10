@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, Bell, FileText, Download, LogOut, GraduationCap, Menu, X, ChevronDown, CreditCard, Clock, AlertCircle, History, Trophy, TrendingUp } from 'lucide-react';
+import { BookOpen, Bell, FileText, Download, LogOut, GraduationCap, Menu, X, ChevronDown, CreditCard, Clock, AlertCircle, History, Trophy, TrendingUp, User, Lock, Edit2, Save, CheckCircle } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import {
@@ -19,6 +19,7 @@ const tabs = [
   { id: 'results', label: 'My Results', icon: Trophy },
   { id: 'announcements', label: 'Announcements', icon: Bell },
   { id: 'fees', label: 'My Fees', icon: CreditCard },
+  { id: 'profile', label: 'Profile & Settings', icon: User },
 ];
 
 function getPercentageColor(pct) {
@@ -41,6 +42,24 @@ export default function StudentDashboard() {
   // Results state
   const [results, setResults] = useState([]);
   const [resultSubjectFilter, setResultSubjectFilter] = useState('');
+
+  // Profile & Board Change State
+  const [profileHistory, setProfileHistory] = useState([]);
+  const [boardRequests, setBoardRequests] = useState([]);
+  const [boardInfo, setBoardInfo] = useState({ remainingChanges: 3, limitReached: false, cooldown: null });
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({ schoolName: user?.schoolName || '', address: user?.address || '' });
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [requestingBoardChange, setRequestingBoardChange] = useState(false);
+  const [boardChangeForm, setBoardChangeForm] = useState({ requestedBoard: '' });
+  const [showBoardModal, setShowBoardModal] = useState(false);
+
+  // Initialize profile form when user object updates
+  useEffect(() => {
+    if (user) {
+      setProfileForm({ schoolName: user.schoolName || '', address: user.address || '' });
+    }
+  }, [user]);
 
   // Notifications state
   const [notifications, setNotifications] = useState([]);
@@ -108,6 +127,91 @@ export default function StudentDashboard() {
       toast.error('Failed to load data');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchProfileData = async () => {
+    try {
+      const [historyRes, requestsRes] = await Promise.all([
+        api.get('/auth/profile-history'),
+        api.get('/board-change/my-requests')
+      ]);
+      setProfileHistory(historyRes.data.data || []);
+      setBoardRequests(requestsRes.data.data || []);
+      setBoardInfo({
+        remainingChanges: requestsRes.data.remainingChanges,
+        limitReached: requestsRes.data.limitReached,
+        cooldown: requestsRes.data.cooldown
+      });
+    } catch {
+      toast.error('Failed to load profile data');
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'profile') {
+      fetchProfileData();
+    }
+  }, [activeTab]);
+
+  useEffect(() => {
+    // Render countdown timer for board change cooldown
+    if (boardInfo.cooldown?.active && boardInfo.cooldown.remainingMs > 0) {
+      const interval = setInterval(() => {
+        setBoardInfo(prev => {
+          if (!prev.cooldown) return prev;
+          const newMs = prev.cooldown.remainingMs - 1000;
+          if (newMs <= 0) {
+            clearInterval(interval);
+            return { ...prev, cooldown: null };
+          }
+          return { ...prev, cooldown: { ...prev.cooldown, remainingMs: newMs } };
+        });
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [boardInfo.cooldown?.active, boardInfo.cooldown?.remainingMs]);
+
+  const formatCooldown = (ms) => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const h = Math.floor(totalSeconds / 3600);
+    const m = Math.floor((totalSeconds % 3600) / 60);
+    const s = totalSeconds % 60;
+    if (h > 0) return `${h}h ${m}m`;
+    return `${m}m ${s}s`;
+  };
+
+  const handleUpdateProfile = async () => {
+    setSavingProfile(true);
+    try {
+      await api.put('/auth/update-profile', profileForm);
+      toast.success('Profile updated successfully');
+      setEditingProfile(false);
+      fetchProfileData(); // refresh history
+      user.schoolName = profileForm.schoolName;
+      user.address = profileForm.address;
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update profile');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const handleRequestBoardChange = async () => {
+    if (!boardChangeForm.requestedBoard) {
+      toast.error('Please select a board');
+      return;
+    }
+    setRequestingBoardChange(true);
+    try {
+      await api.post('/board-change/request', boardChangeForm);
+      toast.success('Board change request submitted submitted');
+      setShowBoardModal(false);
+      fetchProfileData();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to submit request');
+    } finally {
+      setRequestingBoardChange(false);
     }
   };
 
@@ -452,6 +556,219 @@ export default function StudentDashboard() {
               All online payments must be verified by the office. If you've paid recently and it doesn't show up here, please provide your receipt to the front desk.
             </div>
           </div>
+        </div>
+      );
+    }
+
+    if (activeTab === 'profile') {
+      return (
+        <div className="space-y-6 animate-in fade-in duration-500">
+          {/* Profile Overview */}
+          <div className="card p-6">
+            <div className="flex justify-between items-start mb-6">
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-full bg-gradient-brand flex items-center justify-center text-white text-2xl font-bold shadow-glass">
+                  {user?.name?.[0]?.toUpperCase()}
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-xl text-brand-dark">{user?.name}</h3>
+                  <p className="text-gray-500 text-sm font-mono mt-0.5">{user?.studentId}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${user?.isApproved ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                  {user?.registrationStatus}
+                </div>
+                {user?.batch && <div className="mt-2 text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">Batch: {user.batch}</div>}
+                {!user?.batch && <div className="mt-2 text-[10px] bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-bold">Unassigned Batch</div>}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1">Mobile <Lock className="w-3 h-3" /></label>
+                  <p className="font-semibold text-brand-dark">+91 {user?.mobile}</p>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1">Email <Lock className="w-3 h-3" /></label>
+                  <p className="font-semibold text-brand-dark">{user?.email}</p>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1">Class <Lock className="w-3 h-3" /></label>
+                  <p className="font-semibold text-brand-dark">Class {user?.studentClass}</p>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1">Board <Lock className="w-3 h-3" /></label>
+                  <p className="font-semibold text-brand-dark">{user?.board}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1">Parent Name <Lock className="w-3 h-3" /></label>
+                  <p className="font-semibold text-brand-dark">{user?.parentName || '—'}</p>
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1 flex items-center gap-1">Parent Contact <Lock className="w-3 h-3" /></label>
+                  <p className="font-semibold text-brand-dark">{user?.parentContact ? `+91 ${user.parentContact}` : '—'}</p>
+                </div>
+                
+                <div className="pt-2">
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="text-xs text-gray-400 font-semibold uppercase tracking-wider">School Name</label>
+                    {!editingProfile && (
+                      <button onClick={() => setEditingProfile(true)} className="text-primary text-[10px] font-bold uppercase flex items-center gap-1 hover:underline">
+                        <Edit2 className="w-3 h-3" /> Edit
+                      </button>
+                    )}
+                  </div>
+                  {editingProfile ? (
+                    <input className="input-field py-1.5 text-sm" value={profileForm.schoolName} onChange={e => setProfileForm({...profileForm, schoolName: e.target.value})} />
+                  ) : (
+                    <p className="font-semibold text-brand-dark">{user?.schoolName || '—'}</p>
+                  )}
+                </div>
+                <div>
+                  <label className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-1">Home Address</label>
+                  {editingProfile ? (
+                    <textarea className="input-field py-1.5 text-sm resize-none" rows={2} value={profileForm.address} onChange={e => setProfileForm({...profileForm, address: e.target.value})} />
+                  ) : (
+                    <p className="font-semibold text-brand-dark">{user?.address || '—'}</p>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {editingProfile && (
+              <div className="mt-6 flex justify-end gap-3 pt-4 border-t border-gray-100">
+                <button onClick={() => { setEditingProfile(false); setProfileForm({ schoolName: user?.schoolName || '', address: user?.address || '' }); }} className="btn-ghost py-2" disabled={savingProfile}>Cancel</button>
+                <button onClick={handleUpdateProfile} className="btn-primary py-2 flex items-center gap-2" disabled={savingProfile}>
+                  {savingProfile ? 'Saving...' : <><Save className="w-4 h-4" /> Save Changes</>}
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* Board Change Section */}
+          <div className="card p-6 border-l-4 border-primary">
+            <h4 className="font-bold text-brand-dark mb-4 flex items-center gap-2">
+              <History className="w-5 h-5 text-primary" /> Board Change Requests
+            </h4>
+            
+            <div className="bg-brand-bg rounded-xl p-4 mb-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+              <div>
+                <p className="font-semibold text-brand-dark">Current Board: <span className="text-primary font-bold">{user?.board}</span></p>
+                <p className="text-xs text-gray-500 mt-1">
+                  You have <strong className={boardInfo.remainingChanges > 0 ? 'text-emerald-600' : 'text-red-600'}>{boardInfo.remainingChanges} of 3</strong> changes remaining.
+                </p>
+              </div>
+              
+              <button 
+                onClick={() => setShowBoardModal(true)}
+                disabled={boardInfo.limitReached || (boardInfo.cooldown && boardInfo.cooldown.active) || boardRequests.some(r => r.status === 'pending')}
+                className="btn-primary py-2 px-6 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                Request Board Change
+              </button>
+            </div>
+
+            {boardInfo.cooldown?.active && (
+              <div className="mb-4 flex items-center gap-2 p-3 bg-amber-50 text-amber-700 text-xs font-semibold rounded-xl border border-amber-200 animate-pulse">
+                <Clock className="w-4 h-4 text-amber-500" />
+                Next request available in: {formatCooldown(boardInfo.cooldown.remainingMs)}
+              </div>
+            )}
+
+            {boardRequests.length > 0 && (
+              <div className="space-y-3">
+                <h5 className="font-semibold text-sm text-gray-400 uppercase tracking-wider mb-2">Request History</h5>
+                {boardRequests.map(req => (
+                  <div key={req._id} className="flex justify-between items-center bg-white border border-gray-100 p-3 rounded-xl shadow-sm">
+                    <div>
+                      <p className="text-sm font-semibold text-brand-dark">Change to <span className="text-primary">{req.requestedBoard}</span></p>
+                      <p className="text-xs text-gray-400 mt-0.5">{new Date(req.requestedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className={`text-[10px] font-bold uppercase px-2.5 py-1 rounded-full border ${
+                        req.status === 'approved' ? 'bg-emerald-50 text-emerald-600 border-emerald-200' :
+                        req.status === 'rejected' ? 'bg-red-50 text-red-600 border-red-200' :
+                        'bg-amber-50 text-amber-600 border-amber-200'
+                      }`}>
+                        {req.status}
+                      </span>
+                      {req.adminNote && req.status === 'rejected' && <p className="text-[10px] text-red-500 mt-1 limit-lines-1 max-w-[150px]">{req.adminNote}</p>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Profile Edit History */}
+          <div className="card p-6">
+            <h4 className="font-bold text-brand-dark mb-4 flex items-center gap-2">
+              <History className="w-5 h-5 text-gray-400" /> Profile Edit History
+            </h4>
+            {profileHistory.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-6">No edits have been made to your profile.</p>
+            ) : (
+              <div className="space-y-4 relative before:absolute before:inset-y-0 before:left-[11px] before:w-0.5 before:bg-gray-100">
+                {profileHistory.map((log, idx) => (
+                  <div key={idx} className="relative pl-8">
+                    <div className="absolute left-0 top-1.5 w-6 h-6 rounded-full bg-blue-50 border-2 border-white flex items-center justify-center -ml-1.5">
+                      <div className="w-2 h-2 rounded-full bg-blue-400" />
+                    </div>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="text-sm font-semibold text-brand-dark capitalize">{log.field.replace(/([A-Z])/g, ' $1').trim()} Updated</p>
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          <span className="line-through text-red-400 mr-2">{log.oldValue || 'None'}</span>
+                          <span className="font-bold text-emerald-600">{log.newValue || 'None'}</span>
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[10px] text-gray-400">{new Date(log.changedAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        <p className="text-[10px] font-semibold text-brand-dark capitalize bg-gray-50 px-2 py-0.5 rounded mt-1 inline-block">By: {log.changedBy}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+          {/* Board Change Modal */}
+          {showBoardModal && (
+            <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowBoardModal(false)}>
+              <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm flex flex-col animate-fade-in" onClick={(e) => e.stopPropagation()}>
+                <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="font-display font-bold text-brand-dark">Request Board Change</h3>
+                  <button onClick={() => setShowBoardModal(false)} className="p-2 hover:bg-gray-100 rounded-xl"><X className="w-4 h-4 text-gray-400"/></button>
+                </div>
+                <div className="p-5 space-y-4">
+                  <p className="text-xs text-gray-500 leading-relaxed bg-brand-bg p-3 rounded-xl">
+                    You are requesting to change your educational board. This request will be reviewed by an administrator. You have {boardInfo.remainingChanges} changes remaining.
+                  </p>
+                  <div>
+                    <label className="label">Select New Board</label>
+                    <select className="input-field" value={boardChangeForm.requestedBoard} onChange={e => setBoardChangeForm({requestedBoard: e.target.value})}>
+                      <option value="">Select Board</option>
+                      {['CBSE', 'ICSE', 'JAC'].filter(b => b !== user?.board).map(b => (
+                        <option key={b} value={b}>{b}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div className="p-4 border-t border-gray-100 flex gap-3">
+                  <button onClick={() => setShowBoardModal(false)} className="btn-ghost flex-1 py-2">Cancel</button>
+                  <button onClick={handleRequestBoardChange} disabled={requestingBoardChange || !boardChangeForm.requestedBoard} className="btn-primary flex-1 py-2 disabled:opacity-50">
+                    {requestingBoardChange ? 'Submitting...' : 'Submit Request'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       );
     }

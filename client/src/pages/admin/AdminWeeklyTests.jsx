@@ -164,43 +164,53 @@ function CreateTestModal({ onClose, onCreated, branches, defaultBranch }) {
   );
 }
 
-// ─── Import Summary Modal ───────────────────────────────────────────
-function ImportSummaryModal({ data, onClose }) {
+// ─── Import Summary & Preview Modal ─────────────────────────────────
+function ImportSummaryModal({ data, onClose, onConfirm, loading }) {
   if (!data) return null;
+  const isPreview = data.isDryRun;
+
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col animate-fade-in" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[85vh] flex flex-col animate-fade-in" onClick={(e) => e.stopPropagation()}>
         <div className="p-6 border-b border-gray-100 flex items-center justify-between">
           <h3 className="font-display font-bold text-brand-dark text-lg flex items-center gap-2">
-            <FileSpreadsheet className="w-5 h-5 text-primary" /> Import Summary
+            <FileSpreadsheet className="w-5 h-5 text-primary" />
+            {isPreview ? 'Import Preview (Dry Run)' : 'Import Summary'}
           </h3>
-          <button onClick={onClose} className="p-2 rounded-xl hover:bg-gray-100"><X className="w-5 h-5 text-gray-400" /></button>
+          <button onClick={onClose} disabled={loading} className="p-2 rounded-xl hover:bg-gray-100 disabled:opacity-50"><X className="w-5 h-5 text-gray-400" /></button>
         </div>
-        <div className="p-6 overflow-y-auto space-y-4">
+        <div className="p-6 overflow-y-auto space-y-5">
+          {isPreview && (
+            <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-sm font-medium flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600" />
+              This is a preview. No data has been saved to the database yet. Review the details below.
+            </div>
+          )}
+
           <div className="flex gap-4">
             <div className="flex-1 p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-center">
               <div className="text-3xl font-bold text-emerald-700">{data.successCount}</div>
-              <div className="text-xs font-semibold text-emerald-600 mt-1 uppercase tracking-wider">Successful</div>
+              <div className="text-xs font-semibold text-emerald-600 mt-1 uppercase tracking-wider">{isPreview ? 'Valid Rows' : 'Successful'}</div>
             </div>
             <div className="flex-1 p-4 rounded-xl bg-red-50 border border-red-200 text-center">
               <div className="text-3xl font-bold text-red-700">{data.failedCount}</div>
-              <div className="text-xs font-semibold text-red-600 mt-1 uppercase tracking-wider">Failed</div>
+              <div className="text-xs font-semibold text-red-600 mt-1 uppercase tracking-wider">{isPreview ? 'Invalid Rows' : 'Failed'}</div>
             </div>
           </div>
 
-          {data.failed?.length > 0 && (
+          {data.errors?.length > 0 && (
             <div>
               <h4 className="font-semibold text-red-700 text-sm mb-2 flex items-center gap-1.5">
-                <AlertCircle className="w-4 h-4" /> Failed Entries
+                <AlertCircle className="w-4 h-4" /> Errors
               </h4>
-              <div className="space-y-2 max-h-60 overflow-y-auto">
-                {data.failed.map((f, i) => (
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {data.errors.map((f, i) => (
                   <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-red-50 border border-red-100 text-sm">
                     <span className="bg-red-200 text-red-800 px-2 py-0.5 rounded-lg text-xs font-bold shrink-0">Row {f.row}</span>
                     <div>
                       <span className="font-medium text-brand-dark">{f.studentId}</span>
-                      {f.name && <span className="text-gray-500"> — {f.name}</span>}
-                      <p className="text-red-600 text-xs mt-0.5">{f.reason}</p>
+                      {f.studentName && <span className="text-gray-500"> — {f.studentName}</span>}
+                      <p className="text-red-600 text-xs mt-0.5 font-semibold">{f.reason}</p>
                     </div>
                   </div>
                 ))}
@@ -208,26 +218,40 @@ function ImportSummaryModal({ data, onClose }) {
             </div>
           )}
 
-          {data.successful?.length > 0 && (
+          {data.preview?.length > 0 && isPreview && (
             <div>
               <h4 className="font-semibold text-emerald-700 text-sm mb-2 flex items-center gap-1.5">
-                <CheckCircle className="w-4 h-4" /> Imported Successfully
+                <CheckCircle className="w-4 h-4" /> Valid Data to Import
               </h4>
-              <div className="text-xs text-gray-500 space-y-1 max-h-40 overflow-y-auto">
-                {data.successful.map((s, i) => (
-                  <div key={i} className="flex gap-2 p-2 rounded-lg bg-emerald-50/50">
-                    <span className="font-medium text-brand-dark">{s.studentId}</span>
+              <div className="text-xs text-brand-dark space-y-1 max-h-48 overflow-y-auto border border-emerald-100 rounded-xl p-2 bg-emerald-50/30">
+                {data.preview.map((s, i) => (
+                  <div key={i} className="flex gap-2 p-2 rounded-lg bg-white border border-emerald-100/50 shadow-sm">
+                    <span className="font-semibold">{s.studentId}</span>
                     <span className="text-gray-400">•</span>
-                    <span>{s.name}</span>
-                    <span className="ml-auto font-bold text-emerald-700">{s.marks === 'AB' ? 'AB' : s.marks}</span>
+                    <span className="truncate flex-1">{s.studentName}</span>
+                    <span className={`px-1.5 py-0.5 rounded text-[10px] uppercase font-bold ${s.action === 'update' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                      {s.action}
+                    </span>
+                    <span className="ml-auto font-bold text-brand-dark tabular-nums bg-gray-50 px-2 rounded border border-gray-100">
+                      {s.marksObtained} <span className="text-gray-400">/ {s.maxMarks}</span>
+                    </span>
                   </div>
                 ))}
               </div>
             </div>
           )}
         </div>
-        <div className="p-4 border-t border-gray-100">
-          <button onClick={onClose} className="btn-primary w-full py-2.5">Close</button>
+        <div className="p-4 border-t border-gray-100 flex gap-3">
+          {isPreview ? (
+            <>
+              <button onClick={onClose} disabled={loading} className="btn-ghost flex-1 py-2.5">Cancel</button>
+              <button onClick={() => onConfirm(data.file)} disabled={loading || data.successCount === 0} className="btn-primary flex-1 py-2.5 disabled:opacity-60 flex items-center justify-center gap-2">
+                {loading ? 'Importing...' : <><CheckCircle className="w-4 h-4" /> Confirm & Import {data.successCount} Rows</>}
+              </button>
+            </>
+          ) : (
+            <button onClick={onClose} className="btn-primary w-full py-2.5">Done</button>
+          )}
         </div>
       </div>
     </div>
@@ -301,19 +325,41 @@ function TestDetailView({ testId, onBack }) {
     if (!file) return;
     const formData = new FormData();
     formData.append('file', file);
+    formData.append('weeklyTestId', testId);
     setUploading(true);
     try {
-      const res = await api.post(`/weekly-tests/${testId}/import`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const token = localStorage.getItem('srmAdminToken');
+      const res = await api.post(`/admin/import/excel?dryRun=true`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
       });
-      toast.success(res.data.message);
-      setImportData(res.data.data);
-      fetchDetail();
+      // Attach the file object to the preview data so we can reuse it for the real import
+      setImportData({ ...res.data, file });
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Import failed');
+      toast.error(err.response?.data?.message || 'Preview generation failed');
     } finally {
       setUploading(false);
       e.target.value = '';
+    }
+  };
+
+  const handleConfirmImport = async (file) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('weeklyTestId', testId);
+    setUploading(true);
+    try {
+      const token = localStorage.getItem('srmAdminToken');
+      const res = await api.post(`/admin/import/excel?dryRun=false`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
+      });
+      toast.success('Import completed successfully!');
+      setImportData({ ...res.data, isDryRun: false });
+      fetchDetail();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Final import failed');
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -381,7 +427,14 @@ function TestDetailView({ testId, onBack }) {
   return (
     <div className="space-y-6">
       {/* Import Summary Modal */}
-      {importData && <ImportSummaryModal data={importData} onClose={() => setImportData(null)} />}
+      {importData && (
+        <ImportSummaryModal 
+          data={importData} 
+          loading={uploading}
+          onClose={() => setImportData(null)} 
+          onConfirm={handleConfirmImport} 
+        />
+      )}
 
       {/* Header */}
       <div className="flex items-start gap-4">

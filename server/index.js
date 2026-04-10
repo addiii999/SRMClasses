@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
-const Admin = require('./models/Admin');
+// Admin model loaded lazily in seed scripts
 const Course = require('./models/Course');
 
 // Connect to MongoDB
@@ -15,24 +15,9 @@ initCronJobs();
 const startKeepAlive = require('./utils/keepAlive');
 startKeepAlive();
 
-// Seeding Logic
+// Seeding Logic — Admin is seeded via scripts/seedSuperAdmin.js (not inline)
 const seedData = async () => {
   try {
-    // Seed Admin — never use hardcoded passwords; require env (or skip)
-    const adminEmail = process.env.ADMIN_EMAIL ? String(process.env.ADMIN_EMAIL).toLowerCase().trim() : '';
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    if (adminEmail && adminPassword) {
-      const adminExists = await Admin.findOne({ email: adminEmail });
-      if (!adminExists) {
-        await Admin.create({ email: adminEmail, password: adminPassword });
-        console.log('✅ Admin account seeded');
-      }
-    } else if (process.env.NODE_ENV === 'production') {
-      console.warn('⚠️ Skipping admin seed: set ADMIN_EMAIL and ADMIN_PASSWORD in production.');
-    } else {
-      console.warn('⚠️ Admin not seeded: set ADMIN_EMAIL and ADMIN_PASSWORD in .env to create the first admin.');
-    }
-
     // Seed Courses
     const courseCount = await Course.countDocuments();
     if (courseCount === 0) {
@@ -123,6 +108,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/admin/auth', require('./routes/adminAuthRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/board-change', require('./routes/boardChangeRoutes'));
 app.use('/api/enquiries', require('./routes/enquiryRoutes'));
 app.use('/api/demo', require('./routes/demoRoutes'));
 app.use('/api/courses', require('./routes/courseRoutes'));
@@ -135,6 +121,7 @@ app.use('/api/faculty', require('./routes/facultyRoutes'));
 app.use('/api/recycle-bin', require('./routes/recycleBinRoutes'));
 app.use('/api/branches', require('./routes/branchRoutes'));
 app.use('/api/weekly-tests', require('./routes/weeklyTestRoutes'));
+app.use('/api/board-change', require('./routes/boardChangeRoutes'));
 
 // Global error handler
 app.use((err, req, res, next) => {

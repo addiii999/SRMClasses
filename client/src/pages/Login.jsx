@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GraduationCap, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { GraduationCap, Eye, EyeOff, ArrowRight, Clock, XCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -9,11 +9,13 @@ export default function Login() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [statusBanner, setStatusBanner] = useState(null); // { type: 'pending'|'rejected', message }
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setStatusBanner(null);
     setLoading(true);
     try {
       const res = await api.post('/auth/login', form);
@@ -21,7 +23,17 @@ export default function Login() {
       toast.success(`Welcome back, ${res.data.user.name}! 👋`);
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Login failed');
+      const data = err.response?.data;
+      const code = data?.code;
+
+      // Handle registration status gates with visual banners
+      if (code === 'PENDING_APPROVAL') {
+        setStatusBanner({ type: 'pending', message: data.message });
+      } else if (code === 'REGISTRATION_REJECTED') {
+        setStatusBanner({ type: 'rejected', message: data.message });
+      } else {
+        toast.error(data?.message || 'Login failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -42,12 +54,35 @@ export default function Login() {
           <p className="mt-2 text-gray-500">Sign in to access your student dashboard</p>
         </div>
 
+        {/* ── Status Banners ── */}
+        {statusBanner?.type === 'pending' && (
+          <div className="mb-4 flex gap-3 p-4 bg-amber-50 border border-amber-200 rounded-2xl animate-fade-in">
+            <Clock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-amber-800 text-sm">Registration Pending</p>
+              <p className="text-amber-700 text-xs mt-0.5">{statusBanner.message}</p>
+              <p className="text-amber-600 text-xs mt-1">You will be notified once an admin approves your account.</p>
+            </div>
+          </div>
+        )}
+
+        {statusBanner?.type === 'rejected' && (
+          <div className="mb-4 flex gap-3 p-4 bg-red-50 border border-red-200 rounded-2xl animate-fade-in">
+            <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-red-800 text-sm">Registration Rejected</p>
+              <p className="text-red-700 text-xs mt-0.5">{statusBanner.message}</p>
+              <p className="text-red-600 text-xs mt-1">Please contact the admin for assistance.</p>
+            </div>
+          </div>
+        )}
+
         <div className="card p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label className="label">Email Address</label>
               <input type="email" className="input-field" placeholder="your@email.com"
-                value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
+                value={form.email} onChange={e => { setForm({ ...form, email: e.target.value }); setStatusBanner(null); }} required />
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">

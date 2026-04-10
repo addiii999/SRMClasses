@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GraduationCap, Eye, EyeOff, ArrowRight, Phone, ShieldCheck, CheckCircle, RefreshCw, AlertCircle } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+import { GraduationCap, Eye, EyeOff, ArrowRight, Phone, ShieldCheck, CheckCircle, RefreshCw, AlertCircle, Clock, Home, User, BookOpen } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 
@@ -95,13 +94,17 @@ export default function Register() {
   const [otpError, setOtpError] = useState('');
 
   // Step 3 state
-  const [form, setForm] = useState({ name: '', studentClass: '', board: '', branch: '', password: '', confirmPassword: '' });
+  const [form, setForm] = useState({
+    name: '', studentClass: '', board: '', branch: '',
+    password: '', confirmPassword: '',
+    parentName: '', parentContact: '',
+    schoolName: '', address: '',
+  });
   const [showPwd, setShowPwd] = useState(false);
   const [registering, setRegistering] = useState(false);
   const [branches, setBranches] = useState([]);
   const [branchError, setBranchError] = useState('');
 
-  const { login } = useAuth();
   const navigate = useNavigate();
 
   // Fetch branches on mount
@@ -190,6 +193,11 @@ export default function Register() {
     e.preventDefault();
     if (form.password !== form.confirmPassword) { toast.error('Passwords do not match'); return; }
     if (form.password.length < 6) { toast.error('Password must be at least 6 characters'); return; }
+    if (!/\d/.test(form.password)) { toast.error('Password must contain at least 1 number'); return; }
+    if (!form.parentName.trim()) { toast.error('Parent name is required'); return; }
+    if (!/^[6-9]\d{9}$/.test(form.parentContact)) { toast.error('Enter a valid 10-digit parent contact number'); return; }
+    if (mobile === form.parentContact) { toast.error('Student mobile and parent contact cannot be the same'); return; }
+
     setRegistering(true);
     try {
       const res = await api.post('/auth/register', {
@@ -200,13 +208,16 @@ export default function Register() {
         branch: form.branch,
         password: form.password,
         otpToken,
+        parentName: form.parentName,
+        parentContact: form.parentContact,
+        schoolName: form.schoolName || undefined,
+        address: form.address || undefined,
       });
-      login(res.data.user, res.data.token);
-      toast.success('Account created! Welcome to SRM Classes 🎉');
-      navigate('/dashboard');
+      // ✅ Registration submitted — NO auto-login, show pending screen
+      toast.success('Registration submitted successfully!');
+      setStep(4); // success/pending step
     } catch (err) {
       toast.error(err.response?.data?.message || 'Registration failed');
-      // If OTP token expired, send back to step 1
       if (err.response?.status === 401) {
         setStep(1);
         setOTP(['', '', '', '', '', '']);
@@ -367,15 +378,25 @@ export default function Register() {
                 </div>
               </div>
 
+              {/* ── Personal Info ── */}
+              <div className="font-semibold text-brand-dark text-sm flex items-center gap-2 pb-1 border-b border-gray-100">
+                <User className="w-4 h-4 text-primary" /> Personal Information
+              </div>
+
               <div>
                 <label className="label">Full Name</label>
                 <input
                   className="input-field"
-                  placeholder="Your full name"
+                  placeholder="Your full name (letters only)"
                   value={form.name}
                   onChange={e => setForm({ ...form, name: e.target.value })}
                   required
                 />
+              </div>
+
+              {/* ── Academic Info ── */}
+              <div className="font-semibold text-brand-dark text-sm flex items-center gap-2 pb-1 border-b border-gray-100 !mt-5">
+                <BookOpen className="w-4 h-4 text-primary" /> Academic Details
               </div>
 
               <div>
@@ -412,7 +433,7 @@ export default function Register() {
                       const c = parseInt(form.studentClass);
                       if (b === 'ICSE') return c >= 6 && c <= 10;
                       if (b === 'JAC') return c >= 11 && c <= 12;
-                      return true; // CBSE 6-12 covers everything
+                      return true;
                     }).map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
@@ -426,23 +447,85 @@ export default function Register() {
                     required
                   >
                     <option value="">Select Class</option>
-                    {['6','7','8','9','10','11','12'].filter(c => {
+                    {['5','6','7','8','9','10','11','12'].filter(c => {
                       const cls = parseInt(c);
                       if (form.board === 'ICSE') return cls >= 6 && cls <= 10;
                       if (form.board === 'JAC') return cls >= 11 && cls <= 12;
-                      return true; // CBSE covers all available classes
+                      return true;
                     }).map(c => <option key={c} value={c}>Class {c}</option>)}
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="label">Password</label>
+                <label className="label">School Name <span className="text-gray-400 font-normal">(optional)</span></label>
+                <input
+                  className="input-field"
+                  placeholder="Your current school name"
+                  value={form.schoolName}
+                  onChange={e => setForm({ ...form, schoolName: e.target.value })}
+                />
+              </div>
+
+              <div>
+                <label className="label">Address <span className="text-gray-400 font-normal">(optional)</span></label>
+                <input
+                  className="input-field"
+                  placeholder="Your home address"
+                  value={form.address}
+                  onChange={e => setForm({ ...form, address: e.target.value })}
+                />
+              </div>
+
+              {/* ── Parent Info ── */}
+              <div className="font-semibold text-brand-dark text-sm flex items-center gap-2 pb-1 border-b border-gray-100 !mt-5">
+                <Phone className="w-4 h-4 text-primary" /> Parent / Guardian Details
+              </div>
+
+              <div>
+                <label className="label">Parent / Guardian Name</label>
+                <input
+                  className="input-field"
+                  placeholder="Parent's full name"
+                  value={form.parentName}
+                  onChange={e => setForm({ ...form, parentName: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="label">Parent Contact Number</label>
+                <div className="relative">
+                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">+91</span>
+                  <input
+                    className={`input-field pl-12 ${form.parentContact && form.parentContact === mobile ? 'border-red-400 bg-red-50' : ''}`}
+                    placeholder="Parent's 10-digit number"
+                    value={form.parentContact}
+                    onChange={e => setForm({ ...form, parentContact: e.target.value.replace(/\D/g, '').slice(0, 10) })}
+                    inputMode="numeric"
+                    maxLength={10}
+                    required
+                  />
+                </div>
+                {form.parentContact && form.parentContact === mobile && (
+                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                    <AlertCircle className="w-3 h-3" /> Parent contact cannot be same as student mobile
+                  </p>
+                )}
+              </div>
+
+              {/* ── Password ── */}
+              <div className="font-semibold text-brand-dark text-sm flex items-center gap-2 pb-1 border-b border-gray-100 !mt-5">
+                🔐 Set Password
+              </div>
+
+              <div>
+                <label className="label">Password <span className="text-gray-400 font-normal text-xs">(min 6 chars, 1 number required)</span></label>
                 <div className="relative">
                   <input
                     type={showPwd ? 'text' : 'password'}
                     className="input-field pr-12"
-                    placeholder="At least 6 characters"
+                    placeholder="At least 6 characters with 1 number"
                     value={form.password}
                     onChange={e => setForm({ ...form, password: e.target.value })}
                     required
@@ -468,16 +551,53 @@ export default function Register() {
 
               <button
                 type="submit"
-                disabled={registering}
+                disabled={registering || (form.parentContact && form.parentContact === mobile)}
                 className="btn-primary w-full py-4 flex items-center justify-center gap-2 disabled:opacity-60 !mt-6"
               >
                 {registering ? (
-                  <><RefreshCw className="w-4 h-4 animate-spin" /> Creating Account...</>
+                  <><RefreshCw className="w-4 h-4 animate-spin" /> Submitting Registration...</>
                 ) : (
-                  <><CheckCircle className="w-4 h-4" /> Create Account</>
+                  <><CheckCircle className="w-4 h-4" /> Submit Registration</>
                 )}
               </button>
+
+              <p className="text-center text-xs text-gray-400 mt-2">
+                ⏳ Your account will be reviewed by an admin before you can login.
+              </p>
             </form>
+          )}
+
+          {/* ── STEP 4: Pending Approval ── */}
+          {step === 4 && (
+            <div className="text-center space-y-5 py-4 animate-fade-in">
+              <div className="w-20 h-20 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
+                <Clock className="w-10 h-10 text-amber-500" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-brand-dark font-display">Registration Submitted!</h3>
+                <p className="text-gray-500 text-sm mt-2">
+                  Your registration is <strong className="text-amber-600">pending admin approval</strong>.
+                </p>
+                <p className="text-gray-400 text-xs mt-2">
+                  You will receive a notification once your account is approved. Then you can login.
+                </p>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-left space-y-2">
+                <p className="text-sm font-semibold text-amber-700">What happens next?</p>
+                <ul className="text-xs text-amber-600 space-y-1">
+                  <li>✅ Admin reviews your registration</li>
+                  <li>✅ You get an email notification on approval</li>
+                  <li>✅ Login becomes available after approval</li>
+                </ul>
+              </div>
+
+              <Link to="/login"
+                className="btn-primary w-full py-3 flex items-center justify-center gap-2"
+              >
+                <Home className="w-4 h-4" /> Go to Login
+              </Link>
+            </div>
           )}
 
           <div className="mt-6 text-center">

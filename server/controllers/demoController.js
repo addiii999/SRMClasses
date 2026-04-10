@@ -162,6 +162,81 @@ const convertToStudent = async (req, res) => {
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
     if (booking.isConverted) return res.status(400).json({ success: false, message: 'Already converted' });
 
+    // --- QUICK CONVERT (DEVELOPMENT ONLY) ---
+    if (process.env.NODE_ENV === 'development' && req.body.isQuickConvert) {
+      const { feeType, satPercentage, installmentPlan, board } = req.body;
+      const { FEE_STRUCTURE } = require('../utils/feeUtils');
+      
+      let user = await User.findOne({ $or: [{ mobile: booking.mobile }, { email: booking.email }] });
+      const sessionYear = new Date().getFullYear().toString();
+      const adminName = req.admin ? req.admin.email : 'Admin';
+      
+      let studentId;
+      if (!user || (!user.isStudent && !user.studentId)) {
+         studentId = await generateStudentId(sessionYear, booking.studentClass, booking.branch);
+      } else {
+         studentId = user.studentId || await generateStudentId(sessionYear, booking.studentClass, booking.branch);
+      }
+
+      const verifiedBoard = board || 'CBSE';
+
+      let actualFee = 0;
+      if (feeType && feeType !== 'None' && FEE_STRUCTURE[feeType]) {
+        actualFee = FEE_STRUCTURE[feeType][booking.studentClass] || 0;
+      }
+
+      const feeSnapshot = {
+        actualFee,
+        satPercentage: parseInt(satPercentage) || 0,
+        installmentPlan: parseInt(installmentPlan) || 1,
+        updatedBy: adminName,
+        updatedAt: Date.now()
+      };
+
+      if (user) {
+        user.isStudent = true;
+        user.isEnrolled = true;
+        user.verificationStatus = 'approved';
+        user.studentClass = booking.studentClass;
+        user.board = verifiedBoard;
+        user.branch = booking.branch._id;
+        user.studentId = studentId;
+        user.feeType = feeType || 'None';
+        user.feeSnapshot = feeSnapshot;
+        user.shouldChangePassword = true;
+        user.enrollmentLogs.push({ status: 'enrolled', updatedBy: adminName, updatedAt: Date.now() });
+        await user.save();
+      } else {
+        user = await User.create({
+          name: booking.name,
+          email: booking.email,
+          mobile: booking.mobile,
+          studentClass: booking.studentClass,
+          board: verifiedBoard,
+          password: booking.mobile,
+          role: 'student',
+          isStudent: true,
+          isEnrolled: true,
+          verificationStatus: 'approved',
+          shouldChangePassword: true,
+          branch: booking.branch._id,
+          studentId,
+          feeType: feeType || 'None',
+          feeSnapshot,
+          createdByAdmin: true,
+          enrollmentLogs: [{ status: 'enrolled', updatedBy: adminName, updatedAt: Date.now() }]
+        });
+      }
+
+      booking.isConverted = true;
+      booking.convertedStudentId = user._id;
+      booking.status = 'converted';
+      await booking.save();
+
+      return res.json({ success: true, message: 'Test Convert Success! Student created and fee assigned.', data: { user, booking } });
+    }
+
+    // --- EXISTING FLOW ---
     // 1. Check for duplicates (mobile or email)
     let user = await User.findOne({ $or: [{ mobile: booking.mobile }, { email: booking.email }] });
 
@@ -200,6 +275,9 @@ const convertToStudent = async (req, res) => {
     res.json({ success: true, message: 'Demo converted! Please approve the student in Verification tab.', data: { user, booking } });
 
   } catch (error) {
+    if (error.code === 11000) {
+       return res.status(500).json({ success: false, message: 'ID Generation Conflict or Duplicate Email/Mobile.' });
+    }
     res.status(500).json({ success: false, message: error.message });
   }
 };

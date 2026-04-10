@@ -15,7 +15,7 @@ const FEE_STRUCTURE = {
   'ICSE-Advance': { '6': 15000, '7': 18000, '8': 20000, '9': 22000, '10': 25000 }
 };
 
-export default function AdminFeeManagement() {
+export default function AdminFeeManagement({ selectedBranch }) {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -34,7 +34,8 @@ export default function AdminFeeManagement() {
     setLoading(true);
     try {
       const token = localStorage.getItem('srmAdminToken');
-      const res = await api.get(`/fees/students?status=${enrollmentTab}`, {
+      const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
+      const res = await api.get(`/fees/students?status=${enrollmentTab}${branchParam}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStudents(res.data.data || []);
@@ -43,7 +44,7 @@ export default function AdminFeeManagement() {
     } finally {
       setLoading(false);
     }
-  }, [enrollmentTab]);
+  }, [enrollmentTab, selectedBranch]);
 
   useEffect(() => {
     fetchStudents();
