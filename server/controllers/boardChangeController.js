@@ -1,6 +1,7 @@
-const User = require('../models/User');
 const BoardChangeRequest = require('../models/BoardChangeRequest');
 const Notification = require('../models/Notification');
+const Branch = require('../models/Branch'); // Required for nested populate/index registration
+const Admin = require('../models/Admin');   // Required for resolvedBy populate
 
 const COOLDOWN_HOURS = 24;
 
@@ -151,7 +152,11 @@ exports.getBoardChangeRequests = async (req, res) => {
 
     const total = await BoardChangeRequest.countDocuments({ status });
     const requests = await BoardChangeRequest.find({ status })
-      .populate('student', 'name studentId studentClass branch board -parentContact')
+      .populate({
+        path: 'student',
+        select: 'name studentId studentClass branch board -parentContact',
+        populate: { path: 'branch', select: 'name' } // Populate branch name too
+      })
       .populate('resolvedBy', 'name adminId')
       .sort({ requestedAt: -1 })
       .skip(skip)

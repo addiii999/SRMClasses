@@ -973,7 +973,10 @@ function BoardChangeRequests() {
         headers: { Authorization: `Bearer ${token}` },
       });
       setRequests(data.data || []);
-    } catch { toast.error('Failed to fetch board change requests'); }
+    } catch (err) { 
+      const msg = err.response?.data?.message || 'Failed to fetch board change requests';
+      toast.error(msg); 
+    } 
     finally { setLoading(false); }
   }, [tab]);
 
