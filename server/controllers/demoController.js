@@ -251,7 +251,9 @@ const convertToStudent = async (req, res) => {
       // 2a. Update existing user (mark as pending student for manual verification)
       user.isStudent = true;
       user.isEnrolled = false;
+      user.registrationStatus = 'Pending';
       user.verificationStatus = 'pending';
+      user.board = booking.board || user.board || 'CBSE';
       user.shouldChangePassword = true;
       await user.save();
     } else {
@@ -265,8 +267,10 @@ const convertToStudent = async (req, res) => {
         role: 'student',
         isStudent: true,
         isEnrolled: false,
+        registrationStatus: 'Pending',
         verificationStatus: 'pending',
         shouldChangePassword: true,
+        board: booking.board || 'CBSE',
         branch: booking.branch._id
       });
     }
