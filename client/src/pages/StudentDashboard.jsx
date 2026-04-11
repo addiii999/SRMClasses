@@ -31,7 +31,8 @@ function getPercentageColor(pct) {
 }
 
 export default function StudentDashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('materials');
   const [materials, setMaterials] = useState([]);
   const [papers, setPapers] = useState([]);
@@ -140,12 +141,16 @@ export default function StudentDashboard() {
 
   const fetchProfileData = async () => {
     try {
-      const [historyRes, requestsRes] = await Promise.all([
+      const [historyRes, requestsRes, meRes] = await Promise.all([
         api.get('/auth/profile-history'),
-        api.get('/board-change/my-requests')
+        api.get('/board-change/my-requests'),
+        api.get('/auth/me')
       ]);
       setProfileHistory(historyRes.data.data || []);
       setBoardRequests(requestsRes.data.data || []);
+      if (meRes.data.success && meRes.data.user) {
+        updateUser(meRes.data.user);
+      }
       setBoardInfo({
         remainingChanges: requestsRes.data.remainingChanges,
         limitReached: requestsRes.data.limitReached,

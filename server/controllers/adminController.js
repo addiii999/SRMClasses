@@ -325,32 +325,47 @@ exports.updateStudentByAdmin = async (req, res) => {
       }
 
       if (JSON.stringify(oldValue) !== JSON.stringify(newValue)) {
+        // 1. MAIN USER DATA must update FIRST
         student[field] = newValue;
 
         const entry = {
           field,
           oldValue: oldValue?.toString ? oldValue.toString() : oldValue,
           newValue: newValue?.toString ? newValue.toString() : newValue,
+          changedBy: 'admin',
           adminId: req.admin._id,
           adminName,
           timestamp: new Date(),
         };
 
-        historyUpdates.push({ ...entry, changedBy: 'admin' });
+        historyUpdates.push(entry);
         auditUpdates.push({ ...entry, action: 'update_field' });
       }
     }
 
     if (historyUpdates.length > 0) {
-      historyUpdates.forEach(e => student.addProfileHistory({ ...e, changedAt: e.timestamp }));
+      // 2. Then profileHistory must log the change
+      historyUpdates.forEach(e => {
+        student.addProfileHistory({
+          field: e.field,
+          oldValue: e.oldValue,
+          newValue: e.newValue,
+          changedBy: e.changedBy,
+          adminId: e.adminId,
+          changedAt: e.timestamp
+        });
+      });
       auditUpdates.forEach(e => student.addAdminAuditLog(e));
+      
+      // Save user document
       await student.save();
     }
 
     res.json({
       success: true,
-      message: `Updated ${historyUpdates.length} field(s) successfully`,
+      message: 'Student updated successfully',
       updatedFields: historyUpdates.map(e => e.field),
+      updatedUser: student,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
