@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { BookOpen, Bell, FileText, Download, LogOut, GraduationCap, Menu, X, ChevronDown, CreditCard, Clock, AlertCircle, History, Trophy, TrendingUp, User, Lock, Edit2, Save, CheckCircle } from 'lucide-react';
 import api from '../lib/api';
