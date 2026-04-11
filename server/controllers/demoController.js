@@ -249,6 +249,7 @@ const convertToStudent = async (req, res) => {
 
     if (user) {
       // 2a. Update existing user (mark as pending student for manual verification)
+      user.name = booking.name;
       user.isStudent = true;
       user.isEnrolled = false;
       user.registrationStatus = 'Pending';
