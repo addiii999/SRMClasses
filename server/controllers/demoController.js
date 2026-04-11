@@ -162,8 +162,8 @@ const convertToStudent = async (req, res) => {
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
     if (booking.isConverted) return res.status(400).json({ success: false, message: 'Already converted' });
 
-    // --- QUICK CONVERT (DEVELOPMENT ONLY) ---
-    if (process.env.NODE_ENV === 'development' && req.body.isQuickConvert) {
+    // --- QUICK CONVERT (NOW ENABLED FOR ADMIN) ---
+    if (req.body.isQuickConvert) {
       const { feeType, satPercentage, installmentPlan, board } = req.body;
       const { FEE_STRUCTURE } = require('../utils/feeUtils');
       

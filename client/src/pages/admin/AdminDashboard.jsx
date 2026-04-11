@@ -344,7 +344,7 @@ function DemoBookings({ selectedBranch }) {
   
   const [quickConvertModal, setQuickConvertModal] = useState(null);
   const [quickConvertForm, setQuickConvertForm] = useState({ feeType: 'None', satPercentage: 0, installmentPlan: 1, board: 'CBSE' });
-  const isDevMode = import.meta.env.MODE === 'development';
+  const isDevMode = true; // Enabled for production too now
 
   const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}` });
 
