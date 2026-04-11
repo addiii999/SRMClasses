@@ -1,3 +1,4 @@
+const User = require('../models/User');
 const BoardChangeRequest = require('../models/BoardChangeRequest');
 const Notification = require('../models/Notification');
 const Branch = require('../models/Branch'); // Required for nested populate/index registration
