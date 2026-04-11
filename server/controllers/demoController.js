@@ -160,7 +160,16 @@ const convertToStudent = async (req, res) => {
   try {
     const booking = await DemoBooking.findById(req.params.id).populate('branch');
     if (!booking) return res.status(404).json({ success: false, message: 'Booking not found' });
-    if (booking.isConverted) return res.status(400).json({ success: false, message: 'Already converted' });
+    if (booking.isConverted && booking.convertedStudentId) {
+      const existingUser = await User.findById(booking.convertedStudentId);
+      if (existingUser) {
+        return res.json({ 
+          success: true, 
+          message: 'This booking is already converted to a student.', 
+          data: { user: existingUser, booking } 
+        });
+      }
+    }
 
     // --- QUICK CONVERT (NOW ENABLED FOR ADMIN) ---
     if (req.body.isQuickConvert) {
