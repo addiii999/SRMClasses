@@ -15,10 +15,18 @@ const generateStudentId = async (sessionYear, studentClass, branchDoc) => {
     const branchPart = codeRaw.charAt(0) + codeRaw.charAt(codeRaw.length - 1); // First and Last letter (e.g. RI, MR)
     const classPart = studentClass.toString().padStart(2, '0');
     
-    // Find how many students already exist for this Year, Branch and Class to determine sequence
+    // Find the highest sequence number already used for this pattern
     const pattern = new RegExp(`^SRM-${yearPart}-${branchPart}-${classPart}-`);
-    const count = await User.countDocuments({ studentId: { $regex: pattern } });
-    const sequence = (count + 1).toString().padStart(3, '0');
+    const lastStudent = await User.findOne({ studentId: { $regex: pattern } })
+      .sort({ studentId: -1 })
+      .select('studentId')
+      .lean();
+
+    let sequence = '001';
+    if (lastStudent && lastStudent.studentId) {
+      const lastSeq = lastStudent.studentId.split('-').pop();
+      sequence = (parseInt(lastSeq) + 1).toString().padStart(3, '0');
+    }
     
     return `SRM-${yearPart}-${branchPart}-${classPart}-${sequence}`;
   } catch (error) {
