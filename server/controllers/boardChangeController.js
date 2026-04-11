@@ -154,7 +154,7 @@ exports.getBoardChangeRequests = async (req, res) => {
     const requests = await BoardChangeRequest.find({ status })
       .populate({
         path: 'student',
-        select: 'name studentId studentClass branch board -parentContact',
+        select: 'name studentId studentClass branch board',
         populate: { path: 'branch', select: 'name' } // Populate branch name too
       })
       .populate('resolvedBy', 'name adminId')
