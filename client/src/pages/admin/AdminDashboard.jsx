@@ -16,6 +16,13 @@ import AddStudent from './AddStudent';
 import AdminWeeklyTests from './AdminWeeklyTests';
 import AdminAuditLogs from './AdminAuditLogs';
 import AdminManagement from './AdminManagement';
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement,
+  Title, Tooltip, Legend, Filler
+} from 'chart.js';
+import { Line, Bar } from 'react-chartjs-2';
+
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
 // ─── Sidebar nav items ────────────────────────────────────────────
 const navItems = [
@@ -88,19 +95,21 @@ function Overview({ selectedBranch }) {
     const headers = { Authorization: `Bearer ${token}` };
     const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
     Promise.all([
-      api.get(`/enquiries?limit=5${branchParam}`, { headers }),
+      api.get(`/enquiries?limit=100${branchParam}`, { headers }),
       api.get(`/demo?limit=5${branchParam}`, { headers }),
       api.get(`/materials?all=true${branchParam}`, { headers }),
       api.get(`/admin/student-stats?${branchParam}`, { headers }),
     ]).then(([enqRes, demoRes, matRes, statsRes]) => {
+      const allEnquiries = enqRes.data.data || [];
       setStats({ 
         enquiries: enqRes.data.count, 
         demos: demoRes.data.count, 
         materials: matRes.data.data?.length || 0,
         totalStudents: statsRes.data.data?.totalStudents || 0,
-        activeStudents: statsRes.data.data?.activeStudents || 0
+        activeStudents: statsRes.data.data?.activeStudents || 0,
+        enquiryData: allEnquiries
       });
-      setRecentEnquiries(enqRes.data.data?.slice(0, 5) || []);
+      setRecentEnquiries(allEnquiries.slice(0, 5));
     }).catch(() => { });
   }, [selectedBranch]);
 
@@ -133,6 +142,72 @@ function Overview({ selectedBranch }) {
           </div>
         ))}
       </div>
+      
+      {/* 📊 Growth Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Enquiry Status Distribution */}
+        <div className="card p-6">
+          <h3 className="font-semibold text-brand-dark mb-4 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-primary" /> Enquiry Status Breakdown
+          </h3>
+          <div className="h-64">
+            <Bar 
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { y: { beginAtZero: true, grid: { color: '#f3f4f6' } }, x: { grid: { display: false } } }
+              }}
+              data={{
+                labels: ['New', 'Contacted', 'Converted'],
+                datasets: [{
+                  label: 'Enquiries',
+                  data: [
+                    stats.enquiryData?.filter(e => e.status === 'New').length || 0,
+                    stats.enquiryData?.filter(e => e.status === 'Contacted').length || 0,
+                    stats.enquiryData?.filter(e => e.status === 'Converted').length || 0
+                  ],
+                  backgroundColor: ['#9787F3', '#60A5FA', '#34D399'],
+                  borderRadius: 8
+                }]
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Dummy Growth Trend (Student Registration Placeholder) */}
+        <div className="card p-6">
+          <h3 className="font-semibold text-brand-dark mb-4 flex items-center gap-2">
+            <Users className="w-4 h-4 text-primary" /> Student Onboarding Trend
+          </h3>
+          <div className="h-64">
+            <Line 
+              options={{
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: { 
+                  y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                  x: { grid: { display: false } }
+                }
+              }}
+              data={{
+                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                datasets: [{
+                  label: 'New Students',
+                  data: [2, 5, 8, stats.totalStudents || 0],
+                  borderColor: '#9787F3',
+                  backgroundColor: 'rgba(151, 135, 243, 0.1)',
+                  fill: true,
+                  tension: 0.4,
+                  pointRadius: 4
+                }]
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
       <div className="card p-6">
         <h3 className="font-semibold text-brand-dark mb-4">Recent Enquiries</h3>
         {recentEnquiries.length === 0
