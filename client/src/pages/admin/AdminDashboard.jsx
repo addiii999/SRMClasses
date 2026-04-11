@@ -160,6 +160,7 @@ function Enquiries({ selectedBranch }) {
   const [enquiries, setEnquiries] = useState([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('date');
   const [loading, setLoading] = useState(true);
 
   const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}` });
@@ -168,11 +169,11 @@ function Enquiries({ selectedBranch }) {
     setLoading(true);
     try {
       const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
-      const res = await api.get(`/enquiries?status=${filterStatus}&search=${search}${branchParam}`, { headers: getHeaders() });
+      const res = await api.get(`/enquiries?status=${filterStatus}&search=${search}&sortBy=${sortBy}${branchParam}`, { headers: getHeaders() });
       setEnquiries(res.data.data || []);
     } catch { toast.error('Failed to load enquiries'); }
     finally { setLoading(false); }
-  }, [filterStatus, search, selectedBranch]);
+  }, [filterStatus, search, selectedBranch, sortBy]);
 
   useEffect(() => { fetchEnquiries(); }, [fetchEnquiries]);
 
@@ -204,12 +205,20 @@ function Enquiries({ selectedBranch }) {
         <select className="input-field py-2 w-auto" value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
           {['all', 'New', 'Contacted', 'Converted'].map(s => <option key={s} value={s}>{s === 'all' ? 'All Status' : s}</option>)}
         </select>
+        <div className="flex items-center gap-2">
+           <span className="text-xs font-bold text-gray-400 uppercase">Sort By:</span>
+           <select className="input-field py-2 w-auto" value={sortBy} onChange={e => setSortBy(e.target.value)}>
+             <option value="date">Date</option>
+             <option value="school">School</option>
+             <option value="class">Class</option>
+           </select>
+        </div>
       </div>
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead><tr className="border-b border-gray-100 bg-brand-bg">
-              {['Name', 'Email', 'Mobile', 'Class', 'Message', 'Status', 'Actions'].map(h => (
+              {['Name', 'Email', 'Mobile', 'School', 'Class', 'Message', 'Status', 'Actions'].map(h => (
                 <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wide">{h}</th>
               ))}
             </tr></thead>
@@ -227,8 +236,9 @@ function Enquiries({ selectedBranch }) {
                   <td className="px-4 py-3 font-medium text-brand-dark">{e.name}</td>
                   <td className="px-4 py-3 text-gray-500 text-xs">{e.email}</td>
                   <td className="px-4 py-3 text-gray-600">{e.mobile}</td>
+                  <td className="px-4 py-3 text-primary font-medium text-xs truncate max-w-[150px]" title={e.schoolName}>{e.schoolName}</td>
                   <td className="px-4 py-3">{e.studentClass ? `Class ${e.studentClass}` : '–'}</td>
-                  <td className="px-4 py-3 text-gray-500 max-w-xs truncate text-xs">{e.message}</td>
+                  <td className="px-4 py-3 text-gray-500 max-w-xs truncate text-xs">{e.message || <span className="text-gray-300 italic">None</span>}</td>
                   <td className="px-4 py-3">
                     <select value={e.status} onChange={ev => updateStatus(e._id, ev.target.value)}
                       className="text-xs border border-gray-200 rounded-lg px-2 py-1 bg-white focus:outline-none focus:ring-1 focus:ring-primary">

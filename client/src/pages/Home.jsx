@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import EnquiryForm from '../components/EnquiryForm';
 import { ArrowRight, BookOpen, Users, Trophy, Star, Phone, CheckCircle, Play, ChevronRight, Sparkles, MapPin, Target, Award, TrendingUp } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
@@ -57,8 +58,6 @@ const liveAlertClasses = ['Class 10', 'Class 12', 'Class 9', 'Class 8'];
 
 export default function Home() {
   const [courseTab, setCourseTab] = useState('CBSE');
-  const [enquiryForm, setEnquiryForm] = useState({ name: '', email: '', mobile: '', studentClass: '', message: '' });
-  const [submitting, setSubmitting] = useState(false);
   const [activeFaq, setActiveFaq] = useState(null);
   const [currentAlert, setCurrentAlert] = useState(null);
   const [branches, setBranches] = useState([]);
@@ -91,19 +90,7 @@ export default function Home() {
     };
   }, []);
 
-  const handleEnquiry = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await api.post('/enquiries', enquiryForm);
-      toast.success('Enquiry submitted! We will contact you shortly.');
-      setEnquiryForm({ name: '', email: '', mobile: '', studentClass: '', message: '' });
-    } catch {
-      toast.error('Failed to submit. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  // Removed old handleEnquiry logic
 
   return (
     <div className="overflow-x-hidden">
@@ -353,42 +340,7 @@ export default function Home() {
                 ))}
               </ul>
             </div>
-            <form onSubmit={handleEnquiry} className="card p-8 space-y-4">
-              <h3 className="font-display font-bold text-xl text-brand-dark mb-2">Send Enquiry</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Full Name</label>
-                  <input className="input-field" placeholder="Your name" value={enquiryForm.name}
-                    onChange={e => setEnquiryForm({ ...enquiryForm, name: e.target.value })} required />
-                </div>
-                <div>
-                  <label className="label">Mobile</label>
-                  <input className="input-field" placeholder="10-digit number" value={enquiryForm.mobile}
-                    onChange={e => setEnquiryForm({ ...enquiryForm, mobile: e.target.value })} required />
-                </div>
-              </div>
-              <div>
-                <label className="label">Email</label>
-                <input type="email" className="input-field" placeholder="your@email.com" value={enquiryForm.email}
-                  onChange={e => setEnquiryForm({ ...enquiryForm, email: e.target.value })} required />
-              </div>
-              <div>
-                <label className="label">Class Interested In</label>
-                <select className="input-field" value={enquiryForm.studentClass}
-                  onChange={e => setEnquiryForm({ ...enquiryForm, studentClass: e.target.value })}>
-                  <option value="">Select Class</option>
-                  {['6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="label">Message (optional)</label>
-                <textarea className="input-field resize-none" rows={3} placeholder="Any specific queries..." value={enquiryForm.message}
-                  onChange={e => setEnquiryForm({ ...enquiryForm, message: e.target.value })} />
-              </div>
-              <button type="submit" disabled={submitting} className="btn-primary w-full py-4 flex items-center justify-center gap-2 disabled:opacity-60">
-                {submitting ? 'Submitting...' : <><span>Submit Enquiry</span><ArrowRight className="w-4 h-4" /></>}
-              </button>
-            </form>
+            <EnquiryForm />
           </div>
         </div>
       </section>

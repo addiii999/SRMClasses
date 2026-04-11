@@ -6,7 +6,8 @@ const enquirySchema = new mongoose.Schema({
   email: { type: String, required: true, trim: true },
   mobile: { type: String, required: true, trim: true },
   studentClass: { type: String, trim: true },
-  message: { type: String, required: true },
+  schoolName: { type: String, required: true, trim: true },
+  message: { type: String, default: null },
   status: {
     type: String,
     enum: ['New', 'Contacted', 'Converted'],

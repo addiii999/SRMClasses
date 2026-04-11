@@ -3,16 +3,15 @@ import { useLocation } from 'react-router-dom';
 import { MapPin, Phone, Mail, Clock, ArrowRight, CheckCircle } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import EnquiryForm from '../components/EnquiryForm';
 
 export default function Contact() {
-  const [form, setForm] = useState({ name: '', email: '', mobile: '', studentClass: '', message: '' });
   const [demoForm, setDemoForm] = useState({ 
     name: '', email: '', mobile: '', confirmMobile: '', studentClass: '', 
     preferredDate: new Date().toISOString().split('T')[0], preferredTime: '', subject: '', branch: ''
   });
   const [captcha, setCaptcha] = useState({ a: Math.floor(Math.random() * 9) + 1, b: Math.floor(Math.random() * 9) + 1 });
   const [userCaptcha, setUserCaptcha] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [demoSubmitting, setDemoSubmitting] = useState(false);
   const [branches, setBranches] = useState([]);
   const [activeMapIndex, setActiveMapIndex] = useState(0);
@@ -34,16 +33,8 @@ export default function Contact() {
     }
   }, [hash]);
 
-  const handleContact = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await api.post('/enquiries', form);
-      toast.success('Message sent! We\'ll get back to you shortly.');
-      setForm({ name: '', email: '', mobile: '', studentClass: '', message: '' });
-    } catch { toast.error('Failed to send. Please try again.'); }
-    finally { setSubmitting(false); }
-  };
+  // Removed old handleContact logic
+
 
   const handleDemo = async (e) => {
     e.preventDefault();
@@ -132,37 +123,7 @@ export default function Contact() {
 
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Contact Form */}
-            <form onSubmit={handleContact} className="card p-8 space-y-4">
-              <h3 className="font-display font-bold text-xl text-brand-dark mb-2">Send a Message</h3>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="label">Name</label>
-                  <input className="input-field" placeholder="Full name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
-                </div>
-                <div>
-                  <label className="label">Mobile</label>
-                  <input className="input-field" placeholder="10-digit" value={form.mobile} onChange={e => setForm({ ...form, mobile: e.target.value })} required />
-                </div>
-              </div>
-              <div>
-                <label className="label">Email</label>
-                <input type="email" className="input-field" placeholder="your@email.com" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
-              </div>
-              <div>
-                <label className="label">Class</label>
-                <select className="input-field" value={form.studentClass} onChange={e => setForm({ ...form, studentClass: e.target.value })}>
-                  <option value="">Select Class</option>
-                  {['5','6','7','8','9','10','11','12'].map(c => <option key={c} value={c}>Class {c}</option>)}
-                </select>
-              </div>
-              <div>
-                <label className="label">Message</label>
-                <textarea className="input-field resize-none" rows={4} placeholder="How can we help you?" value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} required />
-              </div>
-              <button type="submit" disabled={submitting} className="btn-primary w-full py-4 disabled:opacity-60">
-                {submitting ? 'Sending...' : 'Send Message'}
-              </button>
-            </form>
+            <EnquiryForm />
 
             {/* Demo Form */}
             <form onSubmit={handleDemo} id="demo" className="card p-8 space-y-4">
