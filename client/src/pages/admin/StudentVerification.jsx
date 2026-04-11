@@ -9,14 +9,9 @@ import {
   BookOpen, Phone, MapPin, School, UserCheck, UserX
 } from 'lucide-react';
 
+import { fetchBoardClassMap } from '../../utils/boardConstraints';
+
 const BATCH_OPTIONS = ['Foundation Batch', 'Advance Batch', 'Core Batch', 'Commerce Batch'];
-const BOARDS = ['CBSE', 'ICSE', 'JAC'];
-const CLASSES = ['5', '6', '7', '8', '9', '10', '11', '12'];
-const VALID_BOARD_CLASS = {
-  CBSE: ['5', '6', '7', '8', '9', '10', '11', '12'],
-  ICSE: ['6', '7', '8', '9', '10'],
-  JAC: ['11', '12'],
-};
 
 const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}` });
 
@@ -52,18 +47,33 @@ function StudentDetailModal({ student, branches, onClose, onRefresh, adminRole }
   const [rejectReason, setRejectReason] = useState('');
   const [rejecting, setRejecting] = useState(false);
 
-  const handleUpdateField = async () => {
+  const [overrideModal, setOverrideModal] = useState({ show: false, action: null, message: '' });
+
+  const executeUpdate = async (override = false) => {
     setSaving(true);
+    setOverrideModal({ show: false, action: null, message: '' });
     try {
-      await api.put(`/admin/students/${student._id}`, editForm, { headers: authHeader() });
+      const payload = { ...editForm };
+      if (override) payload.overrideBoardClassValidation = true;
+      await api.put(`/admin/students/${student._id}`, payload, { headers: authHeader() });
       toast.success('Student updated successfully');
       onRefresh();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Update failed');
+      if (err.response?.data?.code === 'INVALID_BOARD_CLASS_COMBINATION' && !override) {
+        setOverrideModal({
+          show: true,
+          message: err.response.data.message,
+          action: () => executeUpdate(true)
+        });
+      } else {
+        toast.error(err.response?.data?.message || 'Update failed');
+      }
     } finally {
-      setSaving(false);
+      if (!override) setSaving(false);
     }
   };
+
+  const handleUpdateField = () => executeUpdate(false);
 
   const handleAssignBatch = async () => {
     if (!batchForm) return toast.error('Please select a batch');
@@ -238,7 +248,8 @@ function StudentDetailModal({ student, branches, onClose, onRefresh, adminRole }
                   <label className="label">Board</label>
                   <select className="input-field" value={editForm.board}
                     onChange={e => setEditForm({ ...editForm, board: e.target.value, studentClass: '' })}>
-                    {BOARDS.map(b => <option key={b} value={b}>{b}</option>)}
+                    <option value="">Select Board</option>
+                    {Object.keys(student.boardClassMap || {}).map(b => <option key={b} value={b}>{b}</option>)}
                   </select>
                 </div>
                 <div>
@@ -246,7 +257,7 @@ function StudentDetailModal({ student, branches, onClose, onRefresh, adminRole }
                   <select className="input-field" value={editForm.studentClass}
                     onChange={e => setEditForm({ ...editForm, studentClass: e.target.value })}>
                     <option value="">Select</option>
-                    {(VALID_BOARD_CLASS[editForm.board] || CLASSES).map(c => <option key={c} value={c}>Class {c}</option>)}
+                    {(student.boardClassMap?.[editForm.board] || ['5','6','7','8','9','10','11','12']).map(c => <option key={c} value={c}>Class {c}</option>)}
                   </select>
                 </div>
               </div>
@@ -261,6 +272,22 @@ function StudentDetailModal({ student, branches, onClose, onRefresh, adminRole }
                 className="btn-primary w-full py-3 flex items-center justify-center gap-2 disabled:opacity-60">
                 {saving ? <><RefreshCw className="w-4 h-4 animate-spin" /> Saving...</> : <><Edit3 className="w-4 h-4" /> Save Changes</>}
               </button>
+            </div>
+          )}
+
+          {overrideModal.show && (
+            <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 flex items-center justify-center p-6 rounded-3xl">
+              <div className="bg-white border border-red-100 shadow-xl rounded-2xl w-full p-6 text-center animate-in fade-in zoom-in duration-200">
+                <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <AlertTriangle className="w-6 h-6 text-red-500" />
+                </div>
+                <h4 className="font-bold text-brand-dark mb-2">Override Constraint</h4>
+                <p className="text-sm text-gray-500 mb-6">{overrideModal.message}<br/><br/>Do you want to force save this configuration?</p>
+                <div className="flex gap-3">
+                  <button onClick={() => setOverrideModal({ show: false })} className="btn-ghost flex-1">Cancel</button>
+                  <button onClick={overrideModal.action} className="btn-primary bg-red-500 hover:bg-red-600 border-red-600 flex-1">Force Save</button>
+                </div>
+              </div>
             </div>
           )}
 
@@ -360,20 +387,36 @@ function ApproveModal({ student, branches, onClose, onSuccess }) {
     board: student.board || 'CBSE',
   });
   const [loading, setLoading] = useState(false);
+  const [overrideModal, setOverrideModal] = useState({ show: false, action: null, message: '' });
 
-  const handleApprove = async (e) => {
-    e.preventDefault();
+  const executeApprove = async (override = false) => {
     setLoading(true);
+    setOverrideModal({ show: false, action: null, message: '' });
     try {
-      const { data } = await api.put(`/admin/students/approve/${student._id}`, form, { headers: authHeader() });
+      const payload = { ...form };
+      if (override) payload.overrideBoardClassValidation = true;
+      const { data } = await api.put(`/admin/students/approve/${student._id}`, payload, { headers: authHeader() });
       toast.success(`✅ Approved! Student ID: ${data.data.studentId}`);
       onSuccess();
       onClose();
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Approval failed');
+      if (err.response?.data?.code === 'INVALID_BOARD_CLASS_COMBINATION' && !override) {
+        setOverrideModal({
+          show: true,
+          message: err.response.data.message,
+          action: () => executeApprove(true)
+        });
+      } else {
+        toast.error(err.response?.data?.message || 'Approval failed');
+      }
     } finally {
-      setLoading(false);
+      if (!override) setLoading(false);
     }
+  };
+
+  const handleApprove = (e) => {
+    e.preventDefault();
+    executeApprove(false);
   };
 
   return (
@@ -397,7 +440,8 @@ function ApproveModal({ student, branches, onClose, onSuccess }) {
             <div>
               <label className="label">Board</label>
               <select className="input-field" value={form.board} onChange={e => setForm({ ...form, board: e.target.value, studentClass: '' })} required>
-                {BOARDS.map(b => <option key={b} value={b}>{b}</option>)}
+                <option value="">Select Board</option>
+                {Object.keys(student.boardClassMap || {}).map(b => <option key={b} value={b}>{b}</option>)}
               </select>
             </div>
           </div>
@@ -405,7 +449,7 @@ function ApproveModal({ student, branches, onClose, onSuccess }) {
             <label className="label">Confirm Class</label>
             <select className="input-field" value={form.studentClass} onChange={e => setForm({ ...form, studentClass: e.target.value })} required>
               <option value="">Select Class</option>
-              {(VALID_BOARD_CLASS[form.board] || []).map(c => <option key={c} value={c}>Class {c}</option>)}
+              {(student.boardClassMap?.[form.board] || ['5','6','7','8','9','10','11','12']).map(c => <option key={c} value={c}>Class {c}</option>)}
             </select>
           </div>
           <div>
@@ -427,6 +471,22 @@ function ApproveModal({ student, branches, onClose, onSuccess }) {
             {loading ? <><RefreshCw className="w-4 h-4 animate-spin" /> Approving...</> : <><UserCheck className="w-5 h-5" /> Confirm Approval</>}
           </button>
         </form>
+
+        {overrideModal.show && (
+          <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 flex items-center justify-center p-6 rounded-3xl">
+            <div className="bg-white border border-red-100 shadow-xl rounded-2xl w-full p-6 text-center animate-in fade-in zoom-in duration-200">
+              <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-3">
+                <AlertTriangle className="w-6 h-6 text-red-500" />
+              </div>
+              <h4 className="font-bold text-brand-dark mb-2">Override Constraint</h4>
+              <p className="text-sm text-gray-500 mb-6">{overrideModal.message}<br/><br/>Do you want to force save this configuration?</p>
+              <div className="flex gap-3">
+                <button onClick={() => setOverrideModal({ show: false })} className="btn-ghost flex-1">Cancel</button>
+                <button onClick={overrideModal.action} className="btn-primary bg-red-500 hover:bg-red-600 border-red-600 flex-1">Force Save</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -437,6 +497,7 @@ export default function StudentVerification({ selectedBranch, adminRole }) {
   const [activeTab, setActiveTab] = useState('Pending');
   const [students, setStudents] = useState([]);
   const [branches, setBranches] = useState([]);
+  const [boardClassMap, setBoardClassMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filters, setFilters] = useState({ board: '', studentClass: '' });
@@ -449,6 +510,7 @@ export default function StudentVerification({ selectedBranch, adminRole }) {
 
   useEffect(() => {
     api.get('/branches').then(r => setBranches(r.data?.data?.filter(b => b.isActive) || [])).catch(() => { });
+    fetchBoardClassMap().then(map => setBoardClassMap(map || {}));
     
     // Check URL parameters for tab
     const params = new URLSearchParams(window.location.search);
@@ -643,7 +705,7 @@ export default function StudentVerification({ selectedBranch, adminRole }) {
       {/* Modals */}
       {showApproveModal && approveTarget && (
         <ApproveModal
-          student={approveTarget}
+          student={{...approveTarget, boardClassMap}}
           branches={branches}
           onClose={() => { setShowApproveModal(false); setApproveTarget(null); }}
           onSuccess={fetchStudents}
@@ -651,7 +713,7 @@ export default function StudentVerification({ selectedBranch, adminRole }) {
       )}
       {showDetailModal && selectedStudent && (
         <StudentDetailModal
-          student={selectedStudent}
+          student={{...selectedStudent, boardClassMap}}
           branches={branches}
           adminRole={adminRole}
           onClose={() => { setShowDetailModal(false); setSelectedStudent(null); }}

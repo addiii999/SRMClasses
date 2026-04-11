@@ -122,6 +122,7 @@ app.use('/api/recycle-bin', require('./routes/recycleBinRoutes'));
 app.use('/api/branches', require('./routes/branchRoutes'));
 app.use('/api/weekly-tests', require('./routes/weeklyTestRoutes'));
 app.use('/api/board-change', require('./routes/boardChangeRoutes'));
+app.use('/api/config', require('./routes/configRoutes'));
 
 // Global error handler
 app.use((err, req, res, next) => {

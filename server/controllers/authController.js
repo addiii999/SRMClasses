@@ -2,6 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { generateOTP, validatePhone, hashOTP, sendOTPviaEmail } = require('../utils/otpService');
+const { isValidCombination } = require('../utils/boardConstraints');
 
 // ─── Token Helpers ────────────────────────────────────────────────────────────
 
@@ -239,6 +240,14 @@ const register = async (req, res) => {
     if (!board) return res.status(400).json({ success: false, message: 'Please select a board' });
     if (!parentName) return res.status(400).json({ success: false, message: 'Parent name is required' });
     if (!parentContact) return res.status(400).json({ success: false, message: 'Parent contact number is required' });
+
+    // 2.5 Strict Class-Board Validation
+    if (!isValidCombination(board, studentClass)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Board '${board}' is not valid for Class '${studentClass}'.`
+      });
+    }
 
     // 3. Name validation: min 3 chars, no numbers/special chars
     if (!validateName(name)) {

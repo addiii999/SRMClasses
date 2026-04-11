@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { BookOpen, Bell, FileText, Download, LogOut, GraduationCap, Menu, X, ChevronDown, CreditCard, Clock, AlertCircle, History, Trophy, TrendingUp, User, Lock, Edit2, Save, CheckCircle } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import { fetchBoardClassMap, getAllowedBoardsForClass } from '../utils/boardConstraints';
 import {
   Chart as ChartJS,
   CategoryScale, LinearScale, PointElement, LineElement, BarElement,
@@ -53,6 +54,7 @@ export default function StudentDashboard() {
   const [requestingBoardChange, setRequestingBoardChange] = useState(false);
   const [boardChangeForm, setBoardChangeForm] = useState({ requestedBoard: '' });
   const [showBoardModal, setShowBoardModal] = useState(false);
+  const [boardClassMap, setBoardClassMap] = useState({});
 
   // Initialize profile form when user object updates
   useEffect(() => {
@@ -78,9 +80,15 @@ export default function StudentDashboard() {
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  // Fetch notifications on mount
   useEffect(() => {
     fetchNotifications();
+    
+    // Fetch global configuration
+    const initConfigs = async () => {
+      const map = await fetchBoardClassMap();
+      if (map) setBoardClassMap(map);
+    };
+    initConfigs();
   }, []);
 
   useEffect(() => {
@@ -754,7 +762,10 @@ export default function StudentDashboard() {
                     <label className="label">Select New Board</label>
                     <select className="input-field" value={boardChangeForm.requestedBoard} onChange={e => setBoardChangeForm({requestedBoard: e.target.value})}>
                       <option value="">Select Board</option>
-                      {['CBSE', 'ICSE', 'JAC'].filter(b => b !== user?.board).map(b => (
+                      {(Object.keys(boardClassMap).length > 0
+                        ? Object.keys(boardClassMap).filter(b => boardClassMap[b].includes(String(user?.studentClass)) && b !== user?.board)
+                        : ['CBSE', 'ICSE', 'JAC'].filter(b => b !== user?.board)
+                      ).map(b => (
                         <option key={b} value={b}>{b}</option>
                       ))}
                     </select>

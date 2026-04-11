@@ -12,12 +12,7 @@ const ADMIN_EDITABLE_FIELDS = [
   'parentName', 'parentContact', 'schoolName', 'address',
 ];
 
-// Helper: validate board-class compatibility
-const VALID_BOARD_CLASS = {
-  'CBSE': ['5', '6', '7', '8', '9', '10', '11', '12'],
-  'ICSE': ['6', '7', '8', '9', '10'],
-  'JAC': ['11', '12'],
-};
+const { isValidCombination } = require('../utils/boardConstraints');
 
 // Helper: create a student-specific notification
 const sendStudentNotification = async ({ title, message, type, studentId, relatedId }) => {
@@ -155,10 +150,25 @@ exports.approveStudent = async (req, res) => {
 
     const studentBoard = board || student.board || 'CBSE';
 
-    if (!VALID_BOARD_CLASS[studentBoard]?.includes(studentClass)) {
-      return res.status(400).json({
-        success: false,
-        message: `Board (${studentBoard}) is only allowed for classes: ${VALID_BOARD_CLASS[studentBoard]?.join(', ')}`,
+    if (!isValidCombination(studentBoard, studentClass)) {
+      if (req.body.overrideBoardClassValidation !== true) {
+        return res.status(400).json({
+          success: false,
+          code: 'INVALID_BOARD_CLASS_COMBINATION',
+          message: `Board (${studentBoard}) is not valid for Class ${studentClass}`,
+        });
+      }
+      
+      // Log the override
+      const adminName = req.admin ? `${req.admin.name} (${req.admin.adminId})` : 'Admin';
+      student.addAdminAuditLog({
+        action: 'validate_override',
+        field: 'board_class_combo',
+        oldValue: 'Rejected',
+        newValue: 'Overridden',
+        adminId: req.admin._id,
+        adminName,
+        timestamp: new Date(),
       });
     }
 
@@ -280,13 +290,31 @@ exports.updateStudentByAdmin = async (req, res) => {
       const oldValue = student[field];
 
       // Special validation for board+class combination
-      if (field === 'board') {
-        const newClass = req.body.studentClass || student.studentClass;
-        if (!VALID_BOARD_CLASS[newValue]?.includes(newClass)) {
-          return res.status(400).json({
-            success: false,
-            message: `Board (${newValue}) is not valid for Class ${newClass}`,
-          });
+      if (field === 'board' || field === 'studentClass') {
+        const checkBoard = field === 'board' ? newValue : (req.body.board || student.board);
+        const checkClass = field === 'studentClass' ? newValue : (req.body.studentClass || student.studentClass);
+        
+        if (!isValidCombination(checkBoard, checkClass)) {
+          if (req.body.overrideBoardClassValidation !== true) {
+            return res.status(400).json({
+              success: false,
+              code: 'INVALID_BOARD_CLASS_COMBINATION',
+              message: `Board (${checkBoard}) is not valid for Class ${checkClass}`,
+            });
+          }
+          
+          if (!student.overrideLogged) { // prevent double logging in the loop
+            auditUpdates.push({
+              field: 'board_class_combo',
+              oldValue: 'Rejected',
+              newValue: 'Overridden',
+              action: 'validate_override',
+              adminId: req.admin._id,
+              adminName,
+              timestamp: new Date(),
+            });
+            student.overrideLogged = true;
+          }
         }
       }
 
@@ -605,11 +633,17 @@ exports.createUser = async (req, res) => {
     }
 
     const studentBoard = board || 'CBSE';
-    if (!VALID_BOARD_CLASS[studentBoard]?.includes(studentClass)) {
-      return res.status(400).json({
-        success: false,
-        message: `Board ${studentBoard} is only allowed for classes: ${VALID_BOARD_CLASS[studentBoard]?.join(', ')}`,
-      });
+    if (!isValidCombination(studentBoard, studentClass)) {
+      if (req.body.overrideBoardClassValidation !== true) {
+        return res.status(400).json({
+          success: false,
+          code: 'INVALID_BOARD_CLASS_COMBINATION',
+          message: `Board ${studentBoard} is not valid for Class ${studentClass}`,
+        });
+      }
+      // Assuming we log this via event since user isn't created yet, 
+      // but in manual creation we can add the audit log after creation.
+      req.overrideBoardClass = true; // flag to save in audit later
     }
 
     if (parentContact && mobile === parentContact) {
@@ -657,6 +691,19 @@ exports.createUser = async (req, res) => {
       adminName,
       timestamp: new Date(),
     });
+
+    if (req.overrideBoardClass) {
+      user.addAdminAuditLog({
+        action: 'validate_override',
+        field: 'board_class_combo',
+        oldValue: 'Rejected',
+        newValue: 'Overridden',
+        adminId: req.admin._id,
+        adminName,
+        timestamp: new Date(),
+      });
+    }
+
     await user.save({ validateBeforeSave: false });
 
     res.status(201).json({ success: true, data: { studentId: user.studentId, name: user.name }, message: 'Student created successfully' });

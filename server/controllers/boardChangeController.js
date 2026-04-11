@@ -3,6 +3,7 @@ const BoardChangeRequest = require('../models/BoardChangeRequest');
 const Notification = require('../models/Notification');
 const Branch = require('../models/Branch'); // Required for nested populate/index registration
 const Admin = require('../models/Admin');   // Required for resolvedBy populate
+const { isValidCombination } = require('../utils/boardConstraints');
 
 const COOLDOWN_HOURS = 24;
 
@@ -30,6 +31,13 @@ exports.requestBoardChange = async (req, res) => {
     const validBoards = ['CBSE', 'ICSE', 'JAC'];
     if (!validBoards.includes(requestedBoard)) {
       return res.status(400).json({ success: false, message: 'Invalid board selected' });
+    }
+
+    if (!isValidCombination(requestedBoard, student.studentClass)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: `Board '${requestedBoard}' is not permitted for your current Class '${student.studentClass}'.` 
+      });
     }
 
     if (requestedBoard === student.board) {

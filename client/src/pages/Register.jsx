@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { GraduationCap, Eye, EyeOff, ArrowRight, Phone, ShieldCheck, CheckCircle, RefreshCw, AlertCircle, Clock, Home, User, BookOpen } from 'lucide-react';
 import api from '../lib/api';
 import toast from 'react-hot-toast';
+import { fetchBoardClassMap, getAllowedBoardsForClass } from '../utils/boardConstraints';
 
 // ── Step Indicator ────────────────────────────────────────────────────────────
 const StepIndicator = ({ current }) => {
@@ -104,6 +105,7 @@ export default function Register() {
   const [registering, setRegistering] = useState(false);
   const [branches, setBranches] = useState([]);
   const [branchError, setBranchError] = useState('');
+  const [boardClassMap, setBoardClassMap] = useState({});
 
   const navigate = useNavigate();
 
@@ -117,7 +119,12 @@ export default function Register() {
         setBranchError('Unable to load branches, please refresh');
       }
     };
-    fetchBranches();
+    const initConfigs = async () => {
+      fetchBranches();
+      const map = await fetchBoardClassMap();
+      if (map) setBoardClassMap(map);
+    };
+    initConfigs();
   }, []);
 
   // Cooldown timer
@@ -428,13 +435,13 @@ export default function Register() {
                     required
                   >
                     <option value="">Select Board</option>
-                    {['CBSE', 'ICSE', 'JAC'].filter(b => {
-                      if (!form.studentClass) return true;
-                      const c = parseInt(form.studentClass);
-                      if (b === 'ICSE') return c >= 6 && c <= 10;
-                      if (b === 'JAC') return c >= 11 && c <= 12;
-                      return true;
-                    }).map(b => <option key={b} value={b}>{b}</option>)}
+                    {Object.keys(boardClassMap).length > 0 ? 
+                      Object.keys(boardClassMap).filter(b => {
+                        if (!form.studentClass) return true;
+                        return boardClassMap[b].includes(String(form.studentClass));
+                      }).map(b => <option key={b} value={b}>{b}</option>)
+                      : ['CBSE', 'ICSE', 'JAC'].map(b => <option key={b} value={b}>{b}</option>)
+                    }
                   </select>
                 </div>
 
@@ -448,10 +455,8 @@ export default function Register() {
                   >
                     <option value="">Select Class</option>
                     {['5','6','7','8','9','10','11','12'].filter(c => {
-                      const cls = parseInt(c);
-                      if (form.board === 'ICSE') return cls >= 6 && cls <= 10;
-                      if (form.board === 'JAC') return cls >= 11 && cls <= 12;
-                      return true;
+                      if (!form.board || !boardClassMap[form.board]) return true;
+                      return boardClassMap[form.board].includes(String(c));
                     }).map(c => <option key={c} value={c}>Class {c}</option>)}
                   </select>
                 </div>
