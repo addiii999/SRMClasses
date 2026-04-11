@@ -197,6 +197,8 @@ const convertToStudent = async (req, res) => {
         user.isStudent = true;
         user.isEnrolled = true;
         user.verificationStatus = 'approved';
+        user.registrationStatus = 'Active';
+        user.isApproved = true;
         user.studentClass = booking.studentClass;
         user.board = verifiedBoard;
         user.branch = booking.branch._id;
@@ -217,6 +219,9 @@ const convertToStudent = async (req, res) => {
           role: 'student',
           isStudent: true,
           isEnrolled: true,
+          isEnrolled: true,
+          isApproved: true,
+          registrationStatus: 'Active',
           verificationStatus: 'approved',
           shouldChangePassword: true,
           branch: booking.branch._id,

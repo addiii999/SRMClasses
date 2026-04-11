@@ -449,6 +449,13 @@ export default function StudentVerification({ selectedBranch, adminRole }) {
 
   useEffect(() => {
     api.get('/branches').then(r => setBranches(r.data?.data?.filter(b => b.isActive) || [])).catch(() => { });
+    
+    // Check URL parameters for tab
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    if (tabParam && ['Pending', 'Active', 'Rejected'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
   }, []);
 
   const fetchStudents = useCallback(async () => {
