@@ -26,28 +26,19 @@ const adminLogin = async (req, res) => {
 
     const normalizedEmail = email.toLowerCase().trim();
 
-    console.log(`[Admin Login Attempt] Email: ${normalizedEmail}`);
-    
     const admin = await Admin.findOne({ email: normalizedEmail }).select('+password');
     if (!admin) {
-      const dbName = mongoose.connection.name;
-      const count = await Admin.countDocuments();
-      console.log(`[Admin Login Fail] No admin found for: ${normalizedEmail} | DB: ${dbName} | Total Admins: ${count}`);
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
     if (!admin.isActive) {
-      console.log(`[Admin Login Fail] Account deactivated: ${normalizedEmail}`);
       return res.status(403).json({ success: false, message: 'Account deactivated. Contact Super Admin.' });
     }
 
     const isMatch = await admin.matchPassword(password);
     if (!isMatch) {
-      console.log(`[Admin Login Fail] Password mismatch for: ${normalizedEmail}`);
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
-
-    console.log(`[Admin Login Success] ${normalizedEmail}`);
 
     const token = generateAdminToken(admin);
 
