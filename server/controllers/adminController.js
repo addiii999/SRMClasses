@@ -135,7 +135,7 @@ exports.getPendingStudents = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 exports.approveStudent = async (req, res) => {
   try {
-    const { sessionYear, studentClass, branchId, board } = req.body;
+    const { sessionYear, studentClass, branchId, board, overrideReason } = req.body;
 
     if (!sessionYear || !studentClass || !branchId) {
       return res.status(400).json({ success: false, message: 'Session Year, Class, and Branch are required for approval' });
@@ -169,6 +169,7 @@ exports.approveStudent = async (req, res) => {
         adminId: req.admin._id,
         adminName,
         timestamp: new Date(),
+        overrideReason: overrideReason || 'No reason provided',
       });
     }
 
@@ -312,6 +313,7 @@ exports.updateStudentByAdmin = async (req, res) => {
               adminId: req.admin._id,
               adminName,
               timestamp: new Date(),
+              overrideReason: req.body.overrideReason || 'No reason provided',
             });
             student.overrideLogged = true;
           }
@@ -641,7 +643,7 @@ exports.deleteAdmin = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 exports.createUser = async (req, res) => {
   try {
-    const { name, email, mobile, studentClass, password, branch, board, parentName, parentContact, schoolName, address } = req.body;
+    const { name, email, mobile, studentClass, password, branch, board, parentName, parentContact, schoolName, address, overrideReason } = req.body;
 
     if (!name || !email || !mobile || !studentClass || !password || !branch) {
       return res.status(400).json({ success: false, message: 'All required fields must be provided' });
@@ -716,6 +718,7 @@ exports.createUser = async (req, res) => {
         adminId: req.admin._id,
         adminName,
         timestamp: new Date(),
+        overrideReason: overrideReason || 'Manual creation override',
       });
     }
 

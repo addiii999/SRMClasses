@@ -23,7 +23,7 @@ const setup = async () => {
         branchCode: 'RAVI',
         address: 'Ravi Steel, Ranchi, Jharkhand',
         googleMapsLink: 'https://maps.app.goo.gl/example1',
-        phone: '9508266012',
+        phone: '9508639773',
         isActive: true
       },
       {
@@ -31,6 +31,7 @@ const setup = async () => {
         branchCode: 'MANDAR',
         address: 'Mandar (Near Mission Hospital), Ranchi, Jharkhand 835214',
         googleMapsLink: 'https://www.google.com/maps/search/?api=1&query=23.464467,85.080045',
+        phone: '9508639773',
         isActive: true
       }
     ];

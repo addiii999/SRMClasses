@@ -9,9 +9,11 @@ import {
   BookOpen, Phone, MapPin, School, UserCheck, UserX
 } from 'lucide-react';
 
-import { fetchBoardClassMap } from '../../utils/boardConstraints';
+import { fetchBoardClassMap, getAllowedBoardsForClass } from '../../utils/boardConstraints';
 
 const BATCH_OPTIONS = ['Foundation Batch', 'Advance Batch', 'Core Batch', 'Commerce Batch'];
+const BOARDS = ['CBSE', 'ICSE', 'JAC'];
+const CLASSES = ['5','6','7','8','9','10','11','12'];
 
 const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}` });
 
@@ -40,6 +42,7 @@ function StudentDetailModal({ student, branches, onClose, onRefresh, adminRole }
     parentContact: student.parentContact || '',
     schoolName: student.schoolName || '',
     address: student.address || '',
+    overrideReason: '',
   });
   const [batchForm, setBatchForm] = useState(student.batch || '');
   const [saving, setSaving] = useState(false);
@@ -54,7 +57,10 @@ function StudentDetailModal({ student, branches, onClose, onRefresh, adminRole }
     setOverrideModal({ show: false, action: null, message: '' });
     try {
       const payload = { ...editForm };
-      if (override) payload.overrideBoardClassValidation = true;
+      if (override) {
+        payload.overrideBoardClassValidation = true;
+        if (!payload.overrideReason) return toast.error('Please provide a reason for override');
+      }
       await api.put(`/admin/students/${student._id}`, payload, { headers: authHeader() });
       toast.success('Student updated successfully');
       onRefresh();
@@ -282,10 +288,25 @@ function StudentDetailModal({ student, branches, onClose, onRefresh, adminRole }
                   <AlertTriangle className="w-6 h-6 text-red-500" />
                 </div>
                 <h4 className="font-bold text-brand-dark mb-2">Override Constraint</h4>
-                <p className="text-sm text-gray-500 mb-6">{overrideModal.message}<br/><br/>Do you want to force save this configuration?</p>
+                <p className="text-[11px] text-gray-500 mb-4">{overrideModal.message}</p>
+                <div className="mb-4 text-left">
+                  <label className="text-[10px] font-bold text-red-600 uppercase mb-1 block">Override Reason (Audit Log)</label>
+                  <textarea 
+                    className="input-field text-xs bg-gray-50 h-20" 
+                    placeholder="Provide justification for this mismatch..."
+                    value={editForm.overrideReason}
+                    onChange={e => setEditForm({...editForm, overrideReason: e.target.value})}
+                  />
+                </div>
                 <div className="flex gap-3">
-                  <button onClick={() => setOverrideModal({ show: false })} className="btn-ghost flex-1">Cancel</button>
-                  <button onClick={overrideModal.action} className="btn-primary bg-red-500 hover:bg-red-600 border-red-600 flex-1">Force Save</button>
+                  <button onClick={() => setOverrideModal({ show: false })} className="btn-ghost flex-1 text-xs">Cancel</button>
+                  <button 
+                    disabled={!editForm.overrideReason}
+                    onClick={overrideModal.action} 
+                    className="btn-primary bg-red-500 hover:bg-red-600 border-red-600 flex-1 text-xs disabled:opacity-50"
+                  >
+                    Force Save
+                  </button>
                 </div>
               </div>
             </div>
@@ -385,6 +406,7 @@ function ApproveModal({ student, branches, onClose, onSuccess }) {
     studentClass: student.studentClass || '',
     branchId: (typeof student.branch === 'object' ? student.branch._id : student.branch) || '',
     board: student.board || 'CBSE',
+    overrideReason: '',
   });
   const [loading, setLoading] = useState(false);
   const [overrideModal, setOverrideModal] = useState({ show: false, action: null, message: '' });
@@ -394,7 +416,10 @@ function ApproveModal({ student, branches, onClose, onSuccess }) {
     setOverrideModal({ show: false, action: null, message: '' });
     try {
       const payload = { ...form };
-      if (override) payload.overrideBoardClassValidation = true;
+      if (override) {
+        payload.overrideBoardClassValidation = true;
+        if (!payload.overrideReason) return toast.error('Please provide a reason for override');
+      }
       const { data } = await api.put(`/admin/students/approve/${student._id}`, payload, { headers: authHeader() });
       toast.success(`✅ Approved! Student ID: ${data.data.studentId}`);
       onSuccess();
@@ -479,10 +504,25 @@ function ApproveModal({ student, branches, onClose, onSuccess }) {
                 <AlertTriangle className="w-6 h-6 text-red-500" />
               </div>
               <h4 className="font-bold text-brand-dark mb-2">Override Constraint</h4>
-              <p className="text-sm text-gray-500 mb-6">{overrideModal.message}<br/><br/>Do you want to force save this configuration?</p>
+              <p className="text-[11px] text-gray-500 mb-4">{overrideModal.message}</p>
+              <div className="mb-4 text-left">
+                <label className="text-[10px] font-bold text-red-600 uppercase mb-1 block">Override Reason (Audit Log)</label>
+                <textarea 
+                  className="input-field text-xs bg-gray-50 h-20" 
+                  placeholder="Provide justification for this mismatch..."
+                  value={form.overrideReason}
+                  onChange={e => setForm({...form, overrideReason: e.target.value})}
+                />
+              </div>
               <div className="flex gap-3">
-                <button onClick={() => setOverrideModal({ show: false })} className="btn-ghost flex-1">Cancel</button>
-                <button onClick={overrideModal.action} className="btn-primary bg-red-500 hover:bg-red-600 border-red-600 flex-1">Force Save</button>
+                <button onClick={() => setOverrideModal({ show: false })} className="btn-ghost flex-1 text-xs">Cancel</button>
+                <button 
+                  disabled={!form.overrideReason}
+                  onClick={overrideModal.action} 
+                  className="btn-primary bg-red-500 hover:bg-red-600 border-red-600 flex-1 text-xs disabled:opacity-50"
+                >
+                  Force Save
+                </button>
               </div>
             </div>
           </div>

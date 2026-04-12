@@ -6,6 +6,7 @@ import {
   ChevronLeft, Eye, Send, X, CheckCircle, AlertCircle, FileSpreadsheet,
   ClipboardList, Users, Calendar, Award
 } from 'lucide-react';
+import { fetchBoardClassMap, getAllowedBoardsForClass } from '../../utils/boardConstraints';
 
 const BATCHES = ['5', '6', '7', '8', '9', '10', '11', '12'];
 const BOARDS = ['CBSE', 'ICSE', 'JAC', 'ALL'];
@@ -43,9 +44,36 @@ function CreateTestModal({ onClose, onCreated, branches, defaultBranch }) {
     batch: '', 
     board: 'ALL',
     branch: defaultBranch && defaultBranch !== '' ? defaultBranch : '',
-    isAllBranches: false 
+    isAllBranches: false,
+    overrideReason: ''
   });
   const [loading, setLoading] = useState(false);
+  const [allowedBoards, setAllowedBoards] = useState([]);
+  const [configMap, setConfigMap] = useState(null);
+  const [requiresOverride, setRequiresOverride] = useState(false);
+
+  useEffect(() => {
+    fetchBoardClassMap().then(setConfigMap);
+  }, []);
+
+  useEffect(() => {
+    if (configMap && form.batch) {
+      const allowed = getAllowedBoardsForClass(configMap, form.batch);
+      setAllowedBoards(allowed);
+      
+      // If "ALL" is selected, we check if ALL is generally allowed or if we need to show override
+      // Usually "ALL" means all boards for that class. 
+      // If form.board is not in allowed list (and not ALL), trigger override prompt
+      if (form.board !== 'ALL' && !allowed.includes(form.board)) {
+        setRequiresOverride(true);
+      } else {
+        setRequiresOverride(false);
+      }
+    } else {
+      setAllowedBoards(BOARDS);
+      setRequiresOverride(false);
+    }
+  }, [configMap, form.batch, form.board]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -103,12 +131,15 @@ function CreateTestModal({ onClose, onCreated, branches, defaultBranch }) {
 
             <div>
               <label className="label">Board</label>
-              <select className="input-field" value={form.board} onChange={(e) => setForm({ ...form, board: e.target.value, batch: '' })} required>
-                {BOARDS.filter(b => {
-                  if (form.batch && ['5', '6', '7', '8', '9', '10'].includes(form.batch) && b === 'JAC') return false;
-                  if (form.batch && ['11', '12'].includes(form.batch) && b === 'ICSE') return false;
-                  return true;
-                }).map((b) => <option key={b} value={b}>{b}</option>)}
+              <select className="input-field" value={form.board} onChange={(e) => setForm({ ...form, board: e.target.value })} required>
+                {BOARDS.map((b) => {
+                  const isAllowed = b === 'ALL' || allowedBoards.includes(b);
+                  return (
+                    <option key={b} value={b} className={!isAllowed ? 'text-red-500 font-bold' : ''}>
+                      {b} {!isAllowed ? '(Invalid)' : ''}
+                    </option>
+                  );
+                })}
               </select>
             </div>
 
@@ -148,15 +179,33 @@ function CreateTestModal({ onClose, onCreated, branches, defaultBranch }) {
               <input type="date" className="input-field" value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })} required />
             </div>
-            <div>
-              <label className="label">Total Marks</label>
-              <input type="number" className="input-field" placeholder="e.g. 50" min="1" value={form.totalMarks}
-                onChange={(e) => setForm({ ...form, totalMarks: e.target.value })} required />
             </div>
           </div>
 
-          <button type="submit" disabled={loading} className="btn-primary w-full py-3 disabled:opacity-60 mt-2">
-            {loading ? 'Creating...' : 'Create Test'}
+          {requiresOverride && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-xl space-y-3 animate-pulse-slow">
+              <div className="flex items-center gap-2 text-red-700 font-bold text-sm">
+                <AlertCircle className="w-4 h-4" /> Validation Override Required
+              </div>
+              <p className="text-xs text-red-600">
+                The selected Board-Class combination is generally not allowed. To proceed, you must provide a reason for this override.
+              </p>
+              <textarea 
+                className="input-field text-sm bg-white" 
+                placeholder="Why is this combination being allowed? (Log required)"
+                value={form.overrideReason}
+                onChange={(e) => setForm({ ...form, overrideReason: e.target.value })}
+                required={requiresOverride}
+              />
+            </div>
+          )}
+
+          <button 
+            type="submit" 
+            disabled={loading || (requiresOverride && !form.overrideReason)} 
+            className="btn-primary w-full py-3 disabled:opacity-60 mt-2"
+          >
+            {loading ? 'Creating...' : (requiresOverride ? '⚠️ Confirm & Create Test' : 'Create Test')}
           </button>
         </form>
       </div>

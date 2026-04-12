@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import EnquiryForm from '../components/EnquiryForm';
 import { ArrowRight, BookOpen, Users, Trophy, Star, Phone, CheckCircle, Play, ChevronRight, Sparkles, MapPin, Target, Award, TrendingUp } from 'lucide-react';
 import api from '../lib/api';
+import { CONTACT_NUMBERS } from '../config/contact';
 import toast from 'react-hot-toast';
 
 const stats = [
@@ -367,11 +368,16 @@ export default function Home() {
                     <MapPin className="w-5 h-5 text-primary shrink-0 mt-0.5" />
                     <p className="text-gray-500 text-sm leading-relaxed">{branch.address}</p>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <Phone className="w-5 h-5 text-primary shrink-0" />
-                    <a href={`tel:${branch.phone}`} className="text-brand-dark font-semibold hover:text-primary transition-colors">
-                      {branch.phone}
-                    </a>
+                  <div className="flex flex-col gap-2">
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Call Us</p>
+                    {CONTACT_NUMBERS.map((number, idx) => (
+                      <div key={idx} className="flex items-center gap-3">
+                        <Phone className="w-5 h-5 text-primary shrink-0" />
+                        <a href={`tel:${number}`} className="text-brand-dark font-semibold hover:text-primary transition-colors">
+                          {number}
+                        </a>
+                      </div>
+                    ))}
                   </div>
                 </div>
                 <div className="flex gap-4">
@@ -405,8 +411,8 @@ export default function Home() {
           <h2 className="text-3xl md:text-4xl font-display font-bold text-white mb-4">Experience the SRM Difference</h2>
           <p className="text-white/80 mb-8 max-w-xl mx-auto">Attend a free demo class. No commitment required. See why 2,500+ students chose us.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a href="tel:+917488886903" className="flex items-center justify-center gap-2 px-8 py-4 bg-white text-primary font-bold rounded-xl hover:bg-white/90 transition-all shadow-glass-lg">
-              <Phone className="w-5 h-5" /> Call Now: +91 7488886903
+            <a href={`tel:${CONTACT_NUMBERS[0]}`} className="flex items-center justify-center gap-2 px-8 py-4 bg-white text-primary font-bold rounded-xl hover:bg-white/90 transition-all shadow-glass-lg">
+              <Phone className="w-5 h-5" /> Call Now: {CONTACT_NUMBERS[0]}
             </a>
             <Link to="/register" className="px-8 py-4 border-2 border-white text-white font-bold rounded-xl hover:bg-white/10 transition-all">
               Register for Free Demo

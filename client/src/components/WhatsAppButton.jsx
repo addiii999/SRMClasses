@@ -1,7 +1,9 @@
+import { WHATSAPP_NUMBERS } from '../config/contact';
+
 export default function WhatsAppButton() {
   return (
     <a
-      href="https://wa.me/919508639773?text=Hello%20SRM%20Classes%2C%20I%20need%20more%20information"
+      href={`https://wa.me/${WHATSAPP_NUMBERS[0]}?text=Hello%20SRM%20Classes%2C%20I%20need%20more%20information`}
       target="_blank"
       rel="noreferrer"
       aria-label="Chat on WhatsApp"

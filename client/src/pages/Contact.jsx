@@ -4,6 +4,7 @@ import { MapPin, Phone, Mail, Clock, ArrowRight, CheckCircle } from 'lucide-reac
 import api from '../lib/api';
 import toast from 'react-hot-toast';
 import EnquiryForm from '../components/EnquiryForm';
+import { CONTACT_NUMBERS } from '../config/contact';
 
 export default function Contact() {
   const [demoForm, setDemoForm] = useState({ 
@@ -79,13 +80,15 @@ export default function Contact() {
               </div>
               <div>
                 <h3 className="font-display font-bold text-brand-dark mb-1">Call Us</h3>
-                {(branches || []).map(b => (
-                  <div key={b._id} className="mb-2 last:mb-0">
-                    <p className="text-gray-400 text-[10px] uppercase font-bold tracking-tighter">{b.name}</p>
-                    <a href={`tel:${b.phone}`} className="text-primary font-medium text-sm hover:underline">{b.phone}</a>
-                  </div>
-                ))}
-                <p className="text-gray-400 text-xs mt-2">Mon–Sat, 7 AM – 8 PM</p>
+                <div className="space-y-3 mt-3">
+                  {CONTACT_NUMBERS.map((number, idx) => (
+                    <div key={idx} className="flex flex-col">
+                       <p className="text-gray-400 text-[10px] uppercase font-bold tracking-tighter">Support Line {idx + 1}</p>
+                       <a href={`tel:${number}`} className="text-primary font-bold text-lg hover:underline transition-all tracking-tight">{number}</a>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-gray-400 text-xs mt-4">Mon–Sat, 7 AM – 8 PM</p>
               </div>
             </div>
 

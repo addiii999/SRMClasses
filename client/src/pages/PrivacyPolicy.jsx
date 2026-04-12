@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Lock, EyeOff, Database, Mail, MapPin, Phone, CheckCircle2 } from 'lucide-react';
 import { useEffect } from 'react';
+import { CONTACT_NUMBERS } from '../config/contact';
 
 export default function PrivacyPolicy() {
   // Use a static date to represent when it was actually last updated, 
@@ -193,10 +194,10 @@ export default function PrivacyPolicy() {
                    <p className="text-sm font-medium text-white/80">Email Us</p>
                    <p className="text-xs text-white/50 mt-1">srmclasses01@gmail.com</p>
                  </a>
-                 <a href="tel:+917488886903" className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-6 transition-all group block">
+                 <a href={`tel:${CONTACT_NUMBERS[0]}`} className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-6 transition-all group block">
                    <Phone className="w-6 h-6 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />
                    <p className="text-sm font-medium text-white/80">Call Support</p>
-                   <p className="text-xs text-white/50 mt-1">+91 7488886903</p>
+                   <p className="text-xs text-white/50 mt-1">{CONTACT_NUMBERS[0]}</p>
                  </a>
                  <a href="https://maps.app.goo.gl/TFpjRggpozuA5TDPA" target="_blank" rel="noreferrer" className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-6 transition-all group block">
                    <MapPin className="w-6 h-6 text-primary mx-auto mb-3 group-hover:scale-110 transition-transform" />

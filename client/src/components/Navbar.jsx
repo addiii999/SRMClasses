@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Menu, X, GraduationCap, ChevronDown, LogOut, LayoutDashboard } from 'lucide-react';
+import { CONTACT_NUMBERS } from '../config/contact';
 
 const navLinks = [
   { label: 'Home', to: '/' },
@@ -47,9 +48,9 @@ export default function Navbar() {
             Call Now for Admission
           </div>
           <div className="flex items-center gap-4 text-sm">
-             <a href="tel:7488886903" className="hover:text-primary-300 transition-colors">7488886903</a>
+             <a href={`tel:${CONTACT_NUMBERS[0]}`} className="hover:text-primary-300 transition-colors">{CONTACT_NUMBERS[0]}</a>
              <span className="opacity-20 hidden md:inline">|</span>
-             <a href="tel:9508639773" className="hover:text-primary-300 transition-colors">9508639773</a>
+             <a href={`tel:${CONTACT_NUMBERS[1]}`} className="hover:text-primary-300 transition-colors">{CONTACT_NUMBERS[1]}</a>
           </div>
         </div>
       </div>

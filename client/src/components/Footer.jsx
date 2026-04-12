@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap, MapPin, Phone, Mail, Instagram, Youtube, Facebook, MessageCircle } from 'lucide-react';
 import api from '../lib/api';
+import { CONTACT_NUMBERS, WHATSAPP_NUMBERS } from '../config/contact';
 
 const footerLinks = {
   'Quick Links': [
@@ -48,7 +49,7 @@ export default function Footer() {
                 { icon: Instagram, href: 'https://www.instagram.com/srm_classes/', label: 'Instagram' },
                 { icon: Youtube, href: 'https://youtube.com/@srmclasses-rnc?si=paFOv6nyy3kRbuhB', label: 'YouTube' },
                 { icon: Facebook, href: 'https://www.facebook.com/share/1GB8aFs4wo/', label: 'Facebook' },
-                { icon: MessageCircle, href: 'https://wa.me/919508639773', label: 'WhatsApp' },
+                { icon: MessageCircle, href: `https://wa.me/${WHATSAPP_NUMBERS[0]}`, label: 'WhatsApp' },
               ].map(({ icon: Icon, href, label }) => (
                 <a key={label} href={href} aria-label={label} target="_blank" rel="noreferrer"
                   className="w-9 h-9 rounded-xl bg-white/10 hover:bg-primary flex items-center justify-center transition-all duration-200 hover:-translate-y-0.5">
@@ -89,20 +90,26 @@ export default function Footer() {
                         {branch.address}
                       </a>
                     </li>
-                    <li className="flex items-center gap-3 text-xs text-white/50">
-                      <Phone className="w-3.5 h-3.5 text-primary shrink-0" />
-                      <a href={`tel:${branch.phone}`} className="hover:text-primary transition-colors">
-                        {branch.phone}
-                      </a>
-                    </li>
                   </ul>
                 </div>
               ))}
-              <div className="pt-2 border-t border-white/5">
-                <a href="mailto:srmclasses01@gmail.com" className="flex items-center gap-3 text-xs text-white/50 hover:text-primary transition-colors">
+              <div className="pt-2 border-t border-white/5 mt-4 space-y-3">
+                <p className="text-white/80 text-xs font-semibold mb-2">Call Us:</p>
+                {CONTACT_NUMBERS.map((number, idx) => (
+                  <div key={idx} className="flex items-center gap-3 text-xs text-white/50">
+                    <Phone className="w-3.5 h-3.5 text-primary shrink-0" />
+                    <a href={`tel:${number}`} className="hover:text-primary transition-colors">
+                      {number}
+                    </a>
+                  </div>
+                ))}
+                
+                <div className="flex items-center gap-3 text-xs text-white/50 pt-2 border-t border-white/5">
                   <Mail className="w-3.5 h-3.5 text-primary shrink-0" />
-                  <span>srmclasses01@gmail.com</span>
-                </a>
+                  <a href="mailto:srmclasses01@gmail.com" className="hover:text-primary transition-colors">
+                    srmclasses01@gmail.com
+                  </a>
+                </div>
               </div>
             </div>
           </div>

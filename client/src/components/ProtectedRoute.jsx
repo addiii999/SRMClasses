@@ -7,5 +7,6 @@ export const ProtectedRoute = ({ children }) => {
 };
 
 export const AdminRoute = ({ children }) => {
-  return children; // Temporarily bypassed for verification
+  const { adminToken } = useAuth();
+  return adminToken ? children : <Navigate to="/admin/login" replace />;
 };

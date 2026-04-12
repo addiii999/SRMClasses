@@ -22,6 +22,7 @@ const adminAuditLogSchema = new mongoose.Schema({
   adminId: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin', required: true },
   adminName: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
+  overrideReason: { type: String, default: null },
 }, { _id: true });
 
 // ─── Main Schema ──────────────────────────────────────────────────────────────
