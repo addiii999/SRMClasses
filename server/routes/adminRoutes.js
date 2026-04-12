@@ -6,7 +6,7 @@ const {
   approveStudent, rejectStudent, createUser,
   updateStudentByAdmin, assignBatch, resetBoardChangeCount,
   createAdminAccount, getAdmins, deactivateAdmin, deleteAdmin,
-  getAdminAuditLogs, getStudentStats,
+  getAdminAuditLogs, getStudentStats, softDeleteAuditLog,
 } = require('../controllers/adminController');
 const {
   getBoardChangeRequests, approveBoardChange, rejectBoardChange,
@@ -53,7 +53,7 @@ const auditDeleteLimiter = rateLimit({
 
 // ── Audit Logs ────────────────────────────────────────────────────────────────
 router.get('/audit-logs', getAdminAuditLogs);
-router.delete('/audit-logs/:studentId/:logId', superAdminOnly, auditDeleteLimiter, exports.softDeleteAuditLog || ((req, res) => res.status(500).json({message: 'Controller not ready'})));
+router.delete('/audit-logs/:studentId/:logId', superAdminOnly, auditDeleteLimiter, softDeleteAuditLog);
 
 // ── Admin Management (SUPER_ADMIN only) ──────────────────────────────────────
 router.get('/admins', superAdminOnly, getAdmins);
