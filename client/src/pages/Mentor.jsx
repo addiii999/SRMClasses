@@ -79,7 +79,6 @@ export default function Mentor() {
                   { icon: Users, text: '3000+ Students Mentored Successfully' },
                   { icon: TrendingUp, text: '50+ Top Performers Every Year (90%+)' },
                   { icon: Award, text: '5 Years Continuous Best Teacher Award' },
-                  { icon: BookOpen, text: 'PGT Level Educator & Teacher Trainer' },
                 ].map((item, idx) => (
                   <div key={idx} className="flex items-start gap-3">
                     <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
