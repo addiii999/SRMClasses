@@ -1,4 +1,5 @@
 const Faculty = require('../models/Faculty');
+const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinary');
 
 // @desc Get all active faculty (Public)
 exports.getPublicFaculty = async (req, res) => {
@@ -61,7 +62,28 @@ exports.getAdminFaculty = async (req, res) => {
 // @desc Add new faculty
 exports.addFaculty = async (req, res) => {
   try {
-    const faculty = await Faculty.create(req.body);
+    const data = { ...req.body };
+    
+    if (req.file) {
+      const publicId = `faculty_${Date.now()}`;
+      const uploadResult = await uploadToCloudinary(
+        req.file.buffer, 
+        'faculty', 
+        publicId, 
+        'image',
+        {
+          transformation: [
+            { width: 400, height: 400, crop: 'fill', gravity: 'face' }
+          ]
+        }
+      );
+      data.photo = {
+        url: uploadResult.url,
+        public_id: uploadResult.publicId
+      };
+    }
+
+    const faculty = await Faculty.create(data);
     res.status(201).json({ success: true, data: faculty });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
@@ -71,13 +93,45 @@ exports.addFaculty = async (req, res) => {
 // @desc Update faculty
 exports.updateFaculty = async (req, res) => {
   try {
-    const faculty = await Faculty.findByIdAndUpdate(req.params.id, req.body, {
+    const data = { ...req.body };
+    const facultyId = req.params.id;
+
+    // Find existing to check for photo
+    const existingFaculty = await Faculty.findById(facultyId);
+    if (!existingFaculty) {
+      return res.status(404).json({ success: false, message: 'Faculty not found' });
+    }
+
+    if (req.file) {
+      // 1. Delete old photo if exists
+      if (existingFaculty.photo && existingFaculty.photo.public_id) {
+        await deleteFromCloudinary(existingFaculty.photo.public_id);
+      }
+
+      // 2. Upload new photo
+      const publicId = `faculty_${Date.now()}`;
+      const uploadResult = await uploadToCloudinary(
+        req.file.buffer, 
+        'faculty', 
+        publicId, 
+        'image',
+        {
+          transformation: [
+            { width: 400, height: 400, crop: 'fill', gravity: 'face' }
+          ]
+        }
+      );
+      data.photo = {
+        url: uploadResult.url,
+        public_id: uploadResult.publicId
+      };
+    }
+
+    const faculty = await Faculty.findByIdAndUpdate(facultyId, data, {
       new: true,
       runValidators: true,
     });
-    if (!faculty) {
-      return res.status(404).json({ success: false, message: 'Faculty not found' });
-    }
+
     res.json({ success: true, data: faculty });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });

@@ -64,8 +64,12 @@ export default function Faculty() {
                   style={{ animationDelay: `${idx * 0.05}s` }}>
                   
                   <div className="relative w-20 h-20 mx-auto mb-6 translate-y-0 group-hover:-translate-y-1 transition-transform">
-                    <div className="w-20 h-20 rounded-full bg-gradient-brand flex items-center justify-center text-white font-display font-bold text-3xl shadow-glass border-4 border-white">
-                      {teacher.name[0]}
+                    <div className="w-20 h-20 rounded-full bg-gradient-brand flex items-center justify-center text-white font-display font-bold text-3xl shadow-glass border-4 border-white overflow-hidden">
+                      {teacher.photo?.url ? (
+                        <img src={teacher.photo.url} alt={teacher.name} className="w-full h-full object-cover" />
+                      ) : (
+                        teacher.name[0]
+                      )}
                     </div>
                     <div className={`absolute -bottom-1 -right-1 px-2.5 py-1 rounded-full border-2 border-white flex items-center justify-center shadow-md ${teacher.priorityOrder ? 'bg-brand-dark' : 'bg-green-500'}`}>
                        {teacher.priorityOrder ? (

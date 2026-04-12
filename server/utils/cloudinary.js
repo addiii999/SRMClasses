@@ -7,14 +7,15 @@ cloudinary.config({
 });
 
 /**
- * Upload a file buffer to Cloudinary
+ * Upload a file buffer to Cloudinary with optional transformations
  * @param {Buffer} buffer - File buffer from multer memory storage
- * @param {string} folder - Cloudinary folder (e.g. 'gallery', 'materials', 'results', 'syllabus')
+ * @param {string} folder - Cloudinary folder (e.g. 'gallery', 'faculty')
  * @param {string} publicId - Clean public ID (no extension)
  * @param {string} resourceType - 'image' or 'raw' (for PDFs)
+ * @param {Object} options - Additional cloudinary options (transformations etc)
  * @returns {Promise<{url: string, publicId: string}>}
  */
-async function uploadToCloudinary(buffer, folder, publicId, resourceType = 'auto') {
+async function uploadToCloudinary(buffer, folder, publicId, resourceType = 'auto', options = {}) {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -22,6 +23,7 @@ async function uploadToCloudinary(buffer, folder, publicId, resourceType = 'auto
         public_id: publicId,
         resource_type: resourceType,
         overwrite: true,
+        ...options,
       },
       (error, result) => {
         if (error) return reject(error);

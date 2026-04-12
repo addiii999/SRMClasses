@@ -3,7 +3,7 @@ import api from '../../lib/api';
 import toast from 'react-hot-toast';
 import { 
   Users, Plus, Search, Edit2, Trash2, Star, 
-  History, CheckCircle, Clock, X, Sparkles, TrendingUp
+  History, CheckCircle, Clock, X, Sparkles, TrendingUp, Camera, Image as ImageIcon
 } from 'lucide-react';
 
 export default function AdminFaculty() {
@@ -12,6 +12,9 @@ export default function AdminFaculty() {
   const [search, setSearch] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingTeacher, setEditingTeacher] = useState(null);
+  const [photoFile, setPhotoFile] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [form, setForm] = useState({
     name: '',
@@ -65,31 +68,63 @@ export default function AdminFaculty() {
     }
   };
 
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('File size must be less than 2MB');
+        return;
+      }
+      setPhotoFile(file);
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
-      const token = sessionStorage.getItem('srmAdminToken');
-      const payload = { 
-        ...form, 
-        experience: Number(form.experience), 
-        rating: Number(form.rating),
-        priorityOrder: form.priorityOrder === '' ? null : Number(form.priorityOrder)
+      const formData = new FormData();
+      formData.append('name', form.name);
+      formData.append('subject', form.subject);
+      formData.append('qualification', form.qualification || '');
+      formData.append('experience', form.experience);
+      formData.append('speciality', form.speciality || '');
+      formData.append('rating', form.rating);
+      if (form.priorityOrder !== '') {
+        formData.append('priorityOrder', form.priorityOrder);
+      }
+      formData.append('isActive', form.isActive);
+      
+      if (photoFile) {
+        formData.append('photo', photoFile);
+      }
+
+      const config = {
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${sessionStorage.getItem('srmAdminToken')}` 
+        }
       };
       
       if (editingTeacher) {
-        await api.put(`/faculty/${editingTeacher._id}`, payload);
+        await api.put(`/faculty/${editingTeacher._id}`, formData, config);
         toast.success('Teacher updated successfully');
       } else {
-        await api.post('/faculty', payload);
+        await api.post('/faculty', formData, config);
         toast.success('Teacher added successfully');
       }
       
       setShowModal(false);
       setEditingTeacher(null);
+      setPhotoFile(null);
+      setPhotoPreview(null);
       setForm({ name: '', subject: '', qualification: '', experience: '', speciality: '', rating: 5.0, isActive: true, priorityOrder: '' });
       fetchFaculty();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Action failed');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -134,6 +169,8 @@ export default function AdminFaculty() {
       isActive: teacher.isActive,
       priorityOrder: teacher.priorityOrder ?? ''
     });
+    setPhotoFile(null);
+    setPhotoPreview(teacher.photo?.url || null);
     setShowModal(true);
   };
 
@@ -159,6 +196,8 @@ export default function AdminFaculty() {
           onClick={() => {
             setEditingTeacher(null);
             setForm({ name: '', subject: '', qualification: '', experience: '', speciality: '', rating: 5.0, isActive: true });
+            setPhotoFile(null);
+            setPhotoPreview(null);
             setShowModal(true);
           }}
           className="btn-primary flex items-center gap-2 px-6 py-3 self-start"
@@ -185,8 +224,12 @@ export default function AdminFaculty() {
           <div key={teacher._id} className={`card p-6 border transition-all ${teacher.isActive ? 'border-gray-100' : 'border-red-100 bg-red-50/30 grayscale opacity-75'}`}>
             <div className="flex justify-between items-start mb-4">
               <div className="flex flex-col gap-2">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-display font-bold text-xl ${teacher.isActive ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'}`}>
-                  {teacher.name[0]}
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-display font-bold text-xl overflow-hidden ${teacher.isActive ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'}`}>
+                  {teacher.photo?.url ? (
+                    <img src={teacher.photo.url} alt={teacher.name} className="w-full h-full object-cover" />
+                  ) : (
+                    teacher.name[0]
+                  )}
                 </div>
                 {isCore && (
                   <span className="px-2 py-0.5 bg-brand-dark text-white text-[8px] font-bold uppercase rounded-md tracking-wider">Core Faculty</span>
@@ -260,6 +303,36 @@ export default function AdminFaculty() {
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              {/* Photo Upload Section */}
+              <div className="flex items-center gap-6 p-4 bg-brand-bg rounded-2xl border border-dashed border-primary/20">
+                <div className="relative group">
+                  <div className="w-20 h-20 rounded-2xl bg-white border-2 border-white shadow-md overflow-hidden flex items-center justify-center">
+                    {photoPreview ? (
+                      <img src={photoPreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <Camera className="w-8 h-8 text-gray-300" />
+                    )}
+                  </div>
+                  <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-brand-dark text-white rounded-full flex items-center justify-center shadow-lg cursor-pointer hover:bg-primary transition-colors">
+                    <Plus className="w-4 h-4" />
+                    <input type="file" className="hidden" accept="image/*" onChange={handlePhotoChange} />
+                  </label>
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-bold text-brand-dark mb-1">Teacher Photo</h4>
+                  <p className="text-[10px] text-gray-500 leading-tight">Recommended: Square (1:1) facial portrait. Max size: 2MB.</p>
+                  {photoFile && (
+                    <button 
+                      type="button" 
+                      onClick={() => { setPhotoFile(null); setPhotoPreview(null); }}
+                      className="text-red-500 text-[10px] font-bold uppercase tracking-wider mt-2 hover:underline"
+                    >
+                      Remove Selection
+                    </button>
+                  )}
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="label">Full Name</label>
@@ -309,9 +382,13 @@ export default function AdminFaculty() {
               </div>
 
               <div className="pt-4">
-                <button type="submit" className="btn-primary w-full py-4 font-bold flex items-center justify-center gap-2">
-                  <Sparkles className="w-5 h-5" /> 
-                  {editingTeacher ? 'Save Changes' : 'Add Teacher to SRM'}
+                <button type="submit" disabled={isSubmitting} className="btn-primary w-full py-4 font-bold flex items-center justify-center gap-2 disabled:opacity-50">
+                  {isSubmitting ? (
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <Sparkles className="w-5 h-5" />
+                  )}
+                  {isSubmitting ? 'Uploading...' : editingTeacher ? 'Save Changes' : 'Add Teacher to SRM'}
                 </button>
               </div>
             </form>

@@ -20,4 +20,18 @@ const upload = multer({
   limits: { fileSize: 20 * 1024 * 1024 }, // 20MB
 });
 
-module.exports = upload;
+const facultyUpload = multer({
+  storage,
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpeg|jpg|png|webp/;
+    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedTypes.test(file.mimetype);
+    if (extname && mimetype) {
+      return cb(null, true);
+    }
+    cb(new Error('Only image files (JPG, PNG, WebP) are allowed for faculty profiles'));
+  },
+  limits: { fileSize: 2 * 1024 * 1024 }, // 2MB strict
+});
+
+module.exports = { upload, facultyUpload };

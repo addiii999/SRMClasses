@@ -40,6 +40,10 @@ const facultySchema = new mongoose.Schema({
     type: Number,
     default: null,
   },
+  photo: {
+    url: { type: String, default: null },
+    public_id: { type: String, default: null },
+  },
 }, { timestamps: true });
 
 facultySchema.plugin(softDeletePlugin);
