@@ -793,6 +793,7 @@ exports.getAdminAuditLogs = async (req, res) => {
       { $project: {
           studentName: '$name',
           studentId: '$studentId',
+          studentDocId: '$_id',
           log: '$adminAuditLog'
         }
       }
