@@ -2,6 +2,7 @@ const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const bcrypt = require('bcryptjs');
+const mongoose = require('mongoose');
 
 const generateAdminToken = (admin) => {
   return jwt.sign(
