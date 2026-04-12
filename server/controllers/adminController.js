@@ -764,13 +764,26 @@ exports.getStudentStats = async (req, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 exports.getAdminAuditLogs = async (req, res) => {
   try {
-    const { page = 1, limit = 50 } = req.query;
+    const { page = 1, limit = 50, showDeleted } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // If SUPER_ADMIN, see all. If ADMIN, see only own.
-    const matchFilter = req.admin.role === 'SUPER_ADMIN' ? {} : { 'adminAuditLog.adminId': req.admin._id };
+    // Filter Logic:
+    // 1. Role Check: ADMIN sees only their own logs. SUPER_ADMIN sees all.
+    // 2. Soft-Delete Check: Hide deleted logs unless showDeleted is true (SUPER_ADMIN only)
+    
+    let matchFilter = {};
+    const isSuperAdmin = req.admin.role === 'SUPER_ADMIN';
+    
+    if (isSuperAdmin) {
+      if (showDeleted !== 'true') {
+        matchFilter['adminAuditLog.isDeleted'] = { $ne: true };
+      }
+    } else {
+      // Regular ADMIN: only own logs AND never see deleted logs
+      matchFilter['adminAuditLog.adminId'] = req.admin._id;
+      matchFilter['adminAuditLog.isDeleted'] = { $ne: true };
+    }
 
-    // We need to aggregate across all User documents inside adminAuditLog array
     const pipeline = [
       { $unwind: '$adminAuditLog' },
       { $match: matchFilter },
@@ -787,7 +800,6 @@ exports.getAdminAuditLogs = async (req, res) => {
 
     const logs = await User.aggregate(pipeline);
 
-    // We do a separate count for pagination
     const countPipeline = [
       { $unwind: '$adminAuditLog' },
       { $match: matchFilter },
@@ -801,6 +813,48 @@ exports.getAdminAuditLogs = async (req, res) => {
       data: logs,
       pagination: { total, page: parseInt(page), limit: parseInt(limit), pages: Math.ceil(total / parseInt(limit)) },
     });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// DELETE /api/admin/audit-logs/:studentId/:logId  — SUPER_ADMIN only
+// ─────────────────────────────────────────────────────────────────────────────
+exports.softDeleteAuditLog = async (req, res) => {
+  try {
+    const { studentId, logId } = req.params;
+    const { reason } = req.body;
+
+    const student = await User.findById(studentId);
+    if (!student) return res.status(404).json({ success: false, message: 'Student document not found' });
+
+    const logIndex = student.adminAuditLog.findIndex(l => l._id.toString() === logId);
+    if (logIndex === -1) return res.status(404).json({ success: false, message: 'Audit log entry not found' });
+
+    const logToHide = student.adminAuditLog[logIndex];
+    if (logToHide.isDeleted) return res.status(400).json({ success: false, message: 'Log is already deleted' });
+
+    // Mark as deleted
+    logToHide.isDeleted = true;
+    logToHide.deletedAt = new Date();
+    logToHide.deletedBy = req.admin._id;
+
+    // MANDATORY AUDIT OF AUDIT: Create a NEW log entry
+    const adminName = req.admin ? `${req.admin.name} (${req.admin.adminId})` : 'Admin';
+    student.addAdminAuditLog({
+      action: 'AUDIT_LOG_DELETED',
+      field: 'adminAuditLog',
+      oldValue: `Action: ${logToHide.action}`,
+      newValue: reason || 'Audit log soft-deleted by Super Admin',
+      adminId: req.admin._id,
+      adminName,
+      timestamp: new Date(),
+    });
+
+    await student.save({ validateBeforeSave: false });
+
+    res.json({ success: true, message: 'Audit log soft-deleted successfully and recorded.' });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

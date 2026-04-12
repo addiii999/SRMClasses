@@ -41,8 +41,19 @@ router.put('/board-change-requests/:id/reject', rejectBoardChange);
 router.post('/import/excel', excelUpload.single('file'), importMarksExcel);
 router.get('/import/logs', getImportLogs);
 
+const rateLimit = require('express-rate-limit');
+
+// Specialized rate limiter for audit log deletion (traceability protection)
+const auditDeleteLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  message: { success: false, message: 'Too many audit log deletions. Maximum 10 per hour per admin.' },
+  keyGenerator: (req) => req.admin._id, // Limit per admin ID instead of IP
+});
+
 // ── Audit Logs ────────────────────────────────────────────────────────────────
 router.get('/audit-logs', getAdminAuditLogs);
+router.delete('/audit-logs/:studentId/:logId', superAdminOnly, auditDeleteLimiter, exports.softDeleteAuditLog || ((req, res) => res.status(500).json({message: 'Controller not ready'})));
 
 // ── Admin Management (SUPER_ADMIN only) ──────────────────────────────────────
 router.get('/admins', superAdminOnly, getAdmins);

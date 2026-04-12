@@ -15,7 +15,7 @@ const profileHistorySchema = new mongoose.Schema({
 }, { _id: false });
 
 const adminAuditLogSchema = new mongoose.Schema({
-  action: { type: String, required: true }, // e.g. 'approve', 'reject', 'update_field', 'assign_batch', 'reset_board_count'
+  action: { type: String, required: true }, // e.g. 'approve', 'reject', 'update_field', 'assign_batch', 'reset_board_count', 'AUDIT_LOG_DELETED'
   field: { type: String, default: null },
   oldValue: { type: mongoose.Schema.Types.Mixed, default: null },
   newValue: { type: mongoose.Schema.Types.Mixed, default: null },
@@ -23,6 +23,10 @@ const adminAuditLogSchema = new mongoose.Schema({
   adminName: { type: String, required: true },
   timestamp: { type: Date, default: Date.now },
   overrideReason: { type: String, default: null },
+  // Soft Delete fields for auditing the auditors
+  isDeleted: { type: Boolean, default: false },
+  deletedAt: { type: Date },
+  deletedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Admin' },
 }, { _id: true });
 
 // ─── Main Schema ──────────────────────────────────────────────────────────────
