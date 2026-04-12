@@ -49,6 +49,7 @@ export default function AdminLogin() {
                 id="admin-email"
                 name="admin-email"
                 type="email" 
+                autoComplete="email"
                 className="input-field bg-white/90" 
                 value={form.email}
                 onChange={e => setForm({ ...form, email: e.target.value })} 
@@ -62,6 +63,7 @@ export default function AdminLogin() {
                   id="admin-password"
                   name="admin-password"
                   type={showPwd ? 'text' : 'password'} 
+                  autoComplete="current-password"
                   className="input-field bg-white/90 pr-12"
                   placeholder="Admin password" 
                   value={form.password}

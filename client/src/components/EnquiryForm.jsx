@@ -74,6 +74,7 @@ export default function EnquiryForm() {
           <input 
             id="enquiry-name"
             name="name"
+            autoComplete="name"
             className="input-field" 
             placeholder="Your name" 
             value={formData.name}
@@ -86,6 +87,7 @@ export default function EnquiryForm() {
           <input 
             id="enquiry-mobile"
             name="mobile"
+            autoComplete="tel"
             className="input-field" 
             placeholder="10-digit number" 
             value={formData.mobile}

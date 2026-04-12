@@ -275,6 +275,7 @@ export default function Register() {
                   <input
                     id="reg-mobile"
                     name="mobile"
+                    autoComplete="tel"
                     className="input-field pl-12"
                     placeholder="10-digit number"
                     value={mobile}
@@ -292,6 +293,7 @@ export default function Register() {
                   id="reg-email"
                   name="email"
                   type="email"
+                  autoComplete="email"
                   className="input-field"
                   placeholder="your@email.com"
                   value={email}
@@ -399,6 +401,7 @@ export default function Register() {
                 <input
                   id="reg-name"
                   name="name"
+                  autoComplete="name"
                   className="input-field"
                   placeholder="Your full name (letters only)"
                   value={form.name}
@@ -523,6 +526,7 @@ export default function Register() {
                   <input
                     id="reg-parent-contact"
                     name="parentContact"
+                    autoComplete="tel"
                     className={`input-field pl-12 ${form.parentContact && form.parentContact === mobile ? 'border-red-400 bg-red-50' : ''}`}
                     placeholder="Parent's 10-digit number"
                     value={form.parentContact}
@@ -551,6 +555,7 @@ export default function Register() {
                     id="reg-password"
                     name="password"
                     type={showPwd ? 'text' : 'password'}
+                    autoComplete="new-password"
                     className="input-field pr-12"
                     placeholder="At least 6 characters with 1 number"
                     value={form.password}
@@ -570,6 +575,7 @@ export default function Register() {
                   id="reg-confirm"
                   name="confirmPassword"
                   type="password"
+                  autoComplete="new-password"
                   className="input-field"
                   placeholder="Re-enter password"
                   value={form.confirmPassword}

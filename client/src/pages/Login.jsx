@@ -81,7 +81,7 @@ export default function Login() {
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
               <label htmlFor="email" className="label">Email Address</label>
-              <input id="email" name="email" type="email" className="input-field" placeholder="your@email.com"
+              <input id="email" name="email" type="email" autoComplete="email" className="input-field" placeholder="your@email.com"
                 value={form.email} onChange={e => { setForm({ ...form, email: e.target.value }); setStatusBanner(null); }} required />
             </div>
             <div>
@@ -90,7 +90,7 @@ export default function Login() {
                 <Link to="/forgot-password" disabled={loading} className="text-xs text-primary hover:underline font-medium">Forgot password?</Link>
               </div>
               <div className="relative">
-                <input id="password" name="password" type={showPassword ? 'text' : 'password'} className="input-field pr-12"
+                <input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" className="input-field pr-12"
                   placeholder="Enter your password"
                   value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}

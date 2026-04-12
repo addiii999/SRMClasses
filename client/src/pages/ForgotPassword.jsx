@@ -85,7 +85,7 @@ export default function ForgotPassword() {
             <form onSubmit={handleSendOTP} className="space-y-5">
               <div>
                 <label htmlFor="reset-email" className="label">Email Address</label>
-                <input id="reset-email" name="email" type="email" className="input-field" placeholder="your@email.com"
+                <input id="reset-email" name="email" type="email" autoComplete="email" className="input-field" placeholder="your@email.com"
                   value={email} onChange={e => setEmail(e.target.value)} required />
               </div>
               <button type="submit" disabled={loading || cooldown > 0} className="btn-primary w-full py-4 flex items-center justify-center gap-2 disabled:opacity-60">
@@ -106,17 +106,17 @@ export default function ForgotPassword() {
                     {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend OTP'}
                   </button>
                 </div>
-                <input id="reset-otp" name="otp" className="input-field tracking-widest text-center text-lg font-bold" placeholder="• • • • • •"
+                <input id="reset-otp" name="otp" autoComplete="one-time-code" className="input-field tracking-widest text-center text-lg font-bold" placeholder="• • • • • •"
                   maxLength={6} value={otp} onChange={e => setOtp(e.target.value)} required />
               </div>
               <div>
                 <label htmlFor="new-password" className="label">New Password</label>
-                <input id="new-password" name="new-password" type="password" className="input-field" placeholder="At least 6 characters"
+                <input id="new-password" name="new-password" type="password" autoComplete="new-password" className="input-field" placeholder="At least 6 characters"
                   value={newPassword} onChange={e => setNewPassword(e.target.value)} required />
               </div>
               <div>
                 <label htmlFor="confirm-password" className="label">Confirm Password</label>
-                <input id="confirm-password" name="confirm-password" type="password" className="input-field" placeholder="Re-enter password"
+                <input id="confirm-password" name="confirm-password" type="password" autoComplete="new-password" className="input-field" placeholder="Re-enter password"
                   value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
               </div>
               <button type="submit" disabled={loading} className="btn-primary w-full py-4 flex items-center justify-center gap-2 disabled:opacity-60 !mt-6">
