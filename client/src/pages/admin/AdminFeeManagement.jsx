@@ -319,7 +319,8 @@ function FeeModal({ student, onClose, onSuccess }) {
   const [form, setForm] = useState({
     feeType: student.feeType || 'None',
     satPercentage: student.satPercentage || '', // Starts empty for better UX
-    installmentPlan: student.installmentPlan || 1
+    installmentPlan: student.installmentPlan || 1,
+    registrationFeeApplicable: student.registrationFeeApplicable !== false
   });
   const [loading, setLoading] = useState(false);
 
@@ -337,22 +338,34 @@ function FeeModal({ student, onClose, onSuccess }) {
   else if (form.installmentPlan === 2) instDiscountPercent = 5;
 
   const instAmount = Math.round(afterSat * (instDiscountPercent / 100));
-  const finalPayable = (afterSat - instAmount) + 500; // Adding ₹500 fixed Admission Fee
+  const admissionFee = form.registrationFeeApplicable ? 500 : 0;
+  const finalPayable = (afterSat - instAmount) + admissionFee; // Conditional Admission Fee
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSubmit = async (e, force = false) => {
+    if (e) e.preventDefault();
     setLoading(true);
     try {
       const token = sessionStorage.getItem('srmAdminToken');
       // Normalize satPercentage to 0 if empty
-      const payload = { ...form, satPercentage: Number(form.satPercentage) || 0 };
+      const payload = { 
+        ...form, 
+        satPercentage: Number(form.satPercentage) || 0,
+        force
+      };
       await api.put(`/fees/settings/${student._id}`, payload, {
         headers: { Authorization: `Bearer ${token}` }
       });
       toast.success('Fee settings updated!');
       onSuccess();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Update failed');
+      if (error.response?.data?.isOverpaymentWarning) {
+        if (window.confirm(error.response.data.message)) {
+          handleSubmit(null, true);
+          return;
+        }
+      } else {
+        toast.error(error.response?.data?.message || 'Update failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -417,6 +430,21 @@ function FeeModal({ student, onClose, onSuccess }) {
             </div>
           </div>
 
+          <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl border border-primary/10">
+            <div>
+              <p className="text-sm font-bold text-brand-dark">Apply Registration Fee</p>
+              <p className="text-[10px] text-gray-400">Add ₹500 fixed admission charge</p>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" className="sr-only peer"
+                checked={form.registrationFeeApplicable}
+                onChange={(e) => setForm({ ...form, registrationFeeApplicable: e.target.checked })}
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+          </div>
+
           {/* Real-time Breakdown Card */}
           <div className="p-5 rounded-2xl bg-gray-50 border border-gray-100 shadow-sm space-y-3">
              <div className="flex items-center gap-2 mb-2">
@@ -425,10 +453,12 @@ function FeeModal({ student, onClose, onSuccess }) {
              </div>
              
              <div className="space-y-1.5 text-sm">
-               <div className="flex justify-between text-gray-600">
-                 <span>Admission Fee:</span>
-                 <span className="font-semibold text-brand-dark">₹500</span>
-               </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>Admission Fee:</span>
+                  <span className={`font-semibold ${form.registrationFeeApplicable ? 'text-brand-dark' : 'text-gray-400 line-through'}`}>
+                    ₹{admissionFee}
+                  </span>
+                </div>
                <div className="flex justify-between text-gray-600 pb-3 border-b border-gray-200">
                  <span>Yearly Fee:</span>
                  <span className="font-semibold text-brand-dark">₹{yearlyFee.toLocaleString('en-IN')}</span>

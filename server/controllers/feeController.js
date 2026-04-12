@@ -51,7 +51,7 @@ exports.getStudentsFeeStats = async (req, res) => {
  */
 exports.updateStudentFeeSettings = async (req, res) => {
   try {
-    const { feeType, satPercentage, installmentPlan } = req.body;
+    const { feeType, satPercentage, installmentPlan, registrationFeeApplicable, force } = req.body;
     const student = await User.findById(req.params.id);
 
     if (!student) {
@@ -66,6 +66,38 @@ exports.updateStudentFeeSettings = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Installments must be 1-6' });
     }
 
+    // --- OVERPAYMENT GUARD FOR REGISTRATION FEE WAIVER ---
+    // If admin is toggling registrationFeeApplicable from true (default) to false
+    if (registrationFeeApplicable === false && student.registrationFeeApplicable !== false) {
+      // 1. Prepare a temporary snapshot to calculate the NEW potential fee
+      let tempActualFee = 0;
+      if (feeType !== 'None' && FEE_STRUCTURE[feeType]) {
+        tempActualFee = FEE_STRUCTURE[feeType][student.studentClass] || 0;
+      }
+
+      const tempUser = student.toObject();
+      tempUser.registrationFeeApplicable = false;
+      tempUser.feeType = feeType;
+      tempUser.feeSnapshot = {
+        actualFee: tempActualFee,
+        satPercentage: parseInt(satPercentage) || 0,
+        installmentPlan: parseInt(installmentPlan) || 1
+      };
+
+      // 2. Calculate what the new payable amount would be
+      const newDetails = calculateFeeDetails(tempUser);
+      const totalPaid = student.payments.reduce((sum, p) => sum + p.amount, 0);
+
+      // 3. If paid amount exceeds the new lower payable, warn unless forced
+      if (totalPaid > newDetails.payableAmount && !force) {
+        return res.status(400).json({
+          success: false,
+          isOverpaymentWarning: true,
+          message: `Student has already paid ₹${totalPaid.toLocaleString('en-IN')}. Disabling the admission fee will make the new payable amount ₹${newDetails.payableAmount.toLocaleString('en-IN')}, resulting in an overpayment of ₹${(totalPaid - newDetails.payableAmount).toLocaleString('en-IN')}. Confirm to proceed?`
+        });
+      }
+    }
+
     // Auto-assign actualFee from structure
     let actualFee = 0;
     if (feeType !== 'None' && FEE_STRUCTURE[feeType]) {
@@ -73,11 +105,10 @@ exports.updateStudentFeeSettings = async (req, res) => {
     }
 
     // Audit Info
-    const adminName = req.admin ? req.admin.email : 'Admin'; // Assuming req.admin from adminProtect
+    const adminName = req.admin ? req.admin.email : 'Admin';
 
-    // If student has existing payments, we should warn or keep track.
-    // For now, we update the snapshot as requested.
     student.feeType = feeType;
+    student.registrationFeeApplicable = registrationFeeApplicable;
     student.feeSnapshot = {
       actualFee,
       satPercentage,

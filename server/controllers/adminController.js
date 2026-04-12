@@ -189,6 +189,7 @@ exports.approveStudent = async (req, res) => {
     student.registrationStatus = 'Active';
     student.isApproved = true;
     student.verificationStatus = 'approved';
+    student.registrationFeeApplicable = true; // New student approved via portal
 
     student.enrollmentLogs.push({ status: 'enrolled', updatedBy: adminName, updatedAt: Date.now() });
 
@@ -693,6 +694,7 @@ exports.createUser = async (req, res) => {
       isApproved: true,
       verificationStatus: 'approved',
       mobileVerified: true,
+      registrationFeeApplicable: false, // Manually created = Existing student (No Fee)
       shouldChangePassword: true,
       createdByAdmin: true,
       enrollmentLogs: [{ status: 'enrolled', updatedBy: adminName, updatedAt: Date.now() }],

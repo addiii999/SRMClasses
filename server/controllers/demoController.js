@@ -213,6 +213,7 @@ const convertToStudent = async (req, res) => {
         user.branch = booking.branch._id;
         user.studentId = studentId;
         user.feeType = feeType || 'None';
+        user.registrationFeeApplicable = true;
         user.feeSnapshot = feeSnapshot;
         user.shouldChangePassword = true;
         user.enrollmentLogs.push({ status: 'enrolled', updatedBy: adminName, updatedAt: Date.now() });
@@ -236,6 +237,7 @@ const convertToStudent = async (req, res) => {
           branch: booking.branch._id,
           studentId,
           feeType: feeType || 'None',
+          registrationFeeApplicable: true,
           feeSnapshot,
           createdByAdmin: true,
           enrollmentLogs: [{ status: 'enrolled', updatedBy: adminName, updatedAt: Date.now() }]

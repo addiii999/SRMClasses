@@ -157,6 +157,10 @@ const userSchema = new mongoose.Schema({
     enum: ['Foundation', 'Advance', 'Math-Science', 'ICSE-Advance', 'None'],
     default: 'None',
   },
+  registrationFeeApplicable: {
+    type: Boolean,
+    default: true,
+  },
   feeSnapshot: {
     actualFee: { type: Number, default: 0 },
     satPercentage: { type: Number, default: 0 },

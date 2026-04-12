@@ -67,8 +67,9 @@ const calculateFeeDetails = (user) => {
 
   const instAmount = Math.round(afterSat * (planDiscountPercent / 100));
   
-  // 3. Final Calculation including static ₹500 Admission Fee
-  const finalPayable = (afterSat - instAmount) + 500;
+  // 3. Final Calculation including conditional ₹500 Admission Fee
+  const admissionFee = user.registrationFeeApplicable !== false ? 500 : 0;
+  const finalPayable = (afterSat - instAmount) + admissionFee;
 
   // 4. Payment Status Logic
   const paidAmount = payments ? payments.reduce((sum, p) => sum + p.amount, 0) : 0;
@@ -101,6 +102,8 @@ const calculateFeeDetails = (user) => {
     actualFee,
     satPercentage,
     installmentPlan,
+    registrationFeeApplicable: user.registrationFeeApplicable !== false,
+    admissionFee,
     satDiscountPercent: satDiscountPercent.toFixed(2),
     planDiscountPercent,
     payableAmount: finalPayable,

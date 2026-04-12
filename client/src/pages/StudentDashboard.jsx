@@ -484,9 +484,15 @@ export default function StudentDashboard() {
             <div className="card p-6 bg-gradient-to-br from-brand-dark to-[#3D375B] text-white">
               <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">Total Payable</p>
               <h3 className="text-3xl font-display font-bold">₹{feeData.payableAmount.toLocaleString('en-IN')}</h3>
-              <div className="mt-4 pt-4 border-t border-white/10 flex justify-between items-center text-xs">
-                <span>SAT: {feeData.satPercentage}% ({feeData.satDiscountPercent}% off)</span>
-                <span>Plan: {feeData.installmentPlan} Mo.</span>
+              <div className="mt-4 pt-4 border-t border-white/10 flex flex-col gap-2 text-[10px] text-white/70">
+                <div className="flex justify-between items-center">
+                  <span>SAT: {feeData.satPercentage}% ({feeData.satDiscountPercent}% off)</span>
+                  <span>Plan: {feeData.installmentPlan} Mo.</span>
+                </div>
+                <div className="flex justify-between items-center font-bold">
+                  <span>Admission Fee:</span>
+                  <span>{feeData.admissionFee > 0 ? `₹${feeData.admissionFee}` : 'Not Applicable (₹0)'}</span>
+                </div>
               </div>
             </div>
             <div className="card p-6 bg-white border-2 border-primary/5">
