@@ -9,7 +9,7 @@ export const AuthProvider = ({ children }) => {
     return stored ? JSON.parse(stored) : null;
   });
   const [token, setToken] = useState(() => localStorage.getItem('srmToken') || null);
-  const [adminToken, setAdminToken] = useState(() => localStorage.getItem('srmAdminToken') || null);
+  const [adminToken, setAdminToken] = useState(() => sessionStorage.getItem('srmAdminToken') || null);
   const [loading, setLoading] = useState(false);
 
   const login = (userData, userToken) => {
@@ -33,12 +33,12 @@ export const AuthProvider = ({ children }) => {
 
   const adminLogin = (adminToken) => {
     setAdminToken(adminToken);
-    localStorage.setItem('srmAdminToken', adminToken);
+    sessionStorage.setItem('srmAdminToken', adminToken);
   };
 
   const adminLogout = () => {
     setAdminToken(null);
-    localStorage.removeItem('srmAdminToken');
+    sessionStorage.removeItem('srmAdminToken');
   };
 
   return (

@@ -13,7 +13,7 @@ export default function AdminAuditLogs({ adminRole }) {
     setLoading(true);
     try {
       const res = await api.get(`/admin/audit-logs?page=${page}&limit=50`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('srmAdminToken')}` }
+        headers: { Authorization: `Bearer ${sessionStorage.getItem('srmAdminToken')}` }
       });
       setLogs(res.data.data);
       setPagination(res.data.pagination);

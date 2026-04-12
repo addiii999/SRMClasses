@@ -32,7 +32,7 @@ export default function AdminFaculty() {
 
   const fetchFaculty = async () => {
     try {
-      const token = localStorage.getItem('srmAdminToken');
+      const token = sessionStorage.getItem('srmAdminToken');
       const { data } = await api.get('/faculty/admin', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -68,7 +68,7 @@ export default function AdminFaculty() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = localStorage.getItem('srmAdminToken');
+      const token = sessionStorage.getItem('srmAdminToken');
       const payload = { 
         ...form, 
         experience: Number(form.experience), 
