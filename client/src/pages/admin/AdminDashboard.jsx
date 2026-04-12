@@ -24,25 +24,60 @@ import { Line, Bar } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, Filler);
 
-// ─── Sidebar nav items ────────────────────────────────────────────
-const navItems = [
-  { path: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
-  { path: '/admin/enquiries', label: 'Enquiries (CRM)', icon: FileText },
-  { path: '/admin/verify-students', label: 'Student Management', icon: ShieldCheck },
-  { path: '/admin/board-requests', label: 'Board Change Requests', icon: ClipboardList },
-  { path: '/admin/manage-admins', label: 'Admin Management', icon: ShieldCheck, superAdminOnly: true },
-  { path: '/admin/audit-logs', label: 'Audit Logs', icon: History },
-  { path: '/admin/demo', label: 'Demo Bookings', icon: Calendar },
-  { path: '/admin/faculty', label: 'Faculty Management', icon: Users },
-  { path: '/admin/materials', label: 'Study Materials', icon: BookOpen },
-  { path: '/admin/courses', label: 'Courses', icon: GraduationCap },
-  { path: '/admin/results', label: 'Results', icon: Trophy },
-  { path: '/admin/gallery', label: 'Gallery', icon: Image },
-  { path: '/admin/announcements', label: 'Announcements', icon: Bell },
-  { path: '/admin/fees', label: 'Fee Management', icon: CreditCard },
-  { path: '/admin/weekly-tests', label: 'Weekly Tests', icon: ClipboardList },
-  { path: '/admin/recycle-bin', label: 'Recycle Bin', icon: Trash2 },
-  { path: '/admin/add-student', label: 'Add Student', icon: Plus },
+// ─── Sidebar nav sections ──────────────────────────────────────────
+const navSections = [
+  {
+    group: '',
+    items: [
+      { path: '/admin/dashboard', label: 'Overview', icon: LayoutDashboard },
+    ]
+  },
+  {
+    group: 'Leads / CRM',
+    items: [
+      { path: '/admin/enquiries', label: 'Enquiries (CRM)', icon: FileText },
+      { path: '/admin/demo', label: 'Demo Bookings', icon: Calendar },
+    ]
+  },
+  {
+    group: 'Student System',
+    items: [
+      { path: '/admin/verify-students', label: 'Student Management', icon: ShieldCheck },
+      { path: '/admin/board-requests', label: 'Board Change Requests', icon: ClipboardList },
+      { path: '/admin/fees', label: 'Fee Management', icon: CreditCard },
+    ]
+  },
+  {
+    group: 'Academic System',
+    items: [
+      { path: '/admin/weekly-tests', label: 'Weekly Tests', icon: ClipboardList },
+      { path: '/admin/results', label: 'Results', icon: Trophy },
+      { path: '/admin/courses', label: 'Courses', icon: GraduationCap },
+      { path: '/admin/materials', label: 'Study Materials', icon: BookOpen },
+    ]
+  },
+  {
+    group: 'Content / Display',
+    items: [
+      { path: '/admin/faculty', label: 'Faculty Management', icon: Users },
+      { path: '/admin/gallery', label: 'Gallery', icon: Image },
+      { path: '/admin/announcements', label: 'Announcements', icon: Bell },
+    ]
+  },
+  {
+    group: 'System Control',
+    items: [
+      { path: '/admin/audit-logs', label: 'Audit Logs', icon: History },
+      { path: '/admin/manage-admins', label: 'Admin Management', icon: ShieldCheck, superAdminOnly: true },
+      { path: '/admin/recycle-bin', label: 'Recycle Bin', icon: Trash2 },
+    ]
+  },
+  {
+    group: 'Quick Action',
+    items: [
+      { path: '/admin/add-student', label: 'Add Student', icon: Plus },
+    ]
+  }
 ];
 
 // ─── Admin Sidebar ─────────────────────────────────────────────────
@@ -66,13 +101,31 @@ function AdminSidebar({ open, onClose, adminRole }) {
             </div>
           </Link>
         </div>
-        <nav className="flex-1 p-3 space-y-1 overflow-y-auto">
-          {navItems.filter(item => !item.superAdminOnly || adminRole === 'SUPER_ADMIN').map(({ path, label, icon: Icon }) => (
-            <NavLink key={path} to={path} onClick={onClose}
-              className={({ isActive }) => `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${isActive ? 'bg-gradient-brand text-white shadow-glass' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
-              <Icon className="w-4 h-4 shrink-0" /> {label}
-            </NavLink>
-          ))}
+        <nav className="flex-1 p-3 space-y-6 overflow-y-auto custom-scrollbar">
+          {navSections.map((section, sidx) => {
+            // Filter items based on superAdminOnly permission
+            const visibleItems = section.items.filter(item => !item.superAdminOnly || adminRole === 'SUPER_ADMIN');
+            
+            if (visibleItems.length === 0) return null;
+
+            return (
+              <div key={sidx} className="space-y-1">
+                {section.group && (
+                  <h5 className="px-4 text-[10px] font-bold text-white/20 uppercase tracking-[0.2em] mb-2">
+                    {section.group}
+                  </h5>
+                )}
+                <div className="space-y-1">
+                  {visibleItems.map(({ path, label, icon: Icon }) => (
+                    <NavLink key={path} to={path} onClick={onClose}
+                      className={({ isActive }) => `flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${isActive ? 'bg-gradient-brand text-white shadow-glass' : 'text-white/60 hover:text-white hover:bg-white/10'}`}>
+                      <Icon className="w-4 h-4 shrink-0" /> {label}
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </nav>
         <div className="p-3 border-t border-white/10">
           <button onClick={handleLogout}
