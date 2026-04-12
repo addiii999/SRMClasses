@@ -269,10 +269,12 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="label">Mobile Number</label>
+                <label htmlFor="reg-mobile" className="label">Mobile Number</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">+91</span>
                   <input
+                    id="reg-mobile"
+                    name="mobile"
                     className="input-field pl-12"
                     placeholder="10-digit number"
                     value={mobile}
@@ -285,8 +287,10 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="label">Email <span className="text-gray-400 font-normal">(OTP will be sent here)</span></label>
+                <label htmlFor="reg-email" className="label">Email <span className="text-gray-400 font-normal">(OTP will be sent here)</span></label>
                 <input
+                  id="reg-email"
+                  name="email"
                   type="email"
                   className="input-field"
                   placeholder="your@email.com"
@@ -391,8 +395,10 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="label">Full Name</label>
+                <label htmlFor="reg-name" className="label">Full Name</label>
                 <input
+                  id="reg-name"
+                  name="name"
                   className="input-field"
                   placeholder="Your full name (letters only)"
                   value={form.name}
@@ -407,11 +413,13 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="label">Branch</label>
+                <label htmlFor="reg-branch" className="label">Branch</label>
                 {branchError ? (
                   <div className="p-3 bg-red-50 text-red-600 text-sm rounded-xl font-medium border border-red-100">{branchError}</div>
                 ) : (
                   <select
+                    id="reg-branch"
+                    name="branch"
                     className="input-field"
                     value={form.branch}
                     onChange={e => setForm({ ...form, branch: e.target.value })}
@@ -427,8 +435,10 @@ export default function Register() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="label">Board</label>
+                  <label htmlFor="reg-board" className="label">Board</label>
                   <select
+                    id="reg-board"
+                    name="board"
                     className="input-field"
                     value={form.board}
                     onChange={e => setForm({ ...form, board: e.target.value, studentClass: '' })}
@@ -446,8 +456,10 @@ export default function Register() {
                 </div>
 
                 <div>
-                  <label className="label">Your Class</label>
+                  <label htmlFor="reg-class" className="label">Your Class</label>
                   <select
+                    id="reg-class"
+                    name="studentClass"
                     className="input-field"
                     value={form.studentClass}
                     onChange={e => setForm({ ...form, studentClass: e.target.value })}
@@ -463,8 +475,10 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="label">School Name <span className="text-gray-400 font-normal">(optional)</span></label>
+                <label htmlFor="reg-school" className="label">School Name <span className="text-gray-400 font-normal">(optional)</span></label>
                 <input
+                  id="reg-school"
+                  name="schoolName"
                   className="input-field"
                   placeholder="Your current school name"
                   value={form.schoolName}
@@ -473,8 +487,10 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="label">Address <span className="text-gray-400 font-normal">(optional)</span></label>
+                <label htmlFor="reg-address" className="label">Address <span className="text-gray-400 font-normal">(optional)</span></label>
                 <input
+                  id="reg-address"
+                  name="address"
                   className="input-field"
                   placeholder="Your home address"
                   value={form.address}
@@ -488,8 +504,10 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="label">Parent / Guardian Name</label>
+                <label htmlFor="reg-parent-name" className="label">Parent / Guardian Name</label>
                 <input
+                  id="reg-parent-name"
+                  name="parentName"
                   className="input-field"
                   placeholder="Parent's full name"
                   value={form.parentName}
@@ -499,10 +517,12 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="label">Parent Contact Number</label>
+                <label htmlFor="reg-parent-contact" className="label">Parent Contact Number</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-semibold text-sm">+91</span>
                   <input
+                    id="reg-parent-contact"
+                    name="parentContact"
                     className={`input-field pl-12 ${form.parentContact && form.parentContact === mobile ? 'border-red-400 bg-red-50' : ''}`}
                     placeholder="Parent's 10-digit number"
                     value={form.parentContact}
@@ -525,9 +545,11 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="label">Password <span className="text-gray-400 font-normal text-xs">(min 6 chars, 1 number required)</span></label>
+                <label htmlFor="reg-password" title="At least 6 characters with 1 number" className="label">Password <span className="text-gray-400 font-normal text-xs">(min 6 chars, 1 number required)</span></label>
                 <div className="relative">
                   <input
+                    id="reg-password"
+                    name="password"
                     type={showPwd ? 'text' : 'password'}
                     className="input-field pr-12"
                     placeholder="At least 6 characters with 1 number"
@@ -543,8 +565,10 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="label">Confirm Password</label>
+                <label htmlFor="reg-confirm" className="label">Confirm Password</label>
                 <input
+                  id="reg-confirm"
+                  name="confirmPassword"
                   type="password"
                   className="input-field"
                   placeholder="Re-enter password"

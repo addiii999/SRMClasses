@@ -44,16 +44,30 @@ export default function AdminLogin() {
         <div className="glass rounded-2xl p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-semibold text-brand-dark mb-1.5">Admin Email</label>
-              <input type="email" className="input-field bg-white/90" value={form.email}
-                onChange={e => setForm({ ...form, email: e.target.value })} required />
+              <label htmlFor="admin-email" className="block text-sm font-semibold text-brand-dark mb-1.5">Admin Email</label>
+              <input 
+                id="admin-email"
+                name="admin-email"
+                type="email" 
+                className="input-field bg-white/90" 
+                value={form.email}
+                onChange={e => setForm({ ...form, email: e.target.value })} 
+                required 
+              />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-brand-dark mb-1.5">Password</label>
+              <label htmlFor="admin-password" className="block text-sm font-semibold text-brand-dark mb-1.5">Password</label>
               <div className="relative">
-                <input type={showPwd ? 'text' : 'password'} className="input-field bg-white/90 pr-12"
-                  placeholder="Admin password" value={form.password}
-                  onChange={e => setForm({ ...form, password: e.target.value })} required />
+                <input 
+                  id="admin-password"
+                  name="admin-password"
+                  type={showPwd ? 'text' : 'password'} 
+                  className="input-field bg-white/90 pr-12"
+                  placeholder="Admin password" 
+                  value={form.password}
+                  onChange={e => setForm({ ...form, password: e.target.value })} 
+                  required 
+                />
                 <button type="button" onClick={() => setShowPwd(!showPwd)}
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary">
                   {showPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

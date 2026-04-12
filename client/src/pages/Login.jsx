@@ -80,17 +80,17 @@ export default function Login() {
         <div className="card p-8">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="label">Email Address</label>
-              <input type="email" className="input-field" placeholder="your@email.com"
+              <label htmlFor="email" className="label">Email Address</label>
+              <input id="email" name="email" type="email" className="input-field" placeholder="your@email.com"
                 value={form.email} onChange={e => { setForm({ ...form, email: e.target.value }); setStatusBanner(null); }} required />
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="label mb-0">Password</label>
-                <Link to="/forgot-password" className="text-xs text-primary hover:underline font-medium">Forgot password?</Link>
+                <label htmlFor="password" className="label mb-0">Password</label>
+                <Link to="/forgot-password" disabled={loading} className="text-xs text-primary hover:underline font-medium">Forgot password?</Link>
               </div>
               <div className="relative">
-                <input type={showPassword ? 'text' : 'password'} className="input-field pr-12"
+                <input id="password" name="password" type={showPassword ? 'text' : 'password'} className="input-field pr-12"
                   placeholder="Enter your password"
                   value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} required />
                 <button type="button" onClick={() => setShowPassword(!showPassword)}

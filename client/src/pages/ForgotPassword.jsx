@@ -84,8 +84,8 @@ export default function ForgotPassword() {
           {step === 1 ? (
             <form onSubmit={handleSendOTP} className="space-y-5">
               <div>
-                <label className="label">Email Address</label>
-                <input type="email" className="input-field" placeholder="your@email.com"
+                <label htmlFor="reset-email" className="label">Email Address</label>
+                <input id="reset-email" name="email" type="email" className="input-field" placeholder="your@email.com"
                   value={email} onChange={e => setEmail(e.target.value)} required />
               </div>
               <button type="submit" disabled={loading || cooldown > 0} className="btn-primary w-full py-4 flex items-center justify-center gap-2 disabled:opacity-60">
@@ -96,7 +96,7 @@ export default function ForgotPassword() {
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
                 <div className="flex justify-between items-center mb-2">
-                  <label className="label !mb-0">6-Digit OTP</label>
+                  <label htmlFor="reset-otp" className="label !mb-0">6-Digit OTP</label>
                   <button 
                     type="button" 
                     onClick={handleSendOTP} 
@@ -106,17 +106,17 @@ export default function ForgotPassword() {
                     {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend OTP'}
                   </button>
                 </div>
-                <input className="input-field tracking-widest text-center text-lg font-bold" placeholder="• • • • • •"
+                <input id="reset-otp" name="otp" className="input-field tracking-widest text-center text-lg font-bold" placeholder="• • • • • •"
                   maxLength={6} value={otp} onChange={e => setOtp(e.target.value)} required />
               </div>
               <div>
-                <label className="label">New Password</label>
-                <input type="password" className="input-field" placeholder="At least 6 characters"
+                <label htmlFor="new-password" className="label">New Password</label>
+                <input id="new-password" name="new-password" type="password" className="input-field" placeholder="At least 6 characters"
                   value={newPassword} onChange={e => setNewPassword(e.target.value)} required />
               </div>
               <div>
-                <label className="label">Confirm Password</label>
-                <input type="password" className="input-field" placeholder="Re-enter password"
+                <label htmlFor="confirm-password" className="label">Confirm Password</label>
+                <input id="confirm-password" name="confirm-password" type="password" className="input-field" placeholder="Re-enter password"
                   value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required />
               </div>
               <button type="submit" disabled={loading} className="btn-primary w-full py-4 flex items-center justify-center gap-2 disabled:opacity-60 !mt-6">

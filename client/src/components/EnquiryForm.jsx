@@ -70,8 +70,10 @@ export default function EnquiryForm() {
       
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="label">Full Name <span className="text-red-500">*</span></label>
+          <label htmlFor="enquiry-name" className="label">Full Name <span className="text-red-500">*</span></label>
           <input 
+            id="enquiry-name"
+            name="name"
             className="input-field" 
             placeholder="Your name" 
             value={formData.name}
@@ -80,8 +82,10 @@ export default function EnquiryForm() {
           />
         </div>
         <div>
-          <label className="label">Mobile <span className="text-red-500">*</span></label>
+          <label htmlFor="enquiry-mobile" className="label">Mobile <span className="text-red-500">*</span></label>
           <input 
+            id="enquiry-mobile"
+            name="mobile"
             className="input-field" 
             placeholder="10-digit number" 
             value={formData.mobile}
@@ -92,8 +96,10 @@ export default function EnquiryForm() {
       </div>
 
       <div>
-        <label className="label">Email <span className="text-red-500">*</span></label>
+        <label htmlFor="enquiry-email" className="label">Email <span className="text-red-500">*</span></label>
         <input 
+          id="enquiry-email"
+          name="email"
           type="email" 
           className="input-field" 
           placeholder="your@email.com" 
@@ -104,8 +110,10 @@ export default function EnquiryForm() {
       </div>
 
       <div>
-        <label className="label">School Name <span className="text-red-500">*</span></label>
+        <label htmlFor="enquiry-school" className="label">School Name <span className="text-red-500">*</span></label>
         <input 
+          id="enquiry-school"
+          name="schoolName"
           className="input-field" 
           placeholder="Enter your school name" 
           value={formData.schoolName}
@@ -115,8 +123,10 @@ export default function EnquiryForm() {
       </div>
 
       <div>
-        <label className="label">Class Interested In <span className="text-red-500">*</span></label>
+        <label htmlFor="enquiry-class" className="label">Class Interested In <span className="text-red-500">*</span></label>
         <select 
+          id="enquiry-class"
+          name="studentClass"
           className="input-field" 
           value={formData.studentClass}
           onChange={e => setFormData({ ...formData, studentClass: e.target.value })}
@@ -128,8 +138,10 @@ export default function EnquiryForm() {
       </div>
 
       <div>
-        <label className="label">Message (optional)</label>
+        <label htmlFor="enquiry-message" className="label">Message (optional)</label>
         <textarea 
+          id="enquiry-message"
+          name="message"
           className="input-field resize-none" 
           rows={3} 
           placeholder="Any specific queries..." 
