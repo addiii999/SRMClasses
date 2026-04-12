@@ -98,5 +98,5 @@ module.exports = {
   validatePhone,
   hashOTP,
   sendOTPviaEmail,
-  sendOTPviaSMS: async () => true // Placeholder
+  sendOTPviaSMS: async () => { throw new Error('SMS API not implemented.'); }
 };

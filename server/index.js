@@ -6,6 +6,8 @@ const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const Course = require('./models/Course');
 
+const isProduction = process.env.NODE_ENV === 'production';
+
 // ─── Startup env-var validation (fail fast) ───────────────────────────────────
 const REQUIRED_ENV = ['MONGO_URI', 'JWT_SECRET', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET', 'RESEND_API_KEY'];
 const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
@@ -76,7 +78,7 @@ const limiter = rateLimit({
   legacyHeaders: false,
   message: 'Too many requests from this IP, please try again after 15 minutes',
   skip: (req) =>
-    process.env.NODE_ENV !== 'production' &&
+    !isProduction &&
     (req.ip === '::1' || req.ip === '127.0.0.1'),
 });
 
@@ -91,7 +93,7 @@ const productionOrigins = [
 
 // Include localhost only in non-production environments
 const allowedOrigins =
-  process.env.NODE_ENV !== 'production'
+  !isProduction
     ? [...productionOrigins, 'http://localhost:5173', 'http://localhost:3000']
     : productionOrigins;
 
@@ -143,11 +145,12 @@ app.use('/api/config', require('./routes/configRoutes'));
 // ─── Global Error Handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   // Never expose internal error details to the client in production
-  const isDev = process.env.NODE_ENV !== 'production';
-  console.error(isDev ? err.stack : err.message);
+  if (!isProduction) console.error(err.stack);
+  else console.error(err.message);
+  
   res.status(err.status || 500).json({
     success: false,
-    message: isDev ? err.message : 'Internal Server Error',
+    message: isProduction ? 'Something went wrong' : err.message,
   });
 });
 

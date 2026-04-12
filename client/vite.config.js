@@ -12,6 +12,10 @@ export default defineConfig({
       },
     },
   },
+  esbuild: {
+    pure: ['console.log', 'console.debug'],
+    drop: ['debugger'],
+  },
   build: {
     sourcemap: false, // Disable source maps for production
     rollupOptions: {

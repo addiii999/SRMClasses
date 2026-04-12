@@ -234,29 +234,36 @@ function Overview({ selectedBranch }) {
             <Users className="w-4 h-4 text-primary" /> Student Onboarding Trend
           </h3>
           <div className="h-64">
-            <Line 
-              options={{
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { display: false } },
-                scales: { 
-                  y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
-                  x: { grid: { display: false } }
-                }
-              }}
-              data={{
-                labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-                datasets: [{
-                  label: 'New Students',
-                  data: [2, 5, 8, stats.totalStudents || 0],
-                  borderColor: '#9787F3',
-                  backgroundColor: 'rgba(151, 135, 243, 0.1)',
-                  fill: true,
-                  tension: 0.4,
-                  pointRadius: 4
-                }]
-              }}
-            />
+            {(!stats.onboardingData || stats.onboardingData.length === 0) ? (
+              <div className="flex flex-col items-center justify-center h-full text-center">
+                <Users className="w-8 h-8 text-gray-200 mb-2" />
+                <p className="text-gray-400 text-sm">No onboarding data available yet</p>
+              </div>
+            ) : (
+              <Line 
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: false } },
+                  scales: { 
+                    y: { beginAtZero: true, grid: { color: '#f3f4f6' } },
+                    x: { grid: { display: false } }
+                  }
+                }}
+                data={{
+                  labels: stats.onboardingData.map(d => d.date),
+                  datasets: [{
+                    label: 'New Students',
+                    data: stats.onboardingData.map(d => d.count),
+                    borderColor: '#9787F3',
+                    backgroundColor: 'rgba(151, 135, 243, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4
+                  }]
+                }}
+              />
+            )}
           </div>
         </div>
       </div>
@@ -397,7 +404,7 @@ function DemoBookings({ selectedBranch }) {
   
   const [quickConvertModal, setQuickConvertModal] = useState(null);
   const [quickConvertForm, setQuickConvertForm] = useState({ feeType: 'None', satPercentage: 0, installmentPlan: 1, board: 'CBSE' });
-  const isDevMode = true; // Enabled for production too now
+  const isDevMode = import.meta.env.MODE !== 'production';
 
   const getHeaders = () => ({ Authorization: `Bearer ${sessionStorage.getItem('srmAdminToken')}` });
 
