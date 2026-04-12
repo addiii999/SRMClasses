@@ -179,6 +179,10 @@ function CreateTestModal({ onClose, onCreated, branches, defaultBranch }) {
               <input type="date" className="input-field" value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })} required />
             </div>
+            <div>
+              <label className="label">Total Marks</label>
+              <input type="number" className="input-field" placeholder="e.g. 50" min="1" value={form.totalMarks}
+                onChange={(e) => setForm({ ...form, totalMarks: e.target.value })} required />
             </div>
           </div>
 
