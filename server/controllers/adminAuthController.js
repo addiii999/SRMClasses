@@ -27,16 +27,16 @@ const adminLogin = async (req, res) => {
 
     const admin = await Admin.findOne({ email: normalizedEmail }).select('+password');
     if (!admin) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
     if (!admin.isActive) {
-      return res.status(403).json({ success: false, message: 'Your admin account has been deactivated. Contact SUPER_ADMIN.' });
+      return res.status(403).json({ success: false, message: 'Account deactivated. Contact Super Admin.' });
     }
 
     const isMatch = await admin.matchPassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
     const token = generateAdminToken(admin);

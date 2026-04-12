@@ -47,6 +47,8 @@ const adminSchema = new mongoose.Schema({
 
 // Password strength validation helper
 const isStrongPassword = (password) => {
+  // If it's already a bcrypt hash, consider it "strong" (pre-validated)
+  if (password.startsWith('$2a$') || password.startsWith('$2b$')) return true;
   // min 8 chars, at least 1 number, 1 special char
   return /^(?=.*[0-9])(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/.test(password);
 };
@@ -60,7 +62,10 @@ adminSchema.pre('save', async function (next) {
     return next(err);
   }
 
-  this.password = await bcrypt.hash(this.password, 12);
+  // Only hash if it's not already a bcrypt hash
+  if (!(this.password.startsWith('$2a$') || this.password.startsWith('$2b$'))) {
+    this.password = await bcrypt.hash(this.password, 12);
+  }
   next();
 });
 

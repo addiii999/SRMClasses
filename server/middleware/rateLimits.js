@@ -50,9 +50,10 @@ const boardRequestLimiter = rateLimit({
 });
 
 // ─── Admin Login Rate Limiter ─────────────────────────────────────────────────
+// Strict: Max 5 attempts per 15 min to prevent brute-force
 const adminLoginLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: 5,
   message: { success: false, message: 'Too many admin login attempts. Please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,

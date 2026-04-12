@@ -6,7 +6,7 @@ import api from '../../lib/api';
 import toast from 'react-hot-toast';
 
 export default function AdminLogin() {
-  const [form, setForm] = useState({ email: 'srmclasses01@gmail.com', password: '' });
+  const [form, setForm] = useState({ email: 'aayushgupta.srm.540@gmail.com', password: '' });
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const { adminLogin } = useAuth();
