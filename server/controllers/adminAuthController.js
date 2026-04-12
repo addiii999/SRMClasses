@@ -29,7 +29,9 @@ const adminLogin = async (req, res) => {
     
     const admin = await Admin.findOne({ email: normalizedEmail }).select('+password');
     if (!admin) {
-      console.log(`[Admin Login Fail] No admin found for: ${normalizedEmail}`);
+      const dbName = mongoose.connection.name;
+      const count = await Admin.countDocuments();
+      console.log(`[Admin Login Fail] No admin found for: ${normalizedEmail} | DB: ${dbName} | Total Admins: ${count}`);
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
