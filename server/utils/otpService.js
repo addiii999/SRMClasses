@@ -45,7 +45,9 @@ const sendOTPviaEmail = async (email, mobile, otp) => {
   };
 
   try {
-    console.log(`📤 Sending Resend API request to ${email}...`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`📤 Sending Resend API request to ${email}...`);
+    }
     const response = await axios.post('https://api.resend.com/emails', data, {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
@@ -53,7 +55,9 @@ const sendOTPviaEmail = async (email, mobile, otp) => {
       }
     });
     
-    console.log(`✅ Resend API Success! ID: ${response.data.id}`);
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`✅ Resend API Success! ID: ${response.data.id}`);
+    }
     return true;
   } catch (error) {
     const errorMsg = error.response?.data?.message || error.message;
