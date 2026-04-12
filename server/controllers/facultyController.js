@@ -21,7 +21,9 @@ exports.getPublicFaculty = async (req, res) => {
       if (b.priorityOrder) return 1;
 
       // Step 3: Alphabetical order
-      return a.name.localeCompare(b.name);
+      const nameA = a.name || '';
+      const nameB = b.name || '';
+      return nameA.localeCompare(nameB);
     });
 
     res.json({ success: true, count: faculty.length, data: faculty });
@@ -50,7 +52,9 @@ exports.getAdminFaculty = async (req, res) => {
       if (b.priorityOrder) return 1;
 
       // Step 3: Alphabetical order
-      return a.name.localeCompare(b.name);
+      const nameA = a.name || '';
+      const nameB = b.name || '';
+      return nameA.localeCompare(nameB);
     });
 
     res.json({ success: true, count: faculty.length, data: faculty });
