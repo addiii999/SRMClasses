@@ -10,9 +10,16 @@ export default defineConfig({
         target: 'http://localhost:5000',
         changeOrigin: true,
       },
-      '/uploads': {
-        target: 'http://localhost:5000',
-        changeOrigin: true,
+    },
+  },
+  build: {
+    sourcemap: false, // Disable source maps for production
+    rollupOptions: {
+      output: {
+        // Code splitting: group vendor libraries into a separate chunk
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-router-dom', 'axios', 'lucide-react'],
+        },
       },
     },
   },

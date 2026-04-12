@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: import.meta.env.MODE === 'development' ? '/api' : 'https://srmclasses-api.onrender.com/api',
+  baseURL: import.meta.env.MODE === 'development' 
+    ? '/api' 
+    : (import.meta.env.VITE_API_URL || 'https://srmclasses-api.onrender.com/api'),
   headers: { 'Content-Type': 'application/json' },
 });
 

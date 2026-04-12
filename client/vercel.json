@@ -1,6 +1,5 @@
 {
   "rewrites": [
-    { "source": "/uploads/:path*", "destination": "http://145.223.17.172/uploads/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

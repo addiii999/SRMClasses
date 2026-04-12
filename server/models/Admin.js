@@ -40,8 +40,8 @@ const adminSchema = new mongoose.Schema({
     ref: 'Admin',
     default: null, // null for SUPER_ADMIN seeded from script
   },
-  // OTP for forgot password
-  otp: String,
+  // OTP for forgot password (hashed)
+  otpHash: String,
   otpExpiry: Date,
 }, { timestamps: true });
 

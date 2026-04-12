@@ -1,10 +1,19 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
-// Admin model loaded lazily in seed scripts
 const Course = require('./models/Course');
+
+// ─── Startup env-var validation (fail fast) ───────────────────────────────────
+const REQUIRED_ENV = ['MONGO_URI', 'JWT_SECRET', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET', 'RESEND_API_KEY'];
+const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
+if (missingEnv.length > 0) {
+  console.error(`❌ Missing required environment variables: ${missingEnv.join(', ')}`);
+  console.error('Server cannot start without all required configuration. Exiting.');
+  process.exit(1);
+}
 
 // Connect to MongoDB
 connectDB();
@@ -45,66 +54,74 @@ const app = express();
 // Trust proxy for Render/cloud deployments (fixes rate limiter using correct client IP)
 app.set('trust proxy', 1);
 
+// ─── Security Headers (helmet) ────────────────────────────────────────────────
+app.use(helmet());
+
 // Root path friendly message
 app.get('/', (req, res) => {
   res.send('<h1>SRM Classes API is Running! 🚀🚀🚀</h1><p>The backend is fully live and connected to MongoDB Atlas.</p>');
 });
 
-// Health check (do not expose connection string fragments)
+// Health check — minimal info only
 app.get('/api/health', (req, res) => {
-  const mongoose = require('mongoose');
-  res.json({
-    status: 'ok',
-    message: 'SRM Classes API is running',
-    dbState: mongoose.connection.readyState,
-    mongoConfigured: Boolean(process.env.MONGO_URI),
-    nodeEnv: process.env.NODE_ENV || 'not set',
-  });
+  res.json({ status: 'ok' });
 });
 
-// Rate limiting to prevent brute force and satisfy CodeQL
+// ─── Global Rate Limiting ─────────────────────────────────────────────────────
+// Reduced to 200/15min. Localhost bypass only applies in development.
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 2000, // Limit each IP to 2000 requests per windowMs
+  windowMs: 15 * 60 * 1000,
+  max: 200,
   standardHeaders: true,
   legacyHeaders: false,
   message: 'Too many requests from this IP, please try again after 15 minutes',
-  skip: (req) => req.ip === '::1' || req.ip === '127.0.0.1' // Skip local dev
+  skip: (req) =>
+    process.env.NODE_ENV !== 'production' &&
+    (req.ip === '::1' || req.ip === '127.0.0.1'),
 });
 
-
-// Middleware - Allow specific origins (CORS fix)
-const allowedOrigins = [
+// ─── CORS ─────────────────────────────────────────────────────────────────────
+const productionOrigins = [
   'https://srmclasses.in',
   'https://www.srmclasses.in',
   'https://srmclasses-frontend.vercel.app',
   'https://srm-classes.vercel.app',
-  'http://localhost:5173',
-  process.env.FRONTEND_URL
+  process.env.FRONTEND_URL,
 ].filter(Boolean);
 
-app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) === -1 && process.env.NODE_ENV === 'production') {
-      return callback(new Error('The CORS policy for this site does not allow access from the specified Origin.'), false);
-    }
-    return callback(null, true);
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization']
-}));
+// Include localhost only in non-production environments
+const allowedOrigins =
+  process.env.NODE_ENV !== 'production'
+    ? [...productionOrigins, 'http://localhost:5173', 'http://localhost:3000']
+    : productionOrigins;
 
-// Apply limiter to all routes
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow requests with no origin (mobile apps, curl, etc.)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        return callback(
+          new Error('The CORS policy for this site does not allow access from the specified Origin.'),
+          false
+        );
+      }
+      return callback(null, true);
+    },
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+  })
+);
+
+// Apply global rate limiter to all routes
 app.use(limiter);
 
+// ─── Body Parsing (10mb limit for JSON/URL-encoded payloads) ─────────────────
+// Note: Excel/file upload routes use multer with its own 50mb limit (see middleware/excelUpload.js)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-app.use(express.json());
-
-app.use(express.urlencoded({ extended: true }));
-
-// Routes
+// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/admin/auth', require('./routes/adminAuthRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
@@ -121,15 +138,16 @@ app.use('/api/faculty', require('./routes/facultyRoutes'));
 app.use('/api/recycle-bin', require('./routes/recycleBinRoutes'));
 app.use('/api/branches', require('./routes/branchRoutes'));
 app.use('/api/weekly-tests', require('./routes/weeklyTestRoutes'));
-app.use('/api/board-change', require('./routes/boardChangeRoutes'));
 app.use('/api/config', require('./routes/configRoutes'));
 
-// Global error handler
+// ─── Global Error Handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  // Never expose internal error details to the client in production
+  const isDev = process.env.NODE_ENV !== 'production';
+  console.error(isDev ? err.stack : err.message);
   res.status(err.status || 500).json({
     success: false,
-    message: err.message || 'Internal Server Error',
+    message: isDev ? err.message : 'Internal Server Error',
   });
 });
 

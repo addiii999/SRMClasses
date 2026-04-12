@@ -1,6 +1,7 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const OtpStore = require('../models/OtpStore');
 const { generateOTP, validatePhone, hashOTP, sendOTPviaEmail } = require('../utils/otpService');
 const { isValidCombination } = require('../utils/boardConstraints');
 
@@ -94,17 +95,14 @@ const sendOTP = async (req, res) => {
       }
     }
 
-    // 4. Rate limiting: max 5 OTPs per hour per mobile
-    const now = Date.now();
-    if (!global.otpRateLimit) global.otpRateLimit = {};
-    const record = global.otpRateLimit[mobile] || { count: 0, windowStart: now, lastSentAt: 0 };
+    // 4. Rate limiting: max 5 OTPs per hour per mobile (using DB records)
+    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const otpCount = await OtpStore.countDocuments({
+      mobile,
+      createdAt: { $gt: oneHourAgo }
+    });
 
-    if (now - record.windowStart > 60 * 60 * 1000) {
-      record.count = 0;
-      record.windowStart = now;
-    }
-
-    if (record.count >= 5) {
+    if (otpCount >= 5) {
       return res.status(429).json({
         success: false,
         message: 'Too many OTP requests. Please try again after 1 hour.',
@@ -112,8 +110,10 @@ const sendOTP = async (req, res) => {
     }
 
     // 5. Cooldown: 60 seconds between resends
-    if (now - record.lastSentAt < 60 * 1000) {
-      const waitSeconds = Math.ceil((60 * 1000 - (now - record.lastSentAt)) / 1000);
+    const lastOtp = await OtpStore.findOne({ mobile }).sort({ createdAt: -1 });
+    const now = Date.now();
+    if (lastOtp && (now - new Date(lastOtp.createdAt).getTime() < 60 * 1000)) {
+      const waitSeconds = Math.ceil((60 * 1000 - (now - new Date(lastOtp.createdAt).getTime())) / 1000);
       return res.status(429).json({
         success: false,
         message: `Please wait ${waitSeconds} seconds before requesting a new OTP.`,
@@ -126,17 +126,16 @@ const sendOTP = async (req, res) => {
     const otpHash = hashOTP(otp);
     const otpExpiry = new Date(now + 5 * 60 * 1000);
 
-    global.otpStore = global.otpStore || {};
-    global.otpStore[mobile] = { otpHash, expiry: otpExpiry, attempts: 0, email: email || null };
-
-    record.count++;
-    record.lastSentAt = now;
-    global.otpRateLimit[mobile] = record;
+    // Store in MongoDB
+    await OtpStore.create({
+      mobile,
+      otpHash,
+      expiresAt: otpExpiry,
+      email: email || null
+    });
 
     if (email) {
       await sendOTPviaEmail(email, mobile, otp);
-    } else {
-      console.log(`[DEV MODE] OTP for ${mobile}: ${otp}`);
     }
 
     res.status(200).json({
@@ -144,7 +143,6 @@ const sendOTP = async (req, res) => {
       message: email
         ? `OTP sent to your email (${email.replace(/(.{2}).+(@.+)/, '$1***$2')})`
         : 'OTP generated (dev mode)',
-      ...(process.env.NODE_ENV !== 'production' && !email ? { otp } : {}),
     });
   } catch (error) {
     console.error('[SEND OTP]', error.message);
@@ -164,25 +162,21 @@ const verifyOTP = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Mobile and OTP are required' });
     }
 
-    const stored = global.otpStore?.[mobile];
+    const stored = await OtpStore.findOne({ mobile });
 
     if (!stored) {
-      return res.status(400).json({ success: false, message: 'OTP not found. Please request a new one.' });
-    }
-
-    if (new Date() > new Date(stored.expiry)) {
-      delete global.otpStore[mobile];
-      return res.status(400).json({ success: false, message: 'OTP has expired. Please request a new one.', expired: true });
+      return res.status(400).json({ success: false, message: 'OTP not found or expired. Please request a new one.' });
     }
 
     if (stored.attempts >= 3) {
-      delete global.otpStore[mobile];
+      await OtpStore.deleteOne({ mobile });
       return res.status(400).json({ success: false, message: 'Too many failed attempts. Please request a new OTP.', blocked: true });
     }
 
     const inputHash = hashOTP(otp.toString().trim());
     if (inputHash !== stored.otpHash) {
       stored.attempts++;
+      await stored.save();
       const remaining = 3 - stored.attempts;
       return res.status(400).json({
         success: false,
@@ -193,7 +187,7 @@ const verifyOTP = async (req, res) => {
       });
     }
 
-    delete global.otpStore[mobile];
+    await OtpStore.deleteMany({ mobile });
     const otpToken = generateOtpVerifiedToken(mobile);
 
     res.status(200).json({

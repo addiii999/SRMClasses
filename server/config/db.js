@@ -2,11 +2,15 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   const uri = process.env.MONGO_URI;
-  console.log('🔄 Attempting MongoDB connection...');
-  console.log('URI starts with:', uri ? uri.substring(0, 40) + '...' : 'NOT SET');
-  
+
+  // Guard: should have been caught by startup validation, but belt-and-suspenders
+  if (!uri) {
+    console.error('❌ MONGO_URI is not defined. Cannot connect to database.');
+    process.exit(1);
+  }
+
   try {
-    const conn = await mongoose.connect(uri, { 
+    const conn = await mongoose.connect(uri, {
       serverSelectionTimeoutMS: 30000,
       socketTimeoutMS: 45000,
       connectTimeoutMS: 30000,
@@ -14,11 +18,13 @@ const connectDB = async () => {
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`❌ MongoDB Connection Error: ${error.message}`);
-    console.error(`❌ Full Error:`, error);
-    console.log('⚠️ Server will continue running. Database features will not work.');
-    // Do NOT exit - let the server stay alive for debugging
+    if (process.env.NODE_ENV === 'production') {
+      console.error('Production mode: exiting process due to DB connection failure.');
+      process.exit(1);
+    } else {
+      console.warn('⚠️ Development mode: server will continue without DB. Some features will not work.');
+    }
   }
 };
 
 module.exports = connectDB;
-

@@ -1,6 +1,7 @@
 const Admin = require('../models/Admin');
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
+const bcrypt = require('bcryptjs');
 
 const generateAdminToken = (admin) => {
   return jwt.sign(
@@ -74,7 +75,8 @@ const adminForgotPassword = async (req, res) => {
     }
 
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
-    admin.otp = otp;
+    const salt = await bcrypt.genSalt(10);
+    admin.otpHash = await bcrypt.hash(otp, salt);
     admin.otpExpiry = Date.now() + 10 * 60 * 1000;
     await admin.save({ validateBeforeSave: false });
 
@@ -112,16 +114,20 @@ const adminResetPassword = async (req, res) => {
     const normalized = email.toLowerCase().trim();
     const admin = await Admin.findOne({
       email: normalized,
-      otp,
       otpExpiry: { $gt: Date.now() },
-    });
+    }).select('+otpHash');
 
     if (!admin) {
       return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
     }
 
+    const isOtpMatch = await bcrypt.compare(otp.toString(), admin.otpHash);
+    if (!isOtpMatch) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+
     admin.password = newPassword;
-    admin.otp = undefined;
+    admin.otpHash = undefined;
     admin.otpExpiry = undefined;
     await admin.save();
 
