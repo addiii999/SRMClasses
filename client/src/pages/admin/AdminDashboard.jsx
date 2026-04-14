@@ -16,6 +16,7 @@ import AddStudent from './AddStudent';
 import AdminWeeklyTests from './AdminWeeklyTests';
 import AdminAuditLogs from './AdminAuditLogs';
 import AdminManagement from './AdminManagement';
+import AdminPromotionManager from './AdminPromotionManager';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement,
   Title, Tooltip, Legend, Filler
@@ -50,6 +51,7 @@ const navSections = [
   {
     group: 'Academic System',
     items: [
+      { path: '/admin/promotion', label: 'Promotion Manager', icon: GraduationCap },
       { path: '/admin/weekly-tests', label: 'Weekly Tests', icon: ClipboardList },
       { path: '/admin/results', label: 'Results', icon: Trophy },
       { path: '/admin/courses', label: 'Courses', icon: GraduationCap },
@@ -1195,6 +1197,7 @@ export default function AdminDashboard() {
             <Route path="weekly-tests" element={<AdminWeeklyTests selectedBranch={selectedBranch} />} />
             <Route path="recycle-bin" element={<AdminRecycleBin selectedBranch={selectedBranch} />} />
             <Route path="add-student" element={<AddStudent selectedBranch={selectedBranch} />} />
+            <Route path="promotion" element={<AdminPromotionManager branches={branches} />} />
             <Route index element={<Overview selectedBranch={selectedBranch} />} />
           </Routes>
         </div>

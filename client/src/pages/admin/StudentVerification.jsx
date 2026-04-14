@@ -126,6 +126,7 @@ function StudentDetailModal({ student, branches, onClose, onRefresh, adminRole }
     { id: 'info', label: 'Information' },
     { id: 'edit', label: 'Edit Fields' },
     { id: 'batch', label: 'Batch' },
+    { id: 'promotion', label: '🎓 History' },
     { id: 'history', label: 'History' },
     { id: 'audit', label: 'Audit Log' },
   ];
@@ -174,6 +175,7 @@ function StudentDetailModal({ student, branches, onClose, onRefresh, adminRole }
                   { label: 'Mobile', value: student.mobile, icon: <Phone className="w-3.5 h-3.5" /> },
                   { label: 'Email', value: student.email, icon: <GraduationCap className="w-3.5 h-3.5" /> },
                   { label: 'Class', value: `Class ${student.studentClass}`, icon: <BookOpen className="w-3.5 h-3.5" /> },
+                  { label: 'Academic Year', value: student.academicYear || 'Not Set', icon: <Calendar className="w-3.5 h-3.5" /> },
                   { label: 'Board', value: student.board, icon: <ShieldCheck className="w-3.5 h-3.5" /> },
                   { label: 'Branch', value: student.branch?.name || '—', icon: <MapPin className="w-3.5 h-3.5" /> },
                   { label: 'Batch', value: student.batch || 'Unassigned', icon: <Package className="w-3.5 h-3.5" /> },
@@ -338,6 +340,36 @@ function StudentDetailModal({ student, branches, onClose, onRefresh, adminRole }
                 className="btn-primary w-full py-3 flex items-center justify-center gap-2 disabled:opacity-60">
                 {assigning ? <><RefreshCw className="w-4 h-4 animate-spin" /> Assigning...</> : <><Package className="w-4 h-4" /> Assign Batch</>}
               </button>
+            </div>
+          )}
+
+          {/* ── Promotion History Tab ── */}
+          {tab === 'promotion' && (
+            <div className="space-y-3">
+              {(!student.classHistory || student.classHistory.length === 0) ? (
+                <p className="text-gray-400 text-sm text-center py-8">No promotion history yet. This student has not been promoted.</p>
+              ) : (
+                <div className="space-y-2">
+                  <div className="grid grid-cols-5 gap-2 text-[10px] font-bold text-gray-400 uppercase px-3">
+                    <span>Class</span><span>Board</span><span>Batch</span><span>Year</span><span>Promoted At</span>
+                  </div>
+                  {[...(student.classHistory || [])].reverse().map((h, i) => (
+                    <div key={i} className="grid grid-cols-5 gap-2 items-center bg-gray-50 rounded-xl px-3 py-2.5 text-xs">
+                      <span className="font-bold text-brand-dark">Class {h.class}</span>
+                      <span className="text-gray-600">{h.board || '—'}</span>
+                      <span className="text-gray-500 truncate">{h.batch || 'None'}</span>
+                      <span className="text-primary font-semibold">{h.academicYear || '—'}</span>
+                      <span className="text-gray-400">{h.promotedAt ? new Date(h.promotedAt).toLocaleDateString('en-IN') : '—'}</span>
+                    </div>
+                  ))}
+                  <div className="flex items-center gap-2 mt-3 px-3 py-2.5 bg-primary/5 rounded-xl border border-primary/10">
+                    <GraduationCap className="w-4 h-4 text-primary" />
+                    <span className="text-xs font-semibold text-primary">
+                      Current: Class {student.studentClass} · {student.academicYear || 'Year Not Set'} · {student.batch || 'No Batch'}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

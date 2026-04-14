@@ -12,6 +12,7 @@ const {
   getBoardChangeRequests, approveBoardChange, rejectBoardChange,
 } = require('../controllers/boardChangeController');
 const { importMarksExcel, getImportLogs } = require('../controllers/excelImportController');
+const { promoteSingleStudent, promoteBulkStudents, getPromotionPreview } = require('../controllers/promotionController');
 const excelUpload = require('../middleware/excelUpload');
 
 // All routes protected by adminProtect
@@ -28,6 +29,12 @@ router.put('/students/reject/:id', rejectStudent);         // changed from DELET
 router.delete('/students/reject/:id', rejectStudent);      // keep old route for backward compat
 router.post('/students/:id/assign-batch', assignBatch);
 router.post('/students/:id/reset-board-count', superAdminOnly, resetBoardChangeCount);
+
+// ── Promotion System ──────────────────────────────────────────────────────────
+// IMPORTANT: /promote-bulk MUST be registered BEFORE /:id/promote to avoid route collision
+router.get('/promotion-preview', getPromotionPreview);
+router.post('/students/promote-bulk', promoteBulkStudents);
+router.post('/students/:id/promote', promoteSingleStudent);
 
 // ── Manual Student Creation ───────────────────────────────────────────────────
 router.post('/users/create', createUser);

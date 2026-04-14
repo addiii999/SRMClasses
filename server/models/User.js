@@ -119,7 +119,7 @@ const userSchema = new mongoose.Schema({
   // ── Registration & Approval Flow ──────────────────────────────────────────
   registrationStatus: {
     type: String,
-    enum: ['Pending', 'Active', 'Rejected'],
+    enum: ['Pending', 'Active', 'Rejected', 'Graduated'],
     default: 'Pending',
     index: true,
   },
@@ -151,10 +151,27 @@ const userSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now },
   }],
 
+  // ── Academic Promotion ───────────────────────────────────────────────────
+  academicYear: {
+    type: String,
+    default: null, // e.g. "2025-26"
+  },
+  classHistory: {
+    type: [{
+      _id: false,
+      class: { type: String },
+      board: { type: String },
+      batch: { type: String, default: null },
+      academicYear: { type: String, default: null },
+      promotedAt: { type: Date, default: Date.now },
+    }],
+    default: [],
+  },
+
   // ── Fee Management (existing, unchanged) ─────────────────────────────────
   feeType: {
     type: String,
-    enum: ['Foundation', 'Advance', 'Math-Science', 'ICSE-Advance', 'None'],
+    enum: ['Foundation', 'Advance', 'Math-Science', 'ICSE-Advance', 'Commerce Advance', 'None'],
     default: 'None',
   },
   registrationFeeApplicable: {
