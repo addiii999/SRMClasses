@@ -8,10 +8,22 @@ const {
   deletePayment,
   getMyFeeStats,
   removeStudentFromFees,
-  restoreStudentToFees
+  restoreStudentToFees,
+  calculateFeePublic // Added public method
 } = require('../controllers/feeController');
 const { adminProtect } = require('../middleware/adminAuth');
 const { protect } = require('../middleware/auth');
+const rateLimit = require('express-rate-limit');
+
+// Rate limiting for public calculation endpoint (max 30 requests per hour)
+const calculateLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 30,
+  message: { success: false, message: 'Too many calculation requests from this IP, please try again after an hour.' }
+});
+
+// Public Route
+router.post('/calculate', calculateLimiter, calculateFeePublic);
 
 // Student Route
 router.get('/my-fee', protect, getMyFeeStats);

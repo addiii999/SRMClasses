@@ -9,6 +9,7 @@ const navLinks = [
   { label: 'About', to: '/about' },
   { label: 'Founder', to: '/mentor' },
   { label: 'Courses', to: '/courses' },
+  { label: 'Fee Calculator', to: '/fee-calculator' },
   { label: 'Faculty', to: '/faculty' },
   { label: 'Results', to: '/results' },
   { label: 'Gallery', to: '/gallery' },

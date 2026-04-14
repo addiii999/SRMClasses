@@ -384,3 +384,82 @@ exports.restoreStudentToFees = async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 };
+
+/**
+ * @desc    Public endpoint to calculate fee breakdown
+ * @route   POST /api/fees/calculate
+ * @access  Public
+ */
+exports.calculateFeePublic = async (req, res) => {
+  try {
+    const { studentClass, feeType, satScore } = req.body;
+
+    if (!studentClass || !feeType) {
+      return res.status(400).json({ success: false, message: 'Class and batch/feeType are required' });
+    }
+
+    const actualFee = FEE_STRUCTURE[feeType]?.[studentClass] || 0;
+    const satPercentage = Number(satScore) || 0;
+
+    if (satPercentage < 0 || satPercentage > 100) {
+      return res.status(400).json({ success: false, message: 'SAT Score must be between 0 and 100' });
+    }
+
+    // Create a dummy user object for our utility function
+    const dummyUser = {
+      studentClass,
+      feeType,
+      registrationFeeApplicable: true, // Always included for new admission estimates
+      feeSnapshot: {
+        actualFee,
+        satPercentage,
+        installmentPlan: 1 // Calculate base plan
+      }
+    };
+
+    // We can evaluate for all 3 installment plans to return a comprehensive view
+    
+    // 1 Installment Option
+    dummyUser.feeSnapshot.installmentPlan = 1;
+    const plan1 = calculateFeeDetails(dummyUser);
+
+    // 2 Installment Option
+    dummyUser.feeSnapshot.installmentPlan = 2;
+    const plan2 = calculateFeeDetails(dummyUser);
+
+    // 3 Installment Option
+    dummyUser.feeSnapshot.installmentPlan = 3;
+    const plan3 = calculateFeeDetails(dummyUser);
+
+    res.status(200).json({
+      success: true,
+      data: {
+        actualFee,
+        admissionFee: 500, // Hardcoded standard since Applicable=true
+        satDiscountPercent: plan1.satDiscountPercent,
+        satDiscountAmount: Math.round(actualFee * (satPercentage / 3 / 100)),
+        afterSat: plan1.actualFee - Math.round(actualFee * (satPercentage / 3 / 100)),
+        plans: {
+          oneInstallment: {
+            payableAmount: plan1.payableAmount,
+            installments: plan1.installments,
+            planDiscountPercent: plan1.planDiscountPercent
+          },
+          twoInstallments: {
+            payableAmount: plan2.payableAmount,
+            installments: plan2.installments,
+            planDiscountPercent: plan2.planDiscountPercent
+          },
+          threeInstallments: {
+             payableAmount: plan3.payableAmount,
+             installments: plan3.installments,
+             planDiscountPercent: plan3.planDiscountPercent
+          }
+        }
+      }
+    });
+
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};

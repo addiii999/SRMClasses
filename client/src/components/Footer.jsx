@@ -10,6 +10,7 @@ const footerLinks = {
     { label: 'About Us', to: '/about' },
     { label: 'Founder', to: '/mentor' },
     { label: 'Courses', to: '/courses' },
+    { label: 'Fee Calculator', to: '/fee-calculator' },
     { label: 'Faculty', to: '/faculty' },
     { label: 'Results', to: '/results' },
   ],
