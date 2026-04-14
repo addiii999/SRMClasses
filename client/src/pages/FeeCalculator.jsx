@@ -112,7 +112,7 @@ export default function FeeCalculator() {
 
   return (
     <>
-      <div className="pt-36 overflow-x-hidden min-h-screen bg-brand-bg relative pb-20">
+      <div className="pt-44 md:pt-48 overflow-x-hidden min-h-screen bg-brand-bg relative pb-20">
         <div className="absolute top-0 right-0 w-96 h-96 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-brand-dark/5 rounded-full blur-3xl pointer-events-none" />
 
