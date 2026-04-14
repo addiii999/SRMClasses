@@ -9,7 +9,14 @@ const FEE_STRUCTURE = {
   'Foundation': { '5': 6500, '6': 7500, '7': 8500, '8': 9500, '9': 12000, '10': 14400 },
   'Advance': { '5': 7500, '6': 10000, '7': 12000, '8': 15000, '9': 18000, '10': 20000 },
   'Math-Science': { '9': 8400, '10': 9600 },
-  'ICSE-Advance': { '6': 15000, '7': 18000, '8': 20000, '9': 22000, '10': 25000 }
+  'ICSE-Advance': { '6': 15000, '7': 18000, '8': 20000, '9': 22000, '10': 25000 },
+  'Commerce Advance': { '11': 0, '12': 0 } // Fee unconfirmed
+};
+
+const BOARD_CLASSES = {
+  'CBSE': ['5','6','7','8','9','10','11','12'],
+  'ICSE': ['6','7','8','9','10'],
+  'JAC': ['11','12']
 };
 
 export default function FeeCalculator() {
@@ -141,7 +148,7 @@ export default function FeeCalculator() {
                       <select 
                         className="input-field" 
                         value={form.board}
-                        onChange={(e) => setForm({ ...form, board: e.target.value, batch: '' })}
+                        onChange={(e) => setForm({ ...form, board: e.target.value, studentClass: '', batch: '' })}
                       >
                         <option value="CBSE">CBSE</option>
                         <option value="ICSE">ICSE</option>
@@ -152,7 +159,7 @@ export default function FeeCalculator() {
                       <label className="label">Class</label>
                       <select className="input-field" value={form.studentClass} onChange={handleClassChange}>
                         <option value="">Select Class</option>
-                        {['5','6','7','8','9','10','11','12'].map(c => (
+                        {BOARD_CLASSES[form.board]?.map(c => (
                           <option key={c} value={c}>Class {c}</option>
                         ))}
                       </select>
@@ -163,10 +170,13 @@ export default function FeeCalculator() {
                     <label className="label">Course Category (Batch)</label>
                     <select className="input-field" value={form.batch} onChange={(e) => setForm({ ...form, batch: e.target.value })}>
                       <option value="">Select Course</option>
-                      {(form.board === 'ICSE' || form.board === 'JAC') && (
-                         <option value="ICSE-Advance">ICSE/Premium</option>
+                      {['11', '12'].includes(form.studentClass) && (
+                         <option value="Commerce Advance">Commerce Advance</option>
                       )}
-                      {form.board === 'CBSE' && (
+                      {form.board === 'ICSE' && !['11', '12'].includes(form.studentClass) && (
+                         <option value="ICSE-Advance">ICSE Advance</option>
+                      )}
+                      {form.board === 'CBSE' && !['11', '12'].includes(form.studentClass) && (
                          <>
                            <option value="Foundation">Foundation</option>
                            <option value="Advance">Advance</option>
@@ -228,46 +238,55 @@ export default function FeeCalculator() {
                       <span className="font-bold text-brand-dark">₹{calculateFees.actualFee.toLocaleString('en-IN')}</span>
                     </div>
                     
-                    <div className="flex justify-between items-start py-3 border-b border-gray-100">
-                      <div className="flex flex-col">
-                        <span className="text-gray-600 font-medium text-sm md:text-base flex items-center gap-1.5">
+                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                      <span className="text-gray-600 font-medium text-sm md:text-base flex items-center gap-1.5 flex-col items-start">
+                         <div className="flex items-center gap-1.5">
                            Registration & Admission
                            <span className="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-md font-bold uppercase">Fixed</span>
-                        </span>
-                        <span className="text-[10px] text-gray-400 italic mt-0.5 leading-snug">Registration fee may be waived in certain cases at admin's discretion.</span>
-                      </div>
-                      <span className="font-bold text-brand-dark shrink-0 pt-0.5">₹{calculateFees.admissionFee}</span>
-                    </div>
-
-                    <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                      <span className="text-gray-600 font-medium text-sm md:text-base flex items-center gap-1.5">
-                         SAT Scholarship <span className="font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md text-[10px]">({calculateFees.satDiscountPercent.toFixed(1)}% OFF)</span>
+                         </div>
+                         <span className="text-[10px] text-gray-400 italic mt-0.5 leading-snug">Registration fee may be waived in certain cases at admin's discretion.</span>
                       </span>
-                      <span className="font-bold text-green-600">- ₹{calculateFees.satDiscountAmount.toLocaleString('en-IN')}</span>
+                      <span className="font-bold text-brand-dark">₹{calculateFees.admissionFee}</span>
                     </div>
 
-                    {calculateFees.plans[activePlan - 1]?.instDiscountAmount > 0 && (
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100 animate-slide-up">
-                        <span className="text-gray-600 font-medium text-sm md:text-base flex items-center gap-1.5">
-                           Payment Plan Discount <span className="font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md text-[10px]">({calculateFees.plans[activePlan - 1].instDiscountPercent}% OFF)</span>
-                        </span>
-                        <span className="font-bold text-green-600">- ₹{calculateFees.plans[activePlan - 1].instDiscountAmount.toLocaleString('en-IN')}</span>
+                    {calculateFees.actualFee === 0 ? (
+                      <div className="bg-amber-50 text-amber-700 p-4 rounded-xl mt-4 text-sm font-medium border border-amber-100">
+                         The tuition fee for {form.batch} is currently unconfirmed. Please secure your estimate via WhatsApp below to receive the finalized pricing directly, or contact the branch.
                       </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                          <span className="text-gray-600 font-medium text-sm md:text-base flex items-center gap-1.5">
+                             SAT Scholarship <span className="font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md text-[10px]">({calculateFees.satDiscountPercent.toFixed(1)}% OFF)</span>
+                          </span>
+                          <span className="font-bold text-green-600">- ₹{calculateFees.satDiscountAmount.toLocaleString('en-IN')}</span>
+                        </div>
+
+                        {calculateFees.plans[activePlan - 1]?.instDiscountAmount > 0 && (
+                          <div className="flex justify-between items-center py-2 border-b border-gray-100 animate-slide-up">
+                            <span className="text-gray-600 font-medium text-sm md:text-base flex items-center gap-1.5">
+                               Payment Plan Discount <span className="font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded-md text-[10px]">({calculateFees.plans[activePlan - 1].instDiscountPercent}% OFF)</span>
+                            </span>
+                            <span className="font-bold text-green-600">- ₹{calculateFees.plans[activePlan - 1].instDiscountAmount.toLocaleString('en-IN')}</span>
+                          </div>
+                        )}
+                      </>
                     )}
                   </div>
 
                   {/* Installment Selector & Final Total */}
-                  <div className="bg-brand-bg border border-gray-100 rounded-2xl p-5 mb-8">
+                  <div className="bg-brand-bg border border-gray-100 rounded-2xl p-5 mb-8 opacity-100">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-3 flex items-center gap-1.5"><Calendar className="w-4 h-4"/> Choose Payment Plan</label>
                     <div className="grid grid-cols-3 gap-2 mb-5">
                       {[1, 2, 3].map(planNumber => (
                         <button 
                           key={planNumber}
                           onClick={() => setActivePlan(planNumber)}
+                          disabled={calculateFees.actualFee === 0}
                           className={`py-2 px-1 text-xs md:text-sm font-bold rounded-xl transition-all border ${
-                            activePlan === planNumber 
+                            activePlan === planNumber && calculateFees.actualFee !== 0
                             ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' 
-                            : 'bg-white text-gray-500 border-gray-200 hover:border-primary/50'
+                            : 'bg-white text-gray-500 border-gray-200 hover:border-primary/50 disabled:opacity-50 disabled:cursor-not-allowed'
                           }`}
                         >
                           {planNumber === 1 ? 'Full Payment' : `${planNumber} Installments`}
@@ -282,9 +301,9 @@ export default function FeeCalculator() {
                        </div>
                        <div className="text-left md:text-right">
                           <p className="text-4xl md:text-5xl font-display font-black text-brand-dark mb-1">
-                             ₹{calculateFees.plans[activePlan - 1].payableAmount.toLocaleString('en-IN')}
+                             {calculateFees.actualFee === 0 ? 'TBA' : `₹${calculateFees.plans[activePlan - 1].payableAmount.toLocaleString('en-IN')}`}
                           </p>
-                          {activePlan > 1 && (
+                          {activePlan > 1 && calculateFees.actualFee > 0 && (
                             <p className="text-xs font-bold text-primary uppercase bg-primary/10 inline-block px-2 py-1 rounded-md">
                               Pay ₹{calculateFees.plans[activePlan - 1].installmentAmount.toLocaleString('en-IN')} × {activePlan}
                             </p>
