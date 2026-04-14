@@ -130,8 +130,8 @@ export default function Home() {
               </Link>
             </div>
             {/* Quick trust badges */}
-            <div className="flex flex-wrap items-center gap-6 mt-10">
-              {['Free Demo Class', 'Expert Faculty', '98% Success Rate'].map(badge => (
+            <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-x-4 gap-y-6 md:gap-8 mt-10">
+              {['Free Demo Class', 'Expert Faculty', '98% Success Rate', 'Scholarship Test (SAT)'].map(badge => (
                 <div key={badge} className="flex items-center gap-2 text-white/90 text-sm md:text-base font-medium">
                   <CheckCircle className="w-5 h-5 text-green-400" /> {badge}
                 </div>
