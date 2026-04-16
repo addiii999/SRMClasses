@@ -38,9 +38,15 @@ api.interceptors.response.use(
       const isAdminRoute = window.location.pathname.startsWith('/admin');
       if (isAdminRoute) {
         localStorage.removeItem('adminToken');
+        if (window.location.pathname !== '/admin/login') {
+          window.location.href = '/admin/login';
+        }
       } else {
         localStorage.removeItem('studentToken');
         localStorage.removeItem('srmUser');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);
