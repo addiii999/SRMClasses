@@ -7,13 +7,13 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Attach JWT: admin area uses only admin token from sessionStorage; everything else uses only student token from localStorage
+// Attach JWT: admin area uses only admin token; everything else uses only student token from localStorage
 api.interceptors.request.use((config) => {
   if (!config.headers.Authorization) {
     const isAdminRoute = window.location.pathname.startsWith('/admin');
     const token = isAdminRoute
-      ? sessionStorage.getItem('srmAdminToken')
-      : localStorage.getItem('srmToken');
+      ? localStorage.getItem('adminToken')
+      : localStorage.getItem('studentToken');
 
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
@@ -37,9 +37,9 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const isAdminRoute = window.location.pathname.startsWith('/admin');
       if (isAdminRoute) {
-        sessionStorage.removeItem('srmAdminToken');
+        localStorage.removeItem('adminToken');
       } else {
-        localStorage.removeItem('srmToken');
+        localStorage.removeItem('studentToken');
         localStorage.removeItem('srmUser');
       }
     }

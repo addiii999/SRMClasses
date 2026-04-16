@@ -8,15 +8,15 @@ export const AuthProvider = ({ children }) => {
     const stored = localStorage.getItem('srmUser');
     return stored ? JSON.parse(stored) : null;
   });
-  const [token, setToken] = useState(() => localStorage.getItem('srmToken') || null);
-  const [adminToken, setAdminToken] = useState(() => sessionStorage.getItem('srmAdminToken') || null);
+  const [token, setToken] = useState(() => localStorage.getItem('studentToken') || null);
+  const [adminToken, setAdminToken] = useState(() => localStorage.getItem('adminToken') || null);
   const [loading, setLoading] = useState(false);
 
   const login = (userData, userToken) => {
     setUser(userData);
     setToken(userToken);
     localStorage.setItem('srmUser', JSON.stringify(userData));
-    localStorage.setItem('srmToken', userToken);
+    localStorage.setItem('studentToken', userToken);
   };
 
   const updateUser = (newUserData) => {
@@ -28,17 +28,17 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('srmUser');
-    localStorage.removeItem('srmToken');
+    localStorage.removeItem('studentToken');
   };
 
   const adminLogin = (adminToken) => {
     setAdminToken(adminToken);
-    sessionStorage.setItem('srmAdminToken', adminToken);
+    localStorage.setItem('adminToken', adminToken);
   };
 
   const adminLogout = () => {
     setAdminToken(null);
-    sessionStorage.removeItem('srmAdminToken');
+    localStorage.removeItem('adminToken');
   };
 
   return (

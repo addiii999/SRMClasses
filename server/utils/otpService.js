@@ -15,7 +15,7 @@ const sendOTPviaEmail = async (email, mobile, otp) => {
 
   const data = {
     // Using the verified root domain for maximum delivery success
-    from: 'SRM Classes <otp@srmclasses.in>',
+    from: process.env.RESEND_FROM_EMAIL || 'SRM Classes <onboarding@resend.dev>',
     to: [email],
     subject: `${otp} is your SRM Classes OTP`,
     html: `
