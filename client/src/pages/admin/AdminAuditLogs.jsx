@@ -18,7 +18,7 @@ export default function AdminAuditLogs({ adminRole }) {
     setLoading(true);
     try {
       const res = await api.get(`/admin/audit-logs?page=${page}&limit=50&showDeleted=${showDeleted}`, {
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('srmAdminToken')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
       });
       setLogs(res.data.data);
       setPagination(res.data.pagination);
@@ -36,7 +36,7 @@ export default function AdminAuditLogs({ adminRole }) {
     try {
       await api.delete(`/admin/audit-logs/${deleteModal.studentDocId}/${deleteModal.logId}`, {
         data: { reason: deleteReason },
-        headers: { Authorization: `Bearer ${sessionStorage.getItem('srmAdminToken')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
       });
       toast.success('Audit log soft-deleted and history updated');
       setDeleteModal(null);

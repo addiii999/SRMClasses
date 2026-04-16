@@ -33,7 +33,7 @@ export default function AdminFeeManagement({ selectedBranch }) {
   const fetchStudents = useCallback(async () => {
     setLoading(true);
     try {
-      const token = sessionStorage.getItem('srmAdminToken');
+      const token = localStorage.getItem('adminToken');
       const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
       const res = await api.get(`/fees/students?status=${enrollmentTab}${branchParam}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -89,7 +89,7 @@ export default function AdminFeeManagement({ selectedBranch }) {
     if (!window.confirm(`Are you sure you want to remove ${student.name} from the active fee list? Their data will NOT be deleted.`)) return;
     
     try {
-      const token = sessionStorage.getItem('srmAdminToken');
+      const token = localStorage.getItem('adminToken');
       await api.patch(`/fees/remove/${student._id}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -102,7 +102,7 @@ export default function AdminFeeManagement({ selectedBranch }) {
 
   const handleRestore = async (student) => {
     try {
-      const token = sessionStorage.getItem('srmAdminToken');
+      const token = localStorage.getItem('adminToken');
       await api.patch(`/fees/restore/${student._id}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -345,7 +345,7 @@ function FeeModal({ student, onClose, onSuccess }) {
     if (e) e.preventDefault();
     setLoading(true);
     try {
-      const token = sessionStorage.getItem('srmAdminToken');
+      const token = localStorage.getItem('adminToken');
       // Normalize satPercentage to 0 if empty
       const payload = { 
         ...form, 
@@ -542,7 +542,7 @@ function PaymentModal({ student, onClose, onSuccess }) {
 
     setLoading(true);
     try {
-      const token = sessionStorage.getItem('srmAdminToken');
+      const token = localStorage.getItem('adminToken');
       const res = await api.post(`/fees/payment/${student._id}`, { ...form, amount: amt }, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -671,7 +671,7 @@ function HistoryModal({ studentId, onClose, onRefresh }) {
   const fetchHistory = useCallback(async () => {
     setLoading(true);
     try {
-      const token = sessionStorage.getItem('srmAdminToken');
+      const token = localStorage.getItem('adminToken');
       // For history, we just get student my-fee endpoint but since we are admin, we should probably have a specific one
       // But we can use current student stats or just fetch the student again.
       // We already have their ID.
@@ -687,7 +687,7 @@ function HistoryModal({ studentId, onClose, onRefresh }) {
   const handleDelete = async (pid) => {
     if (!confirm('Are you sure you want to delete this payment record? This will increase the remaining balance.')) return;
     try {
-      const token = sessionStorage.getItem('srmAdminToken');
+      const token = localStorage.getItem('adminToken');
       const res = await api.delete(`/fees/payment/${studentId}/${pid}`, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Payment deleted');
       setData(res.data.data);
@@ -698,7 +698,7 @@ function HistoryModal({ studentId, onClose, onRefresh }) {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const token = sessionStorage.getItem('srmAdminToken');
+      const token = localStorage.getItem('adminToken');
       const res = await api.put(`/fees/payment/${studentId}/${editingPayment._id}`, {
         amount: editingPayment.amount,
         method: editingPayment.method

@@ -15,7 +15,7 @@ const BATCH_OPTIONS = ['Foundation Batch', 'Advance Batch', 'Core Batch', 'Comme
 const BOARDS = ['CBSE', 'ICSE', 'JAC'];
 const CLASSES = ['5','6','7','8','9','10','11','12'];
 
-const authHeader = () => ({ Authorization: `Bearer ${sessionStorage.getItem('srmAdminToken')}` });
+const authHeader = () => ({ Authorization: `Bearer ${localStorage.getItem('adminToken')}` });
 
 function StatusBadge({ status }) {
   const map = {

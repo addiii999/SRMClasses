@@ -35,7 +35,7 @@ export default function AdminFaculty() {
 
   const fetchFaculty = async () => {
     try {
-      const token = sessionStorage.getItem('srmAdminToken');
+      const token = localStorage.getItem('adminToken');
       const { data } = await api.get('/faculty/admin', {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -103,7 +103,7 @@ export default function AdminFaculty() {
       const config = {
         headers: { 
           'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${sessionStorage.getItem('srmAdminToken')}` 
+          Authorization: `Bearer ${localStorage.getItem('adminToken')}` 
         }
       };
       

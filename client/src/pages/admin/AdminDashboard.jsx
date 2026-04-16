@@ -146,7 +146,7 @@ function Overview({ selectedBranch }) {
   const [recentEnquiries, setRecentEnquiries] = useState([]);
 
   useEffect(() => {
-    const token = sessionStorage.getItem('srmAdminToken');
+    const token = localStorage.getItem('adminToken');
     const headers = { Authorization: `Bearer ${token}` };
     const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
     Promise.all([
@@ -300,7 +300,7 @@ function Enquiries({ selectedBranch }) {
   const [sortBy, setSortBy] = useState('date');
   const [loading, setLoading] = useState(true);
 
-  const getHeaders = () => ({ Authorization: `Bearer ${sessionStorage.getItem('srmAdminToken')}` });
+  const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('adminToken')}` });
 
   const fetchEnquiries = useCallback(async () => {
     setLoading(true);
@@ -408,7 +408,7 @@ function DemoBookings({ selectedBranch }) {
   const [quickConvertForm, setQuickConvertForm] = useState({ feeType: 'None', satPercentage: 0, installmentPlan: 1, board: 'CBSE' });
   const isDevMode = import.meta.env.MODE !== 'production';
 
-  const getHeaders = () => ({ Authorization: `Bearer ${sessionStorage.getItem('srmAdminToken')}` });
+  const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('adminToken')}` });
 
   const fetchBookings = useCallback(async () => {
     setLoading(true);
@@ -1030,7 +1030,7 @@ function BoardChangeRequests() {
   const fetchRequests = useCallback(async () => {
     setLoading(true);
     try {
-      const token = sessionStorage.getItem('srmAdminToken');
+      const token = localStorage.getItem('adminToken');
       const { data } = await api.get(`/admin/board-change-requests?status=${tab}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -1045,7 +1045,7 @@ function BoardChangeRequests() {
   useEffect(() => { fetchRequests(); }, [fetchRequests]);
 
   const handleAction = async (id, action, note) => {
-    const token = sessionStorage.getItem('srmAdminToken');
+    const token = localStorage.getItem('adminToken');
     try {
       await api.put(`/admin/board-change-requests/${id}/${action}`, { adminNote: note },
         { headers: { Authorization: `Bearer ${token}` } });
@@ -1145,7 +1145,7 @@ export default function AdminDashboard() {
   // Decode admin role from JWT token
   const adminRole = (() => {
     try {
-      const token = sessionStorage.getItem('srmAdminToken');
+      const token = localStorage.getItem('adminToken');
       if (!token) return null;
       return JSON.parse(atob(token.split('.')[1]))?.role || null;
     } catch { return null; }
