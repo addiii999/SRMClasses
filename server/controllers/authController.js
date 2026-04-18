@@ -1,8 +1,8 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const OtpStore = require('../models/OtpStore');
-const { generateOTP, validatePhone, hashOTP, sendOTPviaEmail, sendOTPviaSMS } = require('../utils/otpService');
+const admin = require('../config/firebase');
+const { generateOTP, sendOTPviaEmail } = require('../utils/otpService');
 const { isValidCombination } = require('../utils/boardConstraints');
 
 // ─── Token Helpers ────────────────────────────────────────────────────────────
@@ -36,210 +36,37 @@ const validateStudentPassword = (password) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// @desc    Send OTP to phone/email (Step 1 of registration)
-// @route   POST /api/auth/send-otp
-// ─────────────────────────────────────────────────────────────────────────────
-const sendOTP = async (req, res) => {
-  try {
-    const { mobile, email } = req.body;
-
-    // 1. Validate phone format
-    if (!validateIndianMobile(mobile)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Please enter a valid 10-digit Indian mobile number (starts with 6-9)',
-      });
-    }
-
-    // 2. Check if mobile belongs to a rejected student within 7-day cooldown
-    const existingUser = await User.findOne({ mobile }).lean();
-    if (existingUser) {
-      if (existingUser.registrationStatus === 'Active' || existingUser.registrationStatus === 'Pending') {
-        return res.status(400).json({
-          success: false,
-          message: 'This number is already registered. Please login instead.',
-        });
-      }
-      if (existingUser.registrationStatus === 'Rejected') {
-        const rejectedAt = existingUser.rejectedAt ? new Date(existingUser.rejectedAt) : null;
-        if (rejectedAt) {
-          const daysSinceRejection = (Date.now() - rejectedAt.getTime()) / (1000 * 60 * 60 * 24);
-          if (daysSinceRejection < 7) {
-            const remainingDays = Math.ceil(7 - daysSinceRejection);
-            return res.status(400).json({
-              success: false,
-              message: `Your previous registration was rejected. You can re-register after ${remainingDays} day${remainingDays === 1 ? '' : 's'}.`,
-              code: 'REJECTION_COOLDOWN',
-              remainingDays,
-            });
-          }
-        } else {
-          // Rejected without rejectedAt timestamp — block
-          return res.status(400).json({
-            success: false,
-            message: 'Your registration was previously rejected. Please contact admin.',
-            code: 'REGISTRATION_REJECTED',
-          });
-        }
-      }
-    }
-
-    // 3. Check if email already registered (if provided)
-    if (email) {
-      const existingByEmail = await User.findOne({ email: email.toLowerCase() }).lean();
-      if (existingByEmail) {
-        return res.status(400).json({
-          success: false,
-          message: 'This email is already registered. Please login instead.',
-        });
-      }
-    }
-
-    // 4. Rate limiting: max 5 OTPs per hour per mobile (using DB records)
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const otpCount = await OtpStore.countDocuments({
-      mobile,
-      createdAt: { $gt: oneHourAgo }
-    });
-
-    if (otpCount >= 5) {
-      return res.status(429).json({
-        success: false,
-        message: 'Too many OTP requests. Please try again after 1 hour.',
-      });
-    }
-
-    // 5. Cooldown: 60 seconds between resends
-    const lastOtp = await OtpStore.findOne({ mobile }).sort({ createdAt: -1 });
-    const now = Date.now();
-    if (lastOtp && (now - new Date(lastOtp.createdAt).getTime() < 60 * 1000)) {
-      const waitSeconds = Math.ceil((60 * 1000 - (now - new Date(lastOtp.createdAt).getTime())) / 1000);
-      return res.status(429).json({
-        success: false,
-        message: `Please wait ${waitSeconds} seconds before requesting a new OTP.`,
-        waitSeconds,
-      });
-    }
-
-    // 6. Generate and hash OTP
-    const otp = generateOTP();
-    const otpHash = hashOTP(otp);
-    const otpExpiry = new Date(now + 5 * 60 * 1000);
-    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip || 'unknown';
-
-    // 7. Per-IP rate limit: max 10 OTP requests per IP per hour
-    const ipOtpCount = await OtpStore.countDocuments({
-      ipAddress: clientIp,
-      createdAt: { $gt: new Date(Date.now() - 60 * 60 * 1000) },
-    });
-    if (ipOtpCount >= 10) {
-      return res.status(429).json({
-        success: false,
-        message: 'Too many OTP requests from your network. Please try again after 1 hour.',
-        code: 'IP_RATE_LIMITED',
-      });
-    }
-
-    // Store in MongoDB with IP for rate-limit tracking
-    await OtpStore.create({
-      mobile,
-      otpHash,
-      expiresAt: otpExpiry,
-      email: email || null,
-      ipAddress: clientIp,
-    });
-
-    // Send via SMS — real Fast2SMS, no email fallback
-    await sendOTPviaSMS(mobile, otp);
-
-    res.status(200).json({
-      success: true,
-      message: `OTP sent to +91 ${mobile.slice(0, 2)}${'*'.repeat(6)}${mobile.slice(-2)}`,
-    });
-  } catch (error) {
-    console.error('[SEND OTP]', error.message);
-    res.status(500).json({ success: false, message: 'Failed to send OTP. ' + error.message });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Verify OTP (Step 2 of registration)
-// @route   POST /api/auth/verify-otp
-// ─────────────────────────────────────────────────────────────────────────────
-const verifyOTP = async (req, res) => {
-  try {
-    const { mobile, otp } = req.body;
-
-    if (!mobile || !otp) {
-      return res.status(400).json({ success: false, message: 'Mobile and OTP are required' });
-    }
-
-    const stored = await OtpStore.findOne({ mobile });
-
-    if (!stored) {
-      return res.status(400).json({ success: false, message: 'OTP not found or expired. Please request a new one.' });
-    }
-
-    if (stored.attempts >= 3) {
-      await OtpStore.deleteOne({ mobile });
-      return res.status(400).json({ success: false, message: 'Too many failed attempts. Please request a new OTP.', blocked: true });
-    }
-
-    const inputHash = hashOTP(otp.toString().trim());
-    if (inputHash !== stored.otpHash) {
-      stored.attempts++;
-      await stored.save();
-      const remaining = 3 - stored.attempts;
-      return res.status(400).json({
-        success: false,
-        message: remaining > 0
-          ? `Invalid OTP. ${remaining} attempt${remaining === 1 ? '' : 's'} remaining.`
-          : 'Invalid OTP. No attempts remaining.',
-        remainingAttempts: remaining,
-      });
-    }
-
-    await OtpStore.deleteMany({ mobile });
-    const otpToken = generateOtpVerifiedToken(mobile);
-
-    res.status(200).json({
-      success: true,
-      message: 'Phone number verified successfully!',
-      otpToken,
-    });
-  } catch (error) {
-    console.error('[VERIFY OTP]', error.message);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Register student (Step 3 — requires valid otpToken)
+// @desc    Register student (Firebase Phone Auth)
 // @route   POST /api/auth/register
 // ─────────────────────────────────────────────────────────────────────────────
 const register = async (req, res) => {
   try {
     const {
-      name, email, studentClass, password, otpToken,
+      name, email, studentClass, password, firebaseToken,
       branch, board, parentName, parentContact, schoolName, address,
     } = req.body;
 
-    // 1. Validate OTP token
-    let decoded;
+    // 1. Verify Firebase ID Token (Zero-Trust)
+    if (!firebaseToken) {
+      return res.status(401).json({ success: false, message: 'Firebase verification token is required' });
+    }
+
+    let decodedToken;
     try {
-      decoded = jwt.verify(otpToken, process.env.JWT_SECRET);
+      decodedToken = await admin.auth().verifyIdToken(firebaseToken);
     } catch (err) {
+      console.error('[Firebase Token Error]', err.message);
       return res.status(401).json({
         success: false,
-        message: 'Phone verification expired or invalid. Please verify your OTP again.',
+        message: 'Phone verification expired or invalid. Please verify your number again.',
       });
     }
 
-    if (!decoded.otpVerified) {
-      return res.status(401).json({ success: false, message: 'Phone not verified' });
+    // Firebase returns E.164 format (e.g., +919876543210). Extract the last 10 digits.
+    if (!decodedToken.phone_number) {
+       return res.status(401).json({ success: false, message: 'Phone number missing from authentication token' });
     }
-
-    const mobile = decoded.mobile;
+    const mobile = decodedToken.phone_number.slice(-10);
 
     // 2. Validate required fields
     if (!branch) return res.status(400).json({ success: false, message: 'Please select a branch' });
@@ -699,7 +526,7 @@ const resetPassword = async (req, res) => {
 };
 
 module.exports = {
-  sendOTP, verifyOTP, register, login, getMe,
+  register, login, getMe,
   updateProfile, getProfileHistory, markNotificationRead,
   forgotPassword, resetPassword,
 };

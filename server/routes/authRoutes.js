@@ -1,16 +1,14 @@
 const express = require('express');
 const router = express.Router();
 const {
-  sendOTP, verifyOTP, register, login, getMe,
+  register, login, getMe,
   updateProfile, getProfileHistory, markNotificationRead,
   forgotPassword, resetPassword,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 const { otpLimiter, registrationLimiter, loginLimiter, passwordResetLimiter } = require('../middleware/rateLimits');
 
-// ── OTP-based Registration Flow ───────────────────────────────────────────────
-router.post('/send-otp', otpLimiter, sendOTP);
-router.post('/verify-otp', otpLimiter, verifyOTP);
+// ── Firebase-based Registration Flow ──────────────────────────────────────────
 router.post('/register', registrationLimiter, register);
 
 // ── Login & Profile ───────────────────────────────────────────────────────────

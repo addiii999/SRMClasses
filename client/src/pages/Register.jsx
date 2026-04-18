@@ -2,6 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { GraduationCap, Eye, EyeOff, ArrowRight, Phone, ShieldCheck, CheckCircle, RefreshCw, AlertCircle, Clock, Home, User, BookOpen } from 'lucide-react';
 import api from '../lib/api';
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import { auth } from "../lib/firebase";
 import toast from 'react-hot-toast';
 import { fetchBoardClassMap, getAllowedBoardsForClass } from '../utils/boardConstraints';
 
@@ -141,48 +143,66 @@ export default function Register() {
     return null;
   };
 
-  // ── Step 1: send OTP ────────────────────────────────────────────────────────
+  // ── Step 1: send OTP (Firebase) ──────────────────────────────────────────────
+  const setupRecaptcha = () => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        'size': 'invisible',
+        'callback': () => {},
+      });
+    }
+  };
+
   const handleSendOTP = async (e) => {
     e?.preventDefault();
     const phoneErr = validatePhone(mobile);
     if (phoneErr) { toast.error(phoneErr); return; }
-    if (!email) { toast.error('Email is required to receive your OTP'); return; }
+    if (!email) { toast.error('Email is required to receive your account updates'); return; }
+    
     setSendingOTP(true);
     try {
-      await api.post('/auth/send-otp', { mobile, email });
-      toast.success(`OTP sent to ${email.replace(/(.{2}).+(@.+)/, '$1***$2')}`);
+      setupRecaptcha();
+      const appVerifier = window.recaptchaVerifier;
+      const formatPh = `+91${mobile}`;
+      
+      const confirmationResult = await signInWithPhoneNumber(auth, formatPh, appVerifier);
+      window.confirmationResult = confirmationResult;
+      
+      toast.success(`OTP sent via Firebase to +91 ${mobile}`);
       setStep(2);
       setCooldown(60);
       setOtpError('');
     } catch (err) {
-      const msg = err.response?.data?.message || 'Failed to send OTP';
-      const wait = err.response?.data?.waitSeconds;
-      if (wait) setCooldown(wait);
-      toast.error(msg);
+      console.error(err);
+      toast.error('Failed to send OTP. Too many requests or bad network.');
+      if (window.recaptchaVerifier) {
+        window.recaptchaVerifier.clear();
+        window.recaptchaVerifier = null;
+      }
     } finally {
       setSendingOTP(false);
     }
   };
 
-  // ── Step 2: verify OTP ──────────────────────────────────────────────────────
+  // ── Step 2: verify OTP (Firebase) ────────────────────────────────────────────
   const handleVerifyOTP = async (e) => {
     e?.preventDefault();
     const code = otp.join('');
     if (code.length !== 6) { toast.error('Enter the complete 6-digit OTP'); return; }
+    
     setVerifying(true);
     setOtpError('');
     try {
-      const res = await api.post('/auth/verify-otp', { mobile, otp: code });
-      setOtpToken(res.data.otpToken);
+      const result = await window.confirmationResult.confirm(code);
+      const token = await result.user.getIdToken();
+      
+      setOtpToken(token); // Using otpToken variable to store Firebase ID Token
       toast.success('Phone verified! ✅');
       setStep(3);
     } catch (err) {
-      const data = err.response?.data;
-      setOtpError(data?.message || 'Invalid OTP');
-      if (data?.remainingAttempts !== undefined) setRemainingAttempts(data.remainingAttempts);
-      if (data?.expired || data?.blocked) {
-        setOTP(['', '', '', '', '', '']);
-      }
+      console.error(err);
+      setOtpError('Invalid OTP or expired.');
+      setOTP(['', '', '', '', '', '']);
     } finally {
       setVerifying(false);
     }
@@ -214,7 +234,7 @@ export default function Register() {
         board: form.board,
         branch: form.branch,
         password: form.password,
-        otpToken,
+        firebaseToken: otpToken,
         parentName: form.parentName,
         parentContact: form.parentContact,
         schoolName: form.schoolName || undefined,
@@ -247,6 +267,7 @@ export default function Register() {
             </div>
             <span className="font-display font-bold text-2xl text-brand-dark">SRM Classes</span>
           </Link>
+          <div id="recaptcha-container"></div>
           <h2 className="mt-4 text-3xl font-display font-bold text-brand-dark">Create your account</h2>
           <p className="mt-1 text-gray-500 text-sm">Join 2,500+ students on their journey to excellence</p>
         </div>
