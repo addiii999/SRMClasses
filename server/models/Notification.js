@@ -16,10 +16,17 @@ const notificationSchema = new mongoose.Schema({
     enum: ['5', '6', '7', '8', '9', '10', '11', '12', 'all', null],
     default: null,
   },
-  // For student-specific private notifications (NEW)
+  // For student-specific private notifications (existing)
   targetStudent: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
+    default: null,
+    index: true,
+  },
+  // For admin-specific system alerts (lifecycle cron failures, export audits)
+  targetAdmin: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
     default: null,
     index: true,
   },
@@ -30,12 +37,15 @@ const notificationSchema = new mongoose.Schema({
       // Existing
       'test_result',
       'general',
-      // New — student-specific
+      // Student-specific
       'board_change_approved',
       'board_change_rejected',
       'batch_assigned',
       'registration_approved',
       'registration_rejected',
+      // System / Lifecycle (admin-facing)
+      'system_alert',       // cron failure or critical system events
+      'lifecycle_export',   // data export audit trail
     ],
   },
   relatedId: {

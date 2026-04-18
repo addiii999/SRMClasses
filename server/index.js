@@ -141,6 +141,7 @@ app.use('/api/recycle-bin', require('./routes/recycleBinRoutes'));
 app.use('/api/branches', require('./routes/branchRoutes'));
 app.use('/api/weekly-tests', require('./routes/weeklyTestRoutes'));
 app.use('/api/config', require('./routes/configRoutes'));
+app.use('/api/lifecycle', require('./routes/dataLifecycleRoutes'));
 
 // ─── Global Error Handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {

@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import {
   LayoutDashboard, Users, Calendar, BookOpen, GraduationCap, Trophy,
   Image, Bell, LogOut, Menu, X, Upload, Trash2, CheckCircle,
-  AlertCircle, AlertTriangle, Clock, TrendingUp, FileText, Plus, Search, Filter, CreditCard, ShieldCheck, ClipboardList, History, ArrowRight, XCircle
+  AlertCircle, AlertTriangle, Clock, TrendingUp, FileText, Plus, Search, Filter, CreditCard, ShieldCheck, ClipboardList, History, ArrowRight, XCircle, Database
 } from 'lucide-react';
 import AdminFeeManagement from './AdminFeeManagement';
 import AdminFaculty from './AdminFaculty';
@@ -17,6 +17,7 @@ import AdminWeeklyTests from './AdminWeeklyTests';
 import AdminAuditLogs from './AdminAuditLogs';
 import AdminManagement from './AdminManagement';
 import AdminPromotionManager from './AdminPromotionManager';
+import DataManagement from './DataManagement';
 import {
   Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement,
   Title, Tooltip, Legend, Filler
@@ -72,6 +73,7 @@ const navSections = [
       { path: '/admin/audit-logs', label: 'Audit Logs', icon: History },
       { path: '/admin/manage-admins', label: 'Admin Management', icon: ShieldCheck, superAdminOnly: true },
       { path: '/admin/recycle-bin', label: 'Recycle Bin', icon: Trash2 },
+      { path: '/admin/data-management', label: 'Data Management', icon: Database },
     ]
   },
   {
@@ -1198,6 +1200,7 @@ export default function AdminDashboard() {
             <Route path="recycle-bin" element={<AdminRecycleBin selectedBranch={selectedBranch} />} />
             <Route path="add-student" element={<AddStudent selectedBranch={selectedBranch} />} />
             <Route path="promotion" element={<AdminPromotionManager branches={branches} />} />
+            <Route path="data-management" element={<DataManagement adminRole={adminRole} />} />
             <Route index element={<Overview selectedBranch={selectedBranch} />} />
           </Routes>
         </div>

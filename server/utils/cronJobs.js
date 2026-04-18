@@ -92,10 +92,24 @@ const initCronJobs = () => {
       }
     }
     
-    console.log('✨ Recycle Bin cleanup completed.');
+  console.log('✨ Recycle Bin cleanup completed.');
   });
 
   console.log('🗓️ Scheduled daily Recycle Bin cleanup (01:00 AM)');
+
+  // ─── ArchivedStudent Purge — daily at 02:00 AM ───────────────────────────
+  // Permanently deletes archived students soft-deleted for >30 days.
+  // Cloudinary cleanup included. SUPER_ADMIN notified on failure.
+  cron.schedule('0 2 * * *', async () => {
+    try {
+      const { purgeDeletedStudents } = require('../controllers/dataLifecycleController');
+      await purgeDeletedStudents();
+    } catch (err) {
+      console.error('[Cron] Failed to invoke purgeDeletedStudents:', err.message);
+    }
+  });
+
+  console.log('🗓️ Scheduled ArchivedStudent purge (02:00 AM)');
 };
 
 module.exports = initCronJobs;

@@ -137,6 +137,12 @@ const userSchema = new mongoose.Schema({
   isActive: { type: Boolean, default: true },
   isStudent: { type: Boolean, default: false },
   isEnrolled: { type: Boolean, default: false },
+
+  // ── Data Lifecycle — managed by Data Management system ───────────────────
+  // Guard fields: prevent re-archiving; allow cross-collection queries
+  isArchived: { type: Boolean, default: false, index: true },
+  archivedAt: { type: Date, default: null },
+  archivedBy: { type: String, default: null }, // admin email who archived
   studentId: { type: String, unique: true, sparse: true },
   verificationStatus: {
     type: String,
@@ -220,6 +226,7 @@ const userSchema = new mongoose.Schema({
 userSchema.index({ registrationStatus: 1, createdAt: -1 });
 userSchema.index({ isApproved: 1, batch: 1 });
 userSchema.index({ name: 'text', studentId: 'text' });
+userSchema.index({ isArchived: 1, registrationStatus: 1 });
 
 // ─── Pre-save hooks ───────────────────────────────────────────────────────────
 
