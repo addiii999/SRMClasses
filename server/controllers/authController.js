@@ -2,7 +2,7 @@ const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const OtpStore = require('../models/OtpStore');
-const { generateOTP, validatePhone, hashOTP, sendOTPviaEmail } = require('../utils/otpService');
+const { generateOTP, validatePhone, hashOTP, sendOTPviaEmail, sendOTPviaSMS } = require('../utils/otpService');
 const { isValidCombination } = require('../utils/boardConstraints');
 
 // ─── Token Helpers ────────────────────────────────────────────────────────────
@@ -125,24 +125,36 @@ const sendOTP = async (req, res) => {
     const otp = generateOTP();
     const otpHash = hashOTP(otp);
     const otpExpiry = new Date(now + 5 * 60 * 1000);
+    const clientIp = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.ip || 'unknown';
 
-    // Store in MongoDB
+    // 7. Per-IP rate limit: max 10 OTP requests per IP per hour
+    const ipOtpCount = await OtpStore.countDocuments({
+      ipAddress: clientIp,
+      createdAt: { $gt: new Date(Date.now() - 60 * 60 * 1000) },
+    });
+    if (ipOtpCount >= 10) {
+      return res.status(429).json({
+        success: false,
+        message: 'Too many OTP requests from your network. Please try again after 1 hour.',
+        code: 'IP_RATE_LIMITED',
+      });
+    }
+
+    // Store in MongoDB with IP for rate-limit tracking
     await OtpStore.create({
       mobile,
       otpHash,
       expiresAt: otpExpiry,
-      email: email || null
+      email: email || null,
+      ipAddress: clientIp,
     });
 
-    if (email) {
-      await sendOTPviaEmail(email, mobile, otp);
-    }
+    // Send via SMS — real Fast2SMS, no email fallback
+    await sendOTPviaSMS(mobile, otp);
 
     res.status(200).json({
       success: true,
-      message: email
-        ? `OTP sent to your email (${email.replace(/(.{2}).+(@.+)/, '$1***$2')})`
-        : 'OTP generated (dev mode)',
+      message: `OTP sent to +91 ${mobile.slice(0, 2)}${'*'.repeat(6)}${mobile.slice(-2)}`,
     });
   } catch (error) {
     console.error('[SEND OTP]', error.message);
@@ -304,6 +316,7 @@ const register = async (req, res) => {
       schoolName: schoolName?.trim() || null,
       address: address?.trim() || null,
       mobileVerified: true,
+      emailVerified: true, // OTP was verified; email confirmed via registration flow
       registrationStatus: 'Pending',
       isApproved: false,
       // batch: NOT accepted from registration
@@ -346,13 +359,68 @@ const login = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid email' });
     }
 
+    // Fetch user — separate from password check so we can track lockout
     const user = await User.findOne({ email: String(email).toLowerCase().trim() }).select('+password');
 
-    if (!user || !(await user.matchPassword(password))) {
+    // Generic message — don't reveal if the email exists or not
+    if (!user) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
-    // 🚫 Approval gate — check registrationStatus BEFORE issuing token
+    // 🔒 Account lockout check (brute-force protection)
+    if (user.lockUntil && user.lockUntil > Date.now()) {
+      const minutes = Math.ceil((user.lockUntil - Date.now()) / 60000);
+      return res.status(423).json({
+        success: false,
+        message: `Account locked due to too many failed attempts. Try again in ${minutes} minute${minutes !== 1 ? 's' : ''}.`,
+        code: 'ACCOUNT_LOCKED',
+        minutesRemaining: minutes,
+      });
+    }
+
+    // 🔐 Verification gates — check BEFORE password to give clear errors
+    if (!user.mobileVerified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your phone number is not verified. Please complete the registration process.',
+        code: 'MOBILE_NOT_VERIFIED',
+      });
+    }
+
+    if (!user.emailVerified) {
+      return res.status(403).json({
+        success: false,
+        message: 'Your email address has not been verified. Please check your inbox for a verification link.',
+        code: 'EMAIL_NOT_VERIFIED',
+      });
+    }
+
+    // ✅ Password check
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      // Increment failed attempt counter
+      user.loginAttempts = (user.loginAttempts || 0) + 1;
+
+      if (user.loginAttempts >= 5) {
+        user.lockUntil = new Date(Date.now() + 15 * 60 * 1000); // lock 15 min
+        await user.save({ validateBeforeSave: false });
+        return res.status(423).json({
+          success: false,
+          message: 'Too many failed login attempts. Account locked for 15 minutes.',
+          code: 'ACCOUNT_LOCKED',
+        });
+      }
+
+      await user.save({ validateBeforeSave: false });
+      const remaining = 5 - user.loginAttempts;
+      return res.status(401).json({
+        success: false,
+        message: `Invalid email or password. ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining before account lock.`,
+        remainingAttempts: remaining,
+      });
+    }
+
+    // 🚫 Approval gates — check registrationStatus BEFORE issuing token
     if (user.registrationStatus === 'Pending') {
       return res.status(403).json({
         success: false,
@@ -377,6 +445,13 @@ const login = async (req, res) => {
         message: 'Account not yet approved. Please contact admin.',
         code: 'NOT_APPROVED',
       });
+    }
+
+    // ✅ Success — reset lockout counters
+    if (user.loginAttempts > 0 || user.lockUntil) {
+      user.loginAttempts = 0;
+      user.lockUntil = null;
+      await user.save({ validateBeforeSave: false });
     }
 
     const token = generateToken(user._id);

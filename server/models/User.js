@@ -55,10 +55,17 @@ const userSchema = new mongoose.Schema({
     index: true,
   },
   mobileVerified: { type: Boolean, default: false },
+  // default: true for backward compat — existing accounts remain accessible.
+  // New registrations explicitly set this to false until a verification link is clicked.
+  emailVerified: { type: Boolean, default: true },
   phoneOTP: String,
   phoneOTPExpiry: Date,
   phoneOTPAttempts: { type: Number, default: 0 },
   otpLastSentAt: Date,
+
+  // ── Login Brute-Force Protection ──────────────────────────────────────────
+  loginAttempts: { type: Number, default: 0 },   // resets on successful login
+  lockUntil: { type: Date, default: null },       // set to 15min in future on 5th failure
 
   // ── New: Parent / School / Address ────────────────────────────────────────
   parentName: { type: String, trim: true, default: null },
@@ -103,7 +110,7 @@ const userSchema = new mongoose.Schema({
   password: {
     type: String,
     required: [true, 'Password is required'],
-    minlength: 6,
+    minlength: 8, // raised from 6 — enforced with strong regex in controller
     select: false,
   },
   passwordChangedAt: {

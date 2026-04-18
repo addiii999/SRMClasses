@@ -93,10 +93,65 @@ const hashOTP = (otp) => {
   return crypto.createHash('sha256').update(otp).digest('hex');
 };
 
+/**
+ * Send OTP via real SMS using Fast2SMS
+ * - Retries ONCE on failure (1.5s delay)
+ * - No fallback. No fake success. Missing key = hard throw.
+ */
+const sendOTPviaSMS = async (mobile, otp) => {
+  const apiKey = process.env.FAST2SMS_API_KEY;
+
+  if (!apiKey) {
+    throw new Error(
+      'FAST2SMS_API_KEY is not configured. Add it to .env to enable SMS OTP. No fallback available.',
+    );
+  }
+
+  const message = `Your SRM Classes OTP is ${otp}. Valid for 5 minutes. Do not share this code with anyone.`;
+
+  const attempt = async () => {
+    const response = await axios.post(
+      'https://www.fast2sms.com/dev/bulkV2',
+      {
+        route: 'q',
+        message,
+        language: 'english',
+        flash: 0,
+        numbers: mobile,
+      },
+      {
+        headers: {
+          authorization: apiKey,
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000, // 10s hard timeout
+      },
+    );
+
+    // Fast2SMS returns { return: true } on success
+    if (!response.data?.return) {
+      throw new Error(
+        response.data?.message || 'Fast2SMS returned an unexpected failure response.',
+      );
+    }
+
+    return response.data;
+  };
+
+  try {
+    return await attempt();
+  } catch (firstError) {
+    console.error('[SMS] First attempt failed:', firstError.message, '— Retrying in 1.5s...');
+    // One retry — hard fail if this also throws
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+    return attempt();
+  }
+};
+
 module.exports = {
   generateOTP,
   validatePhone,
   hashOTP,
   sendOTPviaEmail,
-  sendOTPviaSMS: async () => { throw new Error('SMS API not implemented.'); }
+  sendOTPviaSMS,
 };
