@@ -6,19 +6,19 @@ const crypto = require('crypto');
  * Resend is incredibly fast and reliable for modern transactional emails.
  */
 const sendOTPviaEmail = async (email, mobile, otp) => {
-  const apiKey = process.env.RESEND_API_KEY;
+  const apiKey = process.env.BREVO_API_KEY;
   
   if (!apiKey) {
-    console.error('❌ RESEND_API_KEY is missing!');
+    console.error('❌ BREVO_API_KEY is missing!');
     throw new Error('Email service key not found.');
   }
 
+  // The email content (using Brevo's payload structure)
   const data = {
-    // Using the verified root domain for maximum delivery success
-    from: process.env.RESEND_FROM_EMAIL || 'SRM Classes <onboarding@resend.dev>',
-    to: [email],
+    sender: { name: 'SRM Classes', email: process.env.ADMIN_EMAIL || 'srmclasses01@gmail.com' },
+    to: [{ email: email }],
     subject: `${otp} is your SRM Classes OTP`,
-    html: `
+    htmlContent: `
       <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 550px; margin: 40px auto; padding: 40px; border-radius: 24px; background-color: #ffffff; border: 1px solid #f0f0f0; box-shadow: 0 10px 30px rgba(0,0,0,0.03);">
         <div style="text-align: center; margin-bottom: 40px;">
            <span style="background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); width: 64px; height: 64px; border-radius: 20px; display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 32px; font-weight: 800; margin-bottom: 20px;">S</span>
@@ -46,22 +46,23 @@ const sendOTPviaEmail = async (email, mobile, otp) => {
 
   try {
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`📤 Sending Resend API request to ${email}...`);
+      console.log(`📤 Sending Brevo API request to ${email}...`);
     }
-    const response = await axios.post('https://api.resend.com/emails', data, {
+    const response = await axios.post('https://api.brevo.com/v3/smtp/email', data, {
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
+        'api-key': apiKey,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
       }
     });
     
     if (process.env.NODE_ENV !== 'production') {
-      console.log(`✅ Resend API Success! ID: ${response.data.id}`);
+      console.log(`✅ Brevo API Success! Message ID: ${response.data.messageId}`);
     }
     return true;
   } catch (error) {
     const errorMsg = error.response?.data?.message || error.message;
-    console.error('❌ Resend API Error:', errorMsg);
+    console.error('❌ Brevo API Error:', errorMsg);
     throw new Error(`Email delivery failed: ${errorMsg}`);
   }
 };
