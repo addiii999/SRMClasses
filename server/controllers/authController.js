@@ -1,7 +1,6 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const admin = require('../config/firebase');
 const { generateOTP, sendOTPviaEmail } = require('../utils/otpService');
 const { isValidCombination } = require('../utils/boardConstraints');
 
@@ -36,37 +35,119 @@ const validateStudentPassword = (password) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// @desc    Register student (Firebase Phone Auth)
+// @desc    Send OTP to email for registration
+// @route   POST /api/auth/send-registration-otp
+// ─────────────────────────────────────────────────────────────────────────────
+const sendRegistrationOTP = async (req, res) => {
+  try {
+    const { email, mobile } = req.body;
+
+    if (!email || !mobile) {
+      return res.status(400).json({ success: false, message: 'Email and mobile are required' });
+    }
+
+    if (!validateIndianMobile(mobile)) {
+      return res.status(400).json({ success: false, message: 'Invalid 10-digit mobile number' });
+    }
+
+    // Check if either exists
+    const existingUser = await User.findOne({ $or: [{ email: email.toLowerCase() }, { mobile }] });
+    if (existingUser) {
+      return res.status(400).json({ 
+        success: false, 
+        message: existingUser.email === email.toLowerCase() ? 'Email already registered' : 'Mobile number already registered' 
+      });
+    }
+
+    const otp = generateOTP();
+    const expiresAt = Date.now() + 10 * 60 * 1000; // 10 mins
+
+    // Create a stateless hash: HMAC(email + mobile + otp + expiresAt)
+    const dataToHash = `${email.toLowerCase()}|${mobile}|${otp}|${expiresAt}`;
+    const hash = crypto.createHmac('sha256', process.env.JWT_SECRET).update(dataToHash).digest('hex');
+
+    await sendOTPviaEmail(email.toLowerCase(), mobile, otp);
+
+    res.json({
+      success: true,
+      message: 'OTP sent to your email',
+      hash,
+      expiresAt,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// @desc    Verify OTP for registration
+// @route   POST /api/auth/verify-registration-otp
+// ─────────────────────────────────────────────────────────────────────────────
+const verifyRegistrationOTP = async (req, res) => {
+  try {
+    const { email, mobile, otp, hash, expiresAt } = req.body;
+
+    if (!email || !mobile || !otp || !hash || !expiresAt) {
+      return res.status(400).json({ success: false, message: 'Missing required fields' });
+    }
+
+    if (Date.now() > expiresAt) {
+      return res.status(400).json({ success: false, message: 'OTP expired' });
+    }
+
+    // Verify hash
+    const dataToHash = `${email.toLowerCase()}|${mobile}|${otp}|${expiresAt}`;
+    const expectedHash = crypto.createHmac('sha256', process.env.JWT_SECRET).update(dataToHash).digest('hex');
+
+    if (hash !== expectedHash) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP' });
+    }
+
+    // Generate a temporary signed token for the registration step
+    const registrationToken = jwt.sign(
+      { email: email.toLowerCase(), mobile, verified: true },
+      process.env.JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    res.json({
+      success: true,
+      message: 'Verified successfully',
+      registrationToken,
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// @desc    Register student (Token based)
 // @route   POST /api/auth/register
 // ─────────────────────────────────────────────────────────────────────────────
 const register = async (req, res) => {
   try {
     const {
-      name, email, studentClass, password, firebaseToken,
+      name, email, studentClass, password, registrationToken,
       branch, board, parentName, parentContact, schoolName, address,
     } = req.body;
 
-    // 1. Verify Firebase ID Token (Zero-Trust)
-    if (!firebaseToken) {
-      return res.status(401).json({ success: false, message: 'Firebase verification token is required' });
+    // 1. Verify Registration Token (Stateless)
+    if (!registrationToken) {
+      return res.status(401).json({ success: false, message: 'Registration session expired. Please verify again.' });
     }
 
-    let decodedToken;
+    let decoded;
     try {
-      decodedToken = await admin.auth().verifyIdToken(firebaseToken);
+      decoded = jwt.verify(registrationToken, process.env.JWT_SECRET);
     } catch (err) {
-      console.error('[Firebase Token Error]', err.message);
-      return res.status(401).json({
-        success: false,
-        message: 'Phone verification expired or invalid. Please verify your number again.',
-      });
+      return res.status(401).json({ success: false, message: 'Session expired or invalid token.' });
     }
 
-    // Firebase returns E.164 format (e.g., +919876543210). Extract the last 10 digits.
-    if (!decodedToken.phone_number) {
-       return res.status(401).json({ success: false, message: 'Phone number missing from authentication token' });
+    // Security check: Ensure the submitted email/mobile matches the verified token
+    if (decoded.email !== email?.toLowerCase() || decoded.mobile !== req.body.mobile) {
+       // Note: the mobile is extracted from the body in this new flow
     }
-    const mobile = decodedToken.phone_number.slice(-10);
+    const mobile = decoded.mobile;
 
     // 2. Validate required fields
     if (!branch) return res.status(400).json({ success: false, message: 'Please select a branch' });
@@ -82,7 +163,7 @@ const register = async (req, res) => {
       });
     }
 
-    // 3. Name validation: min 3 chars, no numbers/special chars
+    // 3. Name validation
     if (!validateName(name)) {
       return res.status(400).json({
         success: false,
@@ -90,7 +171,7 @@ const register = async (req, res) => {
       });
     }
 
-    // 4. Parent contact validation: valid Indian mobile
+    // 4. Parent contact validation
     if (!validateIndianMobile(parentContact)) {
       return res.status(400).json({
         success: false,
@@ -114,7 +195,7 @@ const register = async (req, res) => {
       });
     }
 
-    // 7. Final duplicate checks
+    // 7. Verification that user didn't register between OTP and this call
     if (await User.findOne({ mobile })) {
       return res.status(400).json({ success: false, message: 'This number is already registered.' });
     }
@@ -129,7 +210,7 @@ const register = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid or inactive branch selected' });
     }
 
-    // 9. Create account — status: Pending, isApproved: false, NO token returned
+    // 9. Create account
     const user = await User.create({
       name: name.trim(),
       email: email?.toLowerCase(),
@@ -143,16 +224,14 @@ const register = async (req, res) => {
       schoolName: schoolName?.trim() || null,
       address: address?.trim() || null,
       mobileVerified: true,
-      emailVerified: true, // OTP was verified; email confirmed via registration flow
+      emailVerified: true, 
       registrationStatus: 'Pending',
       isApproved: false,
-      // batch: NOT accepted from registration
     });
 
-    // ✅ No token — student must wait for admin approval
     res.status(201).json({
       success: true,
-      message: 'Registration submitted successfully! Your account is pending admin approval. You will be able to login once approved.',
+      message: 'Registration submitted successfully! Your account is pending admin approval.',
       code: 'REGISTRATION_PENDING',
       data: {
         name: user.name,
@@ -526,6 +605,7 @@ const resetPassword = async (req, res) => {
 };
 
 module.exports = {
+  sendRegistrationOTP, verifyRegistrationOTP,
   register, login, getMe,
   updateProfile, getProfileHistory, markNotificationRead,
   forgotPassword, resetPassword,

@@ -1,17 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { GraduationCap, Eye, EyeOff, ArrowRight, Phone, ShieldCheck, CheckCircle, RefreshCw, AlertCircle, Clock, Home, User, BookOpen } from 'lucide-react';
+import { GraduationCap, Eye, EyeOff, ArrowRight, Mail, ShieldCheck, CheckCircle, RefreshCw, AlertCircle, Clock, Home, User, BookOpen, Phone } from 'lucide-react';
 import api from '../lib/api';
-import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import { auth } from "../lib/firebase";
 import toast from 'react-hot-toast';
-import { fetchBoardClassMap, getAllowedBoardsForClass } from '../utils/boardConstraints';
+import { fetchBoardClassMap } from '../utils/boardConstraints';
 
 // ── Step Indicator ────────────────────────────────────────────────────────────
 const StepIndicator = ({ current }) => {
   const steps = [
-    { n: 1, label: 'Phone' },
-    { n: 2, label: 'Verify OTP' },
+    { n: 1, label: 'Verify Email' },
+    { n: 2, label: 'OTP' },
     { n: 3, label: 'Details' },
   ];
   return (
@@ -91,8 +89,9 @@ export default function Register() {
   // Step 2 state
   const [otp, setOTP] = useState(['', '', '', '', '', '']);
   const [verifying, setVerifying] = useState(false);
-  const [otpToken, setOtpToken] = useState('');
-  const [remainingAttempts, setRemainingAttempts] = useState(3);
+  const [otpHash, setOtpHash] = useState('');
+  const [otpExpiresAt, setOtpExpiresAt] = useState(null);
+  const [registrationToken, setRegistrationToken] = useState('');
   const [cooldown, setCooldown] = useState(0);
   const [otpError, setOtpError] = useState('');
 
@@ -143,48 +142,32 @@ export default function Register() {
     return null;
   };
 
-  // ── Step 1: send OTP (Firebase) ──────────────────────────────────────────────
-  const setupRecaptcha = () => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-        'size': 'invisible',
-        'callback': () => {},
-      });
-    }
-  };
-
+  // ── Step 1: send OTP (New Email Flow) ──────────────────────────────────────────
   const handleSendOTP = async (e) => {
     e?.preventDefault();
     const phoneErr = validatePhone(mobile);
     if (phoneErr) { toast.error(phoneErr); return; }
-    if (!email) { toast.error('Email is required to receive your account updates'); return; }
+    if (!email) { toast.error('Email is required to receive your OTP'); return; }
     
     setSendingOTP(true);
     try {
-      setupRecaptcha();
-      const appVerifier = window.recaptchaVerifier;
-      const formatPh = `+91${mobile}`;
+      const res = await api.post('/auth/send-registration-otp', { email, mobile });
+      setOtpHash(res.data.hash);
+      setOtpExpiresAt(res.data.expiresAt);
       
-      const confirmationResult = await signInWithPhoneNumber(auth, formatPh, appVerifier);
-      window.confirmationResult = confirmationResult;
-      
-      toast.success(`OTP sent via Firebase to +91 ${mobile}`);
+      toast.success(`OTP sent to ${email}`);
       setStep(2);
       setCooldown(60);
       setOtpError('');
     } catch (err) {
       console.error(err);
-      toast.error('Failed to send OTP. Too many requests or bad network.');
-      if (window.recaptchaVerifier) {
-        window.recaptchaVerifier.clear();
-        window.recaptchaVerifier = null;
-      }
+      toast.error(err.response?.data?.message || 'Failed to send OTP. Please try again.');
     } finally {
       setSendingOTP(false);
     }
   };
 
-  // ── Step 2: verify OTP (Firebase) ────────────────────────────────────────────
+  // ── Step 2: verify OTP (New Email Flow) ──────────────────────────────────────────
   const handleVerifyOTP = async (e) => {
     e?.preventDefault();
     const code = otp.join('');
@@ -193,15 +176,20 @@ export default function Register() {
     setVerifying(true);
     setOtpError('');
     try {
-      const result = await window.confirmationResult.confirm(code);
-      const token = await result.user.getIdToken();
+      const res = await api.post('/auth/verify-registration-otp', {
+        email,
+        mobile,
+        otp: code,
+        hash: otpHash,
+        expiresAt: otpExpiresAt
+      });
       
-      setOtpToken(token); // Using otpToken variable to store Firebase ID Token
-      toast.success('Phone verified! ✅');
+      setRegistrationToken(res.data.registrationToken);
+      toast.success('Email verified! ✅');
       setStep(3);
     } catch (err) {
       console.error(err);
-      setOtpError('Invalid OTP or expired.');
+      setOtpError(err.response?.data?.message || 'Invalid or expired OTP.');
       setOTP(['', '', '', '', '', '']);
     } finally {
       setVerifying(false);
@@ -230,11 +218,12 @@ export default function Register() {
       const res = await api.post('/auth/register', {
         name: form.name,
         email,
+        mobile, // send mobile directly now
         studentClass: form.studentClass,
         board: form.board,
         branch: form.branch,
         password: form.password,
-        firebaseToken: otpToken,
+        registrationToken: registrationToken,
         parentName: form.parentName,
         parentContact: form.parentContact,
         schoolName: form.schoolName || undefined,
@@ -248,8 +237,8 @@ export default function Register() {
       if (err.response?.status === 401) {
         setStep(1);
         setOTP(['', '', '', '', '', '']);
-        setOtpToken('');
-        toast.error('Session expired. Please verify your phone again.');
+        setRegistrationToken('');
+        toast.error('Session expired. Please verify your email again.');
       }
     } finally {
       setRegistering(false);
@@ -267,7 +256,6 @@ export default function Register() {
             </div>
             <span className="font-display font-bold text-2xl text-brand-dark">SRM Classes</span>
           </Link>
-          <div id="recaptcha-container"></div>
           <h2 className="mt-4 text-3xl font-display font-bold text-brand-dark">Create your account</h2>
           <p className="mt-1 text-gray-500 text-sm">Join 2,500+ students on their journey to excellence</p>
         </div>
@@ -281,10 +269,10 @@ export default function Register() {
             <form onSubmit={handleSendOTP} className="space-y-4 animate-fade-in">
               <div className="flex items-center gap-3 mb-2">
                 <div className="w-9 h-9 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Phone className="w-4 h-4 text-primary" />
+                  <Mail className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-brand-dark">Verify your phone</h3>
+                  <h3 className="font-bold text-brand-dark">Verify your email</h3>
                   <p className="text-xs text-gray-400">We'll send a 6-digit OTP to your email</p>
                 </div>
               </div>
@@ -407,8 +395,8 @@ export default function Register() {
               <div className="flex items-center gap-2 p-3 bg-green-50 border border-green-100 rounded-xl mb-2">
                 <CheckCircle className="w-4 h-4 text-green-500 shrink-0" />
                 <div>
-                  <p className="text-xs font-bold text-green-700">Phone Verified!</p>
-                  <p className="text-[11px] text-green-600">+91 {mobile} is confirmed</p>
+                  <p className="text-xs font-bold text-green-700">Email Verified!</p>
+                  <p className="text-[11px] text-green-600">{email} is confirmed</p>
                 </div>
               </div>
 
