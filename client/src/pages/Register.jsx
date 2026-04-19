@@ -348,11 +348,7 @@ export default function Register() {
                 </div>
               )}
 
-              {remainingAttempts < 3 && remainingAttempts > 0 && (
-                <p className="text-center text-xs text-orange-500 font-medium">
-                  ⚠️ {remainingAttempts} attempt{remainingAttempts !== 1 ? 's' : ''} remaining
-                </p>
-              )}
+
 
               <button
                 onClick={handleVerifyOTP}
