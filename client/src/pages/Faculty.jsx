@@ -71,8 +71,8 @@ export default function Faculty() {
                         teacher.name[0]
                       )}
                     </div>
-                    <div className={`absolute -bottom-1 -right-1 px-2.5 py-1 rounded-full border-2 border-white flex items-center justify-center shadow-md ${teacher.priorityOrder ? 'bg-brand-dark' : 'bg-green-500'}`}>
-                       {teacher.priorityOrder ? (
+                    <div className={`absolute -bottom-1 -right-1 px-2.5 py-1 rounded-full border-2 border-white flex items-center justify-center shadow-md ${teacher.isCoreTeam ? 'bg-brand-dark' : 'bg-green-500'}`}>
+                       {teacher.isCoreTeam ? (
                            <span className="text-white text-[8px] font-black uppercase tracking-tight">Core Team</span>
                        ) : (
                            <Sparkles className="w-3.5 h-3.5 text-white" />

@@ -44,6 +44,10 @@ const facultySchema = new mongoose.Schema({
     url: { type: String, default: null },
     public_id: { type: String, default: null },
   },
+  isCoreTeam: {
+    type: Boolean,
+    default: false,
+  },
 }, { timestamps: true });
 
 facultySchema.plugin(softDeletePlugin);

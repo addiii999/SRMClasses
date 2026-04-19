@@ -150,10 +150,9 @@ exports.deleteFaculty = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Faculty not found' });
     }
 
-    // Protection for Top 3
-    const coreFaculty = ['Mr. Ranjan Kumar Soni', 'Mr. Raghuwendra Kumar Soni', 'Mr. Yuvraj Kumar'];
-    if (coreFaculty.includes(faculty.name)) {
-      return res.status(403).json({ success: false, message: 'Core faculty members cannot be deactivated' });
+    // Protection for Core Team
+    if (faculty.isCoreTeam) {
+      return res.status(403).json({ success: false, message: 'Core faculty members cannot be deactivated or deleted. Unmark them as Core Team first.' });
     }
 
     const adminEmail = req.admin ? req.admin.email : 'Admin';

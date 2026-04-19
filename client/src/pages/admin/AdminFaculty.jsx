@@ -24,10 +24,9 @@ export default function AdminFaculty() {
     speciality: '',
     rating: 5.0,
     isActive: true,
-    priorityOrder: ''
+    priorityOrder: '',
+    isCoreTeam: false,
   });
-
-  const coreFacultyNames = ['Mr. Ranjan Kumar Soni', 'Mr. Raghuwendra Kumar Soni', 'Mr. Aayush Gupta'];
 
   useEffect(() => {
     fetchFaculty();
@@ -95,6 +94,7 @@ export default function AdminFaculty() {
         formData.append('priorityOrder', form.priorityOrder);
       }
       formData.append('isActive', form.isActive);
+      formData.append('isCoreTeam', form.isCoreTeam);
       
       if (photoFile) {
         formData.append('photo', photoFile);
@@ -119,7 +119,7 @@ export default function AdminFaculty() {
       setEditingTeacher(null);
       setPhotoFile(null);
       setPhotoPreview(null);
-      setForm({ name: '', subject: '', qualification: '', experience: '', speciality: '', rating: 5.0, isActive: true, priorityOrder: '' });
+      setForm({ name: '', subject: '', qualification: '', experience: '', speciality: '', rating: 5.0, isActive: true, priorityOrder: '', isCoreTeam: false });
       fetchFaculty();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Action failed');
@@ -129,8 +129,8 @@ export default function AdminFaculty() {
   };
 
   const handleToggleStatus = async (teacher) => {
-    if (coreFacultyNames.includes(teacher.name) && teacher.isActive) {
-      toast.error('Core faculty members cannot be deactivated');
+    if (teacher.isCoreTeam && teacher.isActive) {
+      toast.error('Core faculty members cannot be deactivated. Unmark them as Core Team first.');
       return;
     }
     try {
@@ -143,8 +143,8 @@ export default function AdminFaculty() {
   };
 
   const handleDelete = async (teacher) => {
-    if (coreFacultyNames.includes(teacher.name)) {
-      toast.error('Core faculty members cannot be deleted');
+    if (teacher.isCoreTeam) {
+      toast.error('Core faculty members cannot be deleted. Unmark them as Core Team first.');
       return;
     }
     if (!window.confirm(`Move ${teacher.name} to Recycle Bin?`)) return;
@@ -167,7 +167,8 @@ export default function AdminFaculty() {
       speciality: teacher.speciality,
       rating: teacher.rating,
       isActive: teacher.isActive,
-      priorityOrder: teacher.priorityOrder ?? ''
+      priorityOrder: teacher.priorityOrder ?? '',
+      isCoreTeam: teacher.isCoreTeam || false
     });
     setPhotoFile(null);
     setPhotoPreview(teacher.photo?.url || null);
@@ -195,7 +196,7 @@ export default function AdminFaculty() {
         <button 
           onClick={() => {
             setEditingTeacher(null);
-            setForm({ name: '', subject: '', qualification: '', experience: '', speciality: '', rating: 5.0, isActive: true });
+            setForm({ name: '', subject: '', qualification: '', experience: '', speciality: '', rating: 5.0, isActive: true, priorityOrder: '', isCoreTeam: false });
             setPhotoFile(null);
             setPhotoPreview(null);
             setShowModal(true);
@@ -219,7 +220,7 @@ export default function AdminFaculty() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filtered.map((teacher) => {
-          const isCore = coreFacultyNames.includes(teacher.name);
+          const isCore = teacher.isCoreTeam;
           return (
           <div key={teacher._id} className={`card p-6 border transition-all ${teacher.isActive ? 'border-gray-100' : 'border-red-100 bg-red-50/30 grayscale opacity-75'}`}>
             <div className="flex justify-between items-start mb-4">
@@ -366,19 +367,29 @@ export default function AdminFaculty() {
                 </div>
               </div>
 
-              <div>
-                <label className="label">Priority Order (Optional)</label>
-                <input 
-                  type="number" 
-                  className="input-field" 
-                  placeholder="e.g. 1, 2, 3... (Empty for auto-sorting)" 
-                  value={form.priorityOrder} 
-                  onChange={e => setForm({...form, priorityOrder: e.target.value})} 
-                  disabled={editingTeacher && coreFacultyNames.includes(editingTeacher.name)}
-                />
-                {editingTeacher && coreFacultyNames.includes(editingTeacher.name) && (
-                  <p className="text-[10px] text-gray-400 mt-1 italic">* Priority is fixed for core faculty members</p>
-                )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="label">Priority Order (Optional)</label>
+                  <input 
+                    type="number" 
+                    className="input-field" 
+                    placeholder="e.g. 1" 
+                    value={form.priorityOrder} 
+                    onChange={e => setForm({...form, priorityOrder: e.target.value})} 
+                  />
+                </div>
+                <div className="flex items-center gap-3 pt-6 md:pl-2">
+                  <label className="relative inline-flex items-center cursor-pointer">
+                    <input 
+                      type="checkbox" 
+                      className="sr-only peer" 
+                      checked={form.isCoreTeam}
+                      onChange={e => setForm({...form, isCoreTeam: e.target.checked})}
+                    />
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                  </label>
+                  <span className="text-sm font-bold text-brand-dark">Mark as Core Team</span>
+                </div>
               </div>
 
               <div className="pt-4">
