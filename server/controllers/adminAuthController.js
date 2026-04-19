@@ -3,6 +3,9 @@ const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const bcrypt = require('bcryptjs');
 const mongoose = require('mongoose');
+const { setAdminAuthCookie } = require('../utils/authCookies');
+
+const GENERIC_SERVER_ERROR = 'Something went wrong. Please try again.';
 
 const generateAdminToken = (admin) => {
   return jwt.sign(
@@ -41,6 +44,7 @@ const adminLogin = async (req, res) => {
     }
 
     const token = generateAdminToken(admin);
+    setAdminAuthCookie(res, token);
 
     res.json({
       success: true,
@@ -54,7 +58,7 @@ const adminLogin = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -96,7 +100,7 @@ const adminForgotPassword = async (req, res) => {
 
     res.json({ success: true, message: 'If this email is registered, an OTP will be sent.' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -134,7 +138,7 @@ const adminResetPassword = async (req, res) => {
 
     res.json({ success: true, message: 'Admin password reset successful' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 

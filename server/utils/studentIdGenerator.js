@@ -1,4 +1,4 @@
-const User = require('../models/User');
+const Counter = require('../models/Counter');
 
 /**
  * Generate a professional Student ID: SRM-YYYY-BC-CC-SEQ
@@ -7,7 +7,7 @@ const User = require('../models/User');
  * @param {Object} branchDoc - The branch document from DB
  * @returns {string} The generated Student ID
  */
-const generateStudentId = async (sessionYear, studentClass, branchDoc) => {
+const generateStudentId = async (sessionYear, studentClass, branchDoc, session = null) => {
   try {
     // BC = Branch Code (e.g. RAVI), CC = Class
     const yearPart = sessionYear;
@@ -15,18 +15,13 @@ const generateStudentId = async (sessionYear, studentClass, branchDoc) => {
     const branchPart = codeRaw.charAt(0) + codeRaw.charAt(codeRaw.length - 1); // First and Last letter (e.g. RI, MR)
     const classPart = studentClass.toString().padStart(2, '0');
     
-    // Find the highest sequence number already used for this pattern
-    const pattern = new RegExp(`^SRM-${yearPart}-${branchPart}-${classPart}-`);
-    const lastStudent = await User.findOne({ studentId: { $regex: pattern } })
-      .sort({ studentId: -1 })
-      .select('studentId')
-      .lean();
-
-    let sequence = '001';
-    if (lastStudent && lastStudent.studentId) {
-      const lastSeq = lastStudent.studentId.split('-').pop();
-      sequence = (parseInt(lastSeq) + 1).toString().padStart(3, '0');
-    }
+    const counterKey = `studentId:${yearPart}:${branchPart}:${classPart}`;
+    const counter = await Counter.findOneAndUpdate(
+      { key: counterKey },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true, setDefaultsOnInsert: true, ...(session ? { session } : {}) }
+    );
+    const sequence = String(counter.seq).padStart(3, '0');
     
     return `SRM-${yearPart}-${branchPart}-${classPart}-${sequence}`;
   } catch (error) {

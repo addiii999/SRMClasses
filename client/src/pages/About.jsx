@@ -144,7 +144,7 @@ export default function About() {
                         {teacher.photo?.url ? (
                           <img src={teacher.photo.url} alt={teacher.name} className="w-full h-full object-cover" />
                         ) : (
-                          teacher.name[0]
+                          (teacher.name || '?').charAt(0).toUpperCase()
                         )}
                       </div>
                       <div className={`absolute -bottom-1 -right-1 px-2.5 py-1 rounded-full border-2 border-white flex items-center justify-center shadow-md ${teacher.priorityOrder ? 'bg-brand-dark' : 'bg-green-500'}`}>

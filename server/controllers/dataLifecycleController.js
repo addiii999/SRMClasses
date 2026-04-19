@@ -112,39 +112,42 @@ exports.getArchivePreview = async (req, res) => {
 // Body: { studentIds: [...], reason: "...", filters: {...} }
 // ─────────────────────────────────────────────────────────────────────────────
 exports.archiveStudents = async (req, res) => {
-  const { studentIds, reason, filters } = req.body;
-  const adminEmail = req.admin.email;
-  const adminRole = req.admin.role;
-  const ip = getClientIP(req);
+  const session = await mongoose.startSession();
+  try {
+    const { studentIds, reason, filters } = req.body;
+    const adminEmail = req.admin.email;
+    const adminRole = req.admin.role;
+    const ip = getClientIP(req);
 
-  // ── Validate reason ──────────────────────────────────────────────────────
-  if (!reason || reason.trim().length < 10) {
-    return res.status(400).json({
-      success: false,
-      message: 'Archive reason is required and must be at least 10 characters.',
-    });
-  }
+    // ── Validate reason ──────────────────────────────────────────────────────
+    if (!reason || reason.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Archive reason is required and must be at least 10 characters.',
+      });
+    }
 
-  // ── Resolve IDs to archive ───────────────────────────────────────────────
-  let idsToArchive = [];
-  if (studentIds && studentIds.length > 0) {
-    idsToArchive = studentIds;
-  } else if (filters) {
-    const filterQuery = buildFilter(filters, 'active');
-    const students = await User.find(filterQuery).select('_id').lean();
-    idsToArchive = students.map((s) => s._id.toString());
-  }
+    // ── Resolve IDs to archive ───────────────────────────────────────────────
+    let idsToArchive = [];
+    if (studentIds && studentIds.length > 0) {
+      idsToArchive = studentIds;
+    } else if (filters) {
+      const filterQuery = buildFilter(filters, 'active');
+      const students = await User.find(filterQuery).select('_id').lean();
+      idsToArchive = students.map((s) => s._id.toString());
+    }
 
-  if (idsToArchive.length === 0) {
-    return res.status(400).json({ success: false, message: 'No students selected for archiving.' });
-  }
+    if (idsToArchive.length === 0) {
+      return res.status(400).json({ success: false, message: 'No students selected for archiving.' });
+    }
 
+    session.startTransaction();
   // ── Fetch full student documents ─────────────────────────────────────────
   const students = await User.find({
     _id: { $in: idsToArchive },
     isArchived: { $ne: true },
     isDeleted: { $ne: true },
-  }).lean();
+  }).session(session).lean();
 
   if (students.length === 0) {
     return res.status(400).json({
@@ -212,60 +215,26 @@ exports.archiveStudents = async (req, res) => {
     }],
   }));
 
-  // ── ATOMIC ARCHIVE with manual rollback ───────────────────────────────────
-  // Phase 1: Insert into ArchivedStudent
-  let insertedIds = [];
-  const failedStudents = [];
-  const succeededStudents = [];
+  await ArchivedStudent.insertMany(archiveDocs, { session, ordered: true });
+  const archivedUserIds = students.map((s) => s._id);
+  await User.deleteMany({ _id: { $in: archivedUserIds } }, { session });
+    await session.commitTransaction();
 
-  for (const doc of archiveDocs) {
-    try {
-      const inserted = await ArchivedStudent.create(doc);
-      insertedIds.push(inserted._id);
-      succeededStudents.push({ name: doc.name, studentId: doc.studentId });
-    } catch (insertErr) {
-      // E11000 = duplicate (already archived from a previous partial run)
-      failedStudents.push({
-        name: doc.name,
-        studentId: doc.studentId,
-        originalUserId: doc.originalUserId,
-        reason: insertErr.code === 11000 ? 'Duplicate archive entry' : insertErr.message,
-      });
-    }
-  }
-
-  // Phase 2: If ANY inserts failed, rollback ALL successful inserts
-  if (failedStudents.length > 0) {
-    try {
-      await ArchivedStudent.deleteMany({ _id: { $in: insertedIds } });
-    } catch (rollbackErr) {
-      console.error('[Lifecycle] CRITICAL: Rollback failed after partial archive:', rollbackErr.message);
-    }
-
-    return res.status(207).json({
-      success: false,
-      message: `Archive failed for ${failedStudents.length} student(s). All changes rolled back.`,
+    return res.status(200).json({
+      success: true,
+      message: `Successfully archived ${archiveDocs.length} student(s)${alreadyArchived > 0 ? ` (${alreadyArchived} were already archived and skipped)` : ''}.`,
       data: {
-        succeeded: [],
-        failed: failedStudents,
-        rolledBack: true,
+        archivedCount: archiveDocs.length,
+        skippedCount: alreadyArchived,
+        archived: archiveDocs.map((d) => ({ name: d.name, studentId: d.studentId })),
       },
     });
+  } catch (error) {
+    await session.abortTransaction();
+    return res.status(500).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
   }
-
-  // Phase 3: All inserts succeeded → delete from active User collection
-  const archivedUserIds = students.map((s) => s._id);
-  await User.deleteMany({ _id: { $in: archivedUserIds } });
-
-  return res.status(200).json({
-    success: true,
-    message: `Successfully archived ${succeededStudents.length} student(s)${alreadyArchived > 0 ? ` (${alreadyArchived} were already archived and skipped)` : ''}.`,
-    data: {
-      archivedCount: succeededStudents.length,
-      skippedCount: alreadyArchived,
-      archived: succeededStudents,
-    },
-  });
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -311,31 +280,34 @@ exports.getArchivedStudents = async (req, res) => {
 // Body: { archivedIds: [...] }
 // ─────────────────────────────────────────────────────────────────────────────
 exports.restoreFromArchive = async (req, res) => {
-  const { archivedIds } = req.body;
-  const adminEmail = req.admin.email;
-  const adminRole = req.admin.role;
-  const ip = getClientIP(req);
+  const session = await mongoose.startSession();
+  try {
+    const { archivedIds } = req.body;
+    const adminEmail = req.admin.email;
+    const adminRole = req.admin.role;
+    const ip = getClientIP(req);
 
-  if (!archivedIds || archivedIds.length === 0) {
-    return res.status(400).json({ success: false, message: 'No archived IDs provided.' });
-  }
+    if (!archivedIds || archivedIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'No archived IDs provided.' });
+    }
 
-  const records = await ArchivedStudent.find({
+    session.startTransaction();
+    const records = await ArchivedStudent.find({
     _id: { $in: archivedIds },
     isArchived: true,
     isDeleted: { $ne: true },
-  }).lean();
+  }).session(session).lean();
 
-  if (records.length === 0) {
-    return res.status(404).json({ success: false, message: 'No eligible archived records found.' });
-  }
+    if (records.length === 0) {
+      return res.status(404).json({ success: false, message: 'No eligible archived records found.' });
+    }
 
-  const failedRestores = [];
-  const restoredStudents = [];
+    const failedRestores = [];
+    const restoredStudents = [];
 
-  for (const record of records) {
+    for (const record of records) {
     // ── DUPLICATE MOBILE CHECK ────────────────────────────────────────────
-    const existingActive = await User.findOne({ mobile: record.mobile });
+      const existingActive = await User.findOne({ mobile: record.mobile }).session(session);
     if (existingActive) {
       failedRestores.push({
         name: record.name,
@@ -356,7 +328,7 @@ exports.restoreFromArchive = async (req, res) => {
         ...userFields
       } = record;
 
-      await User.create({
+      await User.create([{
         ...userFields,
         isArchived: false,
         archivedAt: null,
@@ -365,7 +337,7 @@ exports.restoreFromArchive = async (req, res) => {
         // (student will need to reset via OTP; this is acceptable)
         password: '$2b$12$PLACEHOLDER_RESET_REQUIRED',
         shouldChangePassword: true,
-      });
+      }], { session });
 
       // Append to lifecycleLog on archived record before deleting it
       await ArchivedStudent.updateOne(
@@ -381,11 +353,12 @@ exports.restoreFromArchive = async (req, res) => {
               ipAddress: ip,
             },
           },
-        }
+        },
+        { session }
       );
 
       // Remove from archive
-      await ArchivedStudent.deleteOne({ _id: record._id });
+      await ArchivedStudent.deleteOne({ _id: record._id }, { session });
 
       restoredStudents.push({ name: record.name, studentId: record.studentId });
     } catch (err) {
@@ -395,13 +368,20 @@ exports.restoreFromArchive = async (req, res) => {
         reason: err.message,
       });
     }
-  }
+    }
 
-  return res.json({
-    success: failedRestores.length === 0,
-    message: `Restored ${restoredStudents.length} student(s). ${failedRestores.length > 0 ? `${failedRestores.length} failed.` : ''}`,
-    data: { restored: restoredStudents, failed: failedRestores },
-  });
+    await session.commitTransaction();
+    return res.json({
+      success: failedRestores.length === 0,
+      message: `Restored ${restoredStudents.length} student(s). ${failedRestores.length > 0 ? `${failedRestores.length} failed.` : ''}`,
+      data: { restored: restoredStudents, failed: failedRestores },
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    return res.status(500).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
+  }
 };
 
 // ─────────────────────────────────────────────────────────────────────────────

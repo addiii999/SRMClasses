@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const { adminLoginLimiter } = require('../middleware/rateLimits');
+const { adminLoginLimiter, passwordResetLimiter } = require('../middleware/rateLimits');
 const { adminLogin, adminForgotPassword, adminResetPassword } = require('../controllers/adminAuthController');
 
 router.post('/login', adminLoginLimiter, adminLogin);
-router.post('/forgot-password', adminForgotPassword);
-router.post('/reset-password', adminResetPassword);
+router.post('/forgot-password', passwordResetLimiter, adminForgotPassword);
+router.post('/reset-password', passwordResetLimiter, adminResetPassword);
 
 module.exports = router;

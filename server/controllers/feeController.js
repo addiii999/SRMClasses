@@ -50,9 +50,14 @@ exports.getStudentsFeeStats = async (req, res) => {
  * @access  Private/Admin
  */
 exports.updateStudentFeeSettings = async (req, res) => {
+  const session = await mongoose.startSession();
   try {
+    session.startTransaction();
     const { feeType, satPercentage, installmentPlan, registrationFeeApplicable, force } = req.body;
-    const student = await User.findById(req.params.id);
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid student ID' });
+    }
+    const student = await User.findById(req.params.id).session(session);
 
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student not found' });
@@ -117,7 +122,8 @@ exports.updateStudentFeeSettings = async (req, res) => {
       updatedAt: Date.now()
     };
 
-    await student.save();
+    await student.save({ session });
+    await session.commitTransaction();
 
     res.status(200).json({
       success: true,
@@ -125,7 +131,10 @@ exports.updateStudentFeeSettings = async (req, res) => {
       message: 'Fee settings updated successfully'
     });
   } catch (error) {
+    await session.abortTransaction();
     res.status(500).json({ success: false, error: error.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -135,9 +144,14 @@ exports.updateStudentFeeSettings = async (req, res) => {
  * @access  Private/Admin
  */
 exports.addPayment = async (req, res) => {
+  const session = await mongoose.startSession();
   try {
+    session.startTransaction();
     const { amount, method } = req.body;
-    const student = await User.findById(req.params.id);
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(400).json({ success: false, message: 'Invalid student ID' });
+    }
+    const student = await User.findById(req.params.id).session(session);
 
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student not found' });
@@ -159,15 +173,14 @@ exports.addPayment = async (req, res) => {
     }
 
     // Atomic update
-    const updatedUser = await User.findByIdAndUpdate(req.params.id, {
-      $push: {
-        payments: {
-          amount,
-          method,
-          date: Date.now()
-        }
-      }
-    }, { new: true }).select('-password');
+    student.payments.push({
+      amount,
+      method,
+      date: Date.now()
+    });
+    await student.save({ session });
+    const updatedUser = await User.findById(req.params.id).session(session).select('-password');
+    await session.commitTransaction();
     
     // Add the calculated dynamic fields to the response object
     const finalStudentData = {
@@ -181,7 +194,10 @@ exports.addPayment = async (req, res) => {
       data: finalStudentData
     });
   } catch (error) {
+    await session.abortTransaction();
     res.status(500).json({ success: false, error: error.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -191,9 +207,14 @@ exports.addPayment = async (req, res) => {
  * @access  Private/Admin
  */
 exports.editPayment = async (req, res) => {
+  const session = await mongoose.startSession();
   try {
+    session.startTransaction();
     const { amount, method } = req.body;
-    const student = await User.findById(req.params.id);
+    if (!mongoose.Types.ObjectId.isValid(req.params.id) || !mongoose.Types.ObjectId.isValid(req.params.paymentId)) {
+      return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    }
+    const student = await User.findById(req.params.id).session(session);
 
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student not found' });
@@ -231,7 +252,8 @@ exports.editPayment = async (req, res) => {
     payment.amount = amount;
     payment.method = method;
 
-    await student.save();
+    await student.save({ session });
+    await session.commitTransaction();
 
     const finalStudentData = {
       ...student.toObject(),
@@ -240,7 +262,10 @@ exports.editPayment = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Payment updated successfully', data: finalStudentData });
   } catch (error) {
+    await session.abortTransaction();
     res.status(500).json({ success: false, error: error.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -250,8 +275,13 @@ exports.editPayment = async (req, res) => {
  * @access  Private/Admin
  */
 exports.deletePayment = async (req, res) => {
+  const session = await mongoose.startSession();
   try {
-    const student = await User.findById(req.params.id);
+    session.startTransaction();
+    if (!mongoose.Types.ObjectId.isValid(req.params.id) || !mongoose.Types.ObjectId.isValid(req.params.paymentId)) {
+      return res.status(400).json({ success: false, message: 'Invalid ID format' });
+    }
+    const student = await User.findById(req.params.id).session(session);
 
     if (!student) {
       return res.status(404).json({ success: false, message: 'Student not found' });
@@ -275,7 +305,8 @@ exports.deletePayment = async (req, res) => {
 
     // Remove payment
     student.payments.pull(req.params.paymentId);
-    await student.save();
+    await student.save({ session });
+    await session.commitTransaction();
 
     const finalStudentData = {
       ...student.toObject(),
@@ -284,7 +315,10 @@ exports.deletePayment = async (req, res) => {
 
     res.status(200).json({ success: true, message: 'Payment deleted successfully', data: finalStudentData });
   } catch (error) {
+    await session.abortTransaction();
     res.status(500).json({ success: false, error: error.message });
+  } finally {
+    session.endSession();
   }
 };
 

@@ -5,18 +5,23 @@ const api = axios.create({
     ? '/api' 
     : (import.meta.env.VITE_API_URL || 'https://srmclasses-api.onrender.com/api'),
   headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
 });
 
-// Attach JWT: admin area uses only admin token; everything else uses only student token from localStorage
+const getStoredToken = (key) => sessionStorage.getItem(key) || localStorage.getItem(key);
+
+// Prefer httpOnly cookies; keep header token fallback for backward compatibility.
 api.interceptors.request.use((config) => {
   if (!config.headers.Authorization) {
-    const isAdminRoute = window.location.pathname.startsWith('/admin');
+    const authScope = config.headers['X-Auth-Scope'];
+    const isAdminRoute = authScope === 'admin' || String(config.url || '').includes('/admin');
     const token = isAdminRoute
-      ? localStorage.getItem('adminToken')
-      : localStorage.getItem('studentToken');
+      ? getStoredToken('adminToken')
+      : getStoredToken('studentToken');
 
     if (token) config.headers.Authorization = `Bearer ${token}`;
   }
+  delete config.headers['X-Auth-Scope'];
   return config;
 });
 
@@ -37,12 +42,15 @@ api.interceptors.response.use(
     if (error.response?.status === 401) {
       const isAdminRoute = window.location.pathname.startsWith('/admin');
       if (isAdminRoute) {
+        sessionStorage.removeItem('adminToken');
         localStorage.removeItem('adminToken');
         if (window.location.pathname !== '/admin/login') {
           window.location.href = '/admin/login';
         }
       } else {
+        sessionStorage.removeItem('studentToken');
         localStorage.removeItem('studentToken');
+        sessionStorage.removeItem('srmUser');
         localStorage.removeItem('srmUser');
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';

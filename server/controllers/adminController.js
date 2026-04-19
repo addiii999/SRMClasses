@@ -134,14 +134,16 @@ exports.getPendingStudents = async (req, res) => {
 // PUT /api/admin/students/approve/:id
 // ─────────────────────────────────────────────────────────────────────────────
 exports.approveStudent = async (req, res) => {
+  const session = await require('mongoose').startSession();
   try {
+    session.startTransaction();
     const { sessionYear, studentClass, branchId, board, overrideReason } = req.body;
 
     if (!sessionYear || !studentClass || !branchId) {
       return res.status(400).json({ success: false, message: 'Session Year, Class, and Branch are required for approval' });
     }
 
-    const student = await User.findById(req.params.id);
+    const student = await User.findById(req.params.id).session(session);
     if (!student) return res.status(404).json({ success: false, message: 'User not found' });
 
     if (student.registrationStatus === 'Active') {
@@ -173,10 +175,10 @@ exports.approveStudent = async (req, res) => {
       });
     }
 
-    const branchDoc = await Branch.findById(branchId);
+    const branchDoc = await Branch.findById(branchId).session(session);
     if (!branchDoc) return res.status(404).json({ success: false, message: 'Branch not found' });
 
-    const newStudentId = await generateStudentId(sessionYear, studentClass, branchDoc);
+    const newStudentId = await generateStudentId(sessionYear, studentClass, branchDoc, session);
     const adminName = req.admin ? `${req.admin.name} (${req.admin.adminId})` : 'Admin';
 
     // Update student
@@ -204,7 +206,7 @@ exports.approveStudent = async (req, res) => {
       timestamp: new Date(),
     });
 
-    await student.save();
+    await student.save({ session });
 
     // In-app notification
     await sendStudentNotification({
@@ -214,12 +216,16 @@ exports.approveStudent = async (req, res) => {
       studentId: student._id,
     });
 
+    await session.commitTransaction();
     res.json({ success: true, message: 'Student approved successfully', data: { studentId: newStudentId } });
   } catch (error) {
+    await session.abortTransaction();
     if (error.code === 11000) {
       return res.status(500).json({ success: false, message: 'ID Generation Conflict. Please try again.' });
     }
     res.status(500).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -531,6 +537,46 @@ exports.getAdminAuditLogs = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// DELETE /api/admin/audit-logs/:studentId/:logId  — SUPER_ADMIN only
+// ─────────────────────────────────────────────────────────────────────────────
+exports.softDeleteAuditLog = async (req, res) => {
+  try {
+    const { studentId, logId } = req.params;
+    const { reason } = req.body;
+
+    const student = await User.findById(studentId);
+    if (!student) return res.status(404).json({ success: false, message: 'Student document not found' });
+
+    const logIndex = student.adminAuditLog.findIndex((l) => l._id.toString() === logId);
+    if (logIndex === -1) return res.status(404).json({ success: false, message: 'Audit log entry not found' });
+
+    const logToHide = student.adminAuditLog[logIndex];
+    if (logToHide.isDeleted) return res.status(400).json({ success: false, message: 'Log is already deleted' });
+
+    logToHide.isDeleted = true;
+    logToHide.deletedAt = new Date();
+    logToHide.deletedBy = req.admin._id;
+
+    const adminName = req.admin ? `${req.admin.name} (${req.admin.adminId})` : 'Admin';
+    student.addAdminAuditLog({
+      action: 'AUDIT_LOG_DELETED',
+      field: 'adminAuditLog',
+      oldValue: `Action: ${logToHide.action}`,
+      newValue: reason || 'Audit log soft-deleted by Super Admin',
+      adminId: req.admin._id,
+      adminName,
+      timestamp: new Date(),
+    });
+
+    await student.save({ validateBeforeSave: false });
+
+    res.json({ success: true, message: 'Audit log soft-deleted successfully and recorded.' });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to delete audit log.' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // POST /api/admin/create-admin  — SUPER_ADMIN only
 // ─────────────────────────────────────────────────────────────────────────────
 exports.createAdminAccount = async (req, res) => {
@@ -643,7 +689,9 @@ exports.deleteAdmin = async (req, res) => {
 // POST /api/admin/users/create  — Manual Student Creation by Admin
 // ─────────────────────────────────────────────────────────────────────────────
 exports.createUser = async (req, res) => {
+  const session = await require('mongoose').startSession();
   try {
+    session.startTransaction();
     const { name, email, mobile, studentClass, password, branch, board, parentName, parentContact, schoolName, address, overrideReason } = req.body;
 
     if (!name || !email || !mobile || !studentClass || !password || !branch) {
@@ -671,18 +719,18 @@ exports.createUser = async (req, res) => {
       });
     }
 
-    const branchDoc = await Branch.findById(branch);
+    const branchDoc = await Branch.findById(branch).session(session);
     if (!branchDoc) return res.status(404).json({ success: false, message: 'Branch not found' });
 
-    const existing = await User.findOne({ $or: [{ email: email.toLowerCase() }, { mobile }] });
+    const existing = await User.findOne({ $or: [{ email: email.toLowerCase() }, { mobile }] }).session(session);
     if (existing) return res.status(400).json({ success: false, message: 'Email or Mobile already registered' });
 
     const sessionYear = new Date().getFullYear().toString();
-    const studentId = await generateStudentId(sessionYear, studentClass, branchDoc);
+    const studentId = await generateStudentId(sessionYear, studentClass, branchDoc, session);
 
     const adminName = req.admin ? `${req.admin.name} (${req.admin.adminId})` : 'Admin';
 
-    const user = await User.create({
+    const user = await User.create([{
       name, email: email.toLowerCase(), mobile, studentClass,
       password, branch, board: studentBoard, studentId,
       parentName: parentName || null,
@@ -698,10 +746,11 @@ exports.createUser = async (req, res) => {
       shouldChangePassword: true,
       createdByAdmin: true,
       enrollmentLogs: [{ status: 'enrolled', updatedBy: adminName, updatedAt: Date.now() }],
-    });
+    }], { session });
+    const createdUser = user[0];
 
     // Log admin action
-    user.addAdminAuditLog({
+    createdUser.addAdminAuditLog({
       action: 'manual_create',
       field: null,
       oldValue: null,
@@ -712,7 +761,7 @@ exports.createUser = async (req, res) => {
     });
 
     if (req.overrideBoardClass) {
-      user.addAdminAuditLog({
+      createdUser.addAdminAuditLog({
         action: 'validate_override',
         field: 'board_class_combo',
         oldValue: 'Rejected',
@@ -724,11 +773,15 @@ exports.createUser = async (req, res) => {
       });
     }
 
-    await user.save({ validateBeforeSave: false });
+    await createdUser.save({ validateBeforeSave: false, session });
+    await session.commitTransaction();
 
-    res.status(201).json({ success: true, data: { studentId: user.studentId, name: user.name }, message: 'Student created successfully' });
+    res.status(201).json({ success: true, data: { studentId: createdUser.studentId, name: createdUser.name }, message: 'Student created successfully' });
   } catch (error) {
+    await session.abortTransaction();
     res.status(500).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -761,194 +814,3 @@ exports.getStudentStats = async (req, res) => {
   }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /api/admin/audit-logs
-// ─────────────────────────────────────────────────────────────────────────────
-exports.getAdminAuditLogs = async (req, res) => {
-  try {
-    const { page = 1, limit = 50, showDeleted } = req.query;
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-
-    // Filter Logic:
-    // 1. Role Check: ADMIN sees only their own logs. SUPER_ADMIN sees all.
-    // 2. Soft-Delete Check: Hide deleted logs unless showDeleted is true (SUPER_ADMIN only)
-    
-    let matchFilter = {};
-    const isSuperAdmin = req.admin.role === 'SUPER_ADMIN';
-    
-    if (isSuperAdmin) {
-      if (showDeleted !== 'true') {
-        matchFilter['adminAuditLog.isDeleted'] = { $ne: true };
-      }
-    } else {
-      // Regular ADMIN: only own logs AND never see deleted logs
-      matchFilter['adminAuditLog.adminId'] = req.admin._id;
-      matchFilter['adminAuditLog.isDeleted'] = { $ne: true };
-    }
-
-    const pipeline = [
-      { $unwind: '$adminAuditLog' },
-      { $match: matchFilter },
-      { $sort: { 'adminAuditLog.timestamp': -1 } },
-      { $skip: skip },
-      { $limit: parseInt(limit) },
-      { $project: {
-          studentName: '$name',
-          studentId: '$studentId',
-          studentDocId: '$_id',
-          log: '$adminAuditLog'
-        }
-      }
-    ];
-
-    const logs = await User.aggregate(pipeline);
-
-    const countPipeline = [
-      { $unwind: '$adminAuditLog' },
-      { $match: matchFilter },
-      { $count: 'total' }
-    ];
-    const totalResult = await User.aggregate(countPipeline);
-    const total = totalResult.length > 0 ? totalResult[0].total : 0;
-
-    res.json({
-      success: true,
-      data: logs,
-      pagination: { total, page: parseInt(page), limit: parseInt(limit), pages: Math.ceil(total / parseInt(limit)) },
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DELETE /api/admin/audit-logs/:studentId/:logId  — SUPER_ADMIN only
-// ─────────────────────────────────────────────────────────────────────────────
-exports.softDeleteAuditLog = async (req, res) => {
-  try {
-    const { studentId, logId } = req.params;
-    const { reason } = req.body;
-
-    const student = await User.findById(studentId);
-    if (!student) return res.status(404).json({ success: false, message: 'Student document not found' });
-
-    const logIndex = student.adminAuditLog.findIndex(l => l._id.toString() === logId);
-    if (logIndex === -1) return res.status(404).json({ success: false, message: 'Audit log entry not found' });
-
-    const logToHide = student.adminAuditLog[logIndex];
-    if (logToHide.isDeleted) return res.status(400).json({ success: false, message: 'Log is already deleted' });
-
-    // Mark as deleted
-    logToHide.isDeleted = true;
-    logToHide.deletedAt = new Date();
-    logToHide.deletedBy = req.admin._id;
-
-    // MANDATORY AUDIT OF AUDIT: Create a NEW log entry
-    const adminName = req.admin ? `${req.admin.name} (${req.admin.adminId})` : 'Admin';
-    student.addAdminAuditLog({
-      action: 'AUDIT_LOG_DELETED',
-      field: 'adminAuditLog',
-      oldValue: `Action: ${logToHide.action}`,
-      newValue: reason || 'Audit log soft-deleted by Super Admin',
-      adminId: req.admin._id,
-      adminName,
-      timestamp: new Date(),
-    });
-
-    await student.save({ validateBeforeSave: false });
-
-    res.json({ success: true, message: 'Audit log soft-deleted successfully and recorded.' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// GET /api/admin/admins (Super Admin only - managed via routes middleware)
-// ─────────────────────────────────────────────────────────────────────────────
-exports.getAdmins = async (req, res) => {
-  try {
-    const admins = await Admin.find().select('-password').lean();
-    res.json({ success: true, data: admins });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// POST /api/admin/create-admin (Super Admin only)
-// ─────────────────────────────────────────────────────────────────────────────
-exports.createAdminAccount = async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: 'Please provide all required fields' });
-    }
-
-    const existing = await Admin.findOne({ email: email.toLowerCase() });
-    if (existing) {
-      return res.status(400).json({ success: false, message: 'Email is already taken by another admin' });
-    }
-
-    // Generate unique adminId
-    const count = await Admin.countDocuments();
-    const adminId = `ADM-${String(count + 1).padStart(3, '0')}`;
-
-    const admin = await Admin.create({
-      name,
-      email: email.toLowerCase(),
-      password, // Pre-save hook hashes it
-      role: 'ADMIN', // Cannot create SUPER_ADMIN via UI
-      adminId,
-      createdBy: req.admin._id,
-    });
-
-    res.status(201).json({ success: true, message: 'Admin account created successfully', data: { name: admin.name, adminId: admin.adminId } });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-// ─────────────────────────────────────────────────────────────────────────────
-// PUT /api/admin/admins/:id/toggle-active (Super Admin only)
-// ─────────────────────────────────────────────────────────────────────────────
-exports.deactivateAdmin = async (req, res) => {
-  try {
-    const admin = await Admin.findById(req.params.id);
-    if (!admin) return res.status(404).json({ success: false, message: 'Admin not found' });
-    
-    if (admin.role === 'SUPER_ADMIN') {
-      return res.status(400).json({ success: false, message: 'Cannot deactivate a SUPER_ADMIN' });
-    }
-
-    admin.isActive = !admin.isActive;
-    await admin.save();
-    
-    res.json({ success: true, message: `Admin ${admin.isActive ? 'activated' : 'deactivated'} successfully`, isActive: admin.isActive });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// DELETE /api/admin/admins/:id (Super Admin only)
-// ─────────────────────────────────────────────────────────────────────────────
-exports.deleteAdmin = async (req, res) => {
-  try {
-    const admin = await Admin.findById(req.params.id);
-    if (!admin) return res.status(404).json({ success: false, message: 'Admin not found' });
-    
-    if (admin.role === 'SUPER_ADMIN') {
-      // Check if there are other super admins
-      const superAdminCount = await Admin.countDocuments({ role: 'SUPER_ADMIN' });
-      if (superAdminCount <= 1) {
-        return res.status(400).json({ success: false, message: 'Cannot delete the last SUPER_ADMIN. Create another SUPER_ADMIN first.' });
-      }
-    }
-
-    await admin.deleteOne();
-    res.json({ success: true, message: 'Admin deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};

@@ -107,7 +107,11 @@ exports.importMarksExcel = async (req, res) => {
       }
 
       // Check for duplicate in this test
-      const existingResult = await TestResult.findOne({ weeklyTest: weeklyTestId, student: student._id !== undefined ? student._id : null });
+      const studentDoc = await User.findOne({ studentId }).select('_id');
+      const existingResult = await TestResult.findOne({
+        testId: weeklyTestId,
+        studentId: studentDoc?._id || null,
+      });
 
       previewData.push({
         row: rowNumber,
@@ -125,13 +129,10 @@ exports.importMarksExcel = async (req, res) => {
           if (maxMarks) existingResult.maxMarks = maxMarks;
           await existingResult.save();
         } else {
-          // Find student full doc for _id
-          const studentDoc = await User.findOne({ studentId }).select('_id');
           await TestResult.create({
-            weeklyTest: weeklyTestId,
-            student: studentDoc._id,
+            testId: weeklyTestId,
+            studentId: studentDoc._id,
             marksObtained,
-            maxMarks: maxMarks || test.maxMarks,
           });
         }
       }
@@ -168,7 +169,7 @@ exports.importMarksExcel = async (req, res) => {
     });
   } catch (error) {
     console.error('[EXCEL IMPORT]', error);
-    res.status(500).json({ success: false, message: 'Import failed: ' + error.message });
+    res.status(500).json({ success: false, message: 'Import failed.' });
   }
 };
 
@@ -194,6 +195,6 @@ exports.getImportLogs = async (req, res) => {
       pagination: { total, page: parseInt(page), limit: parseInt(limit), pages: Math.ceil(total / parseInt(limit)) },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: 'Failed to fetch import logs.' });
   }
 };

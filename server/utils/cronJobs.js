@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const mongoose = require('mongoose');
 const { deleteFromCloudinary } = require('./cloudinary');
 const cloudinary = require('cloudinary').v2;
+const logger = require('./logger');
 
 /**
  * Dynamic Model Retrieval to avoid circular dependencies during startup/import
@@ -36,9 +37,15 @@ const MODEL_MAP = [
  * Initialize all scheduled tasks
  */
 const initCronJobs = () => {
+  const cronEnabled = process.env.CRON_ENABLED !== 'false';
+  if (!cronEnabled) {
+    logger.info('Cron jobs disabled on this instance');
+    return;
+  }
+
   // Run every day at 1:00 AM
   cron.schedule('0 1 * * *', async () => {
-    console.log('🧹 Running daily Recycle Bin cleanup...');
+    logger.info('Running daily Recycle Bin cleanup');
     
     // Default retention is 30 days
     let retentionDays = 30;
@@ -48,11 +55,11 @@ const initCronJobs = () => {
       const usage = await cloudinary.api.usage();
       const usagePercent = (usage.credits.used / usage.credits.limit) * 100;
       if (usagePercent > 80) {
-        console.warn(`⚠️ Storage usage is high (${usagePercent.toFixed(2)}%). Reducing retention to 15 days.`);
+        logger.warn('Storage usage high, reducing retention window', { usagePercent: usagePercent.toFixed(2) });
         retentionDays = 15;
       }
     } catch (e) {
-      console.log('Skipping storage usage check (API restricted or not configured).');
+      logger.warn('Skipping storage usage check (API restricted or not configured)');
     }
 
     const cutoffDate = new Date();
@@ -70,7 +77,7 @@ const initCronJobs = () => {
         });
 
         if (itemsToPurge.length > 0) {
-          console.log(`🗑️ Purging ${itemsToPurge.length} old ${type} records...`);
+          logger.info('Purging recycle-bin records', { type, count: itemsToPurge.length });
           
           for (const item of itemsToPurge) {
             // Storage Cleanup
@@ -85,17 +92,17 @@ const initCronJobs = () => {
           const idsToPurge = itemsToPurge.map(item => item._id);
           await Model.deleteMany({ _id: { $in: idsToPurge } });
           
-          console.log(`✅ Successfully purged ${itemsToPurge.length} ${type} records.`);
+          logger.info('Recycle-bin purge completed', { type, count: itemsToPurge.length });
         }
       } catch (error) {
-        console.error(`❌ Error purging ${type} records:`, error.message);
+        logger.error('Error purging recycle-bin records', { type, error: error.message });
       }
     }
     
-  console.log('✨ Recycle Bin cleanup completed.');
+  logger.info('Recycle Bin cleanup completed');
   });
 
-  console.log('🗓️ Scheduled daily Recycle Bin cleanup (01:00 AM)');
+  logger.info('Scheduled daily Recycle Bin cleanup (01:00 AM)');
 
   // ─── ArchivedStudent Purge — daily at 02:00 AM ───────────────────────────
   // Permanently deletes archived students soft-deleted for >30 days.
@@ -105,11 +112,11 @@ const initCronJobs = () => {
       const { purgeDeletedStudents } = require('../controllers/dataLifecycleController');
       await purgeDeletedStudents();
     } catch (err) {
-      console.error('[Cron] Failed to invoke purgeDeletedStudents:', err.message);
+      logger.error('Failed to invoke purgeDeletedStudents', { error: err.message });
     }
   });
 
-  console.log('🗓️ Scheduled ArchivedStudent purge (02:00 AM)');
+  logger.info('Scheduled ArchivedStudent purge (02:00 AM)');
 };
 
 module.exports = initCronJobs;

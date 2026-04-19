@@ -32,6 +32,14 @@ export default function AdminFaculty() {
     fetchFaculty();
   }, []);
 
+  useEffect(() => {
+    return () => {
+      if (photoPreview && photoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(photoPreview);
+      }
+    };
+  }, [photoPreview]);
+
   const fetchFaculty = async () => {
     try {
       const token = localStorage.getItem('adminToken');
@@ -73,6 +81,9 @@ export default function AdminFaculty() {
       if (file.size > 2 * 1024 * 1024) {
         toast.error('File size must be less than 2MB');
         return;
+      }
+      if (photoPreview && photoPreview.startsWith('blob:')) {
+        URL.revokeObjectURL(photoPreview);
       }
       setPhotoFile(file);
       setPhotoPreview(URL.createObjectURL(file));
@@ -229,7 +240,7 @@ export default function AdminFaculty() {
                   {teacher.photo?.url ? (
                     <img src={teacher.photo.url} alt={teacher.name} className="w-full h-full object-cover" />
                   ) : (
-                    teacher.name[0]
+                    (teacher.name || '?').charAt(0).toUpperCase()
                   )}
                 </div>
                 {isCore && (

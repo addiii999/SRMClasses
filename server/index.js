@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const Course = require('./models/Course');
+const logger = require('./utils/logger');
 
 const isProduction = process.env.NODE_ENV === 'production';
 
@@ -12,8 +13,8 @@ const isProduction = process.env.NODE_ENV === 'production';
 const REQUIRED_ENV = ['MONGO_URI', 'JWT_SECRET', 'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET', 'RESEND_API_KEY'];
 const missingEnv = REQUIRED_ENV.filter((key) => !process.env[key]);
 if (missingEnv.length > 0) {
-  console.error(`❌ Missing required environment variables: ${missingEnv.join(', ')}`);
-  console.error('Server cannot start without all required configuration. Exiting.');
+  logger.error(`Missing required environment variables: ${missingEnv.join(', ')}`);
+  logger.error('Server cannot start without all required configuration. Exiting.');
   process.exit(1);
 }
 
@@ -59,6 +60,20 @@ app.set('trust proxy', 1);
 // ─── Security Headers (helmet) ────────────────────────────────────────────────
 app.use(helmet());
 
+app.use((req, res, next) => {
+  const cookieHeader = req.headers.cookie || '';
+  const cookies = {};
+  if (cookieHeader) {
+    cookieHeader.split(';').forEach((entry) => {
+      const [rawKey, ...rawVal] = entry.trim().split('=');
+      if (!rawKey) return;
+      cookies[rawKey] = decodeURIComponent(rawVal.join('=') || '');
+    });
+  }
+  req.cookies = cookies;
+  next();
+});
+
 // Root path friendly message
 app.get('/', (req, res) => {
   res.send('<h1>SRM Classes API is Running! 🚀🚀🚀</h1><p>The backend is fully live and connected to MongoDB Atlas.</p>');
@@ -66,7 +81,8 @@ app.get('/', (req, res) => {
 
 // Health check — minimal info only
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
+  const dbReady = connectDB && require('mongoose').connection?.readyState === 1;
+  res.status(dbReady ? 200 : 503).json({ status: dbReady ? 'ok' : 'degraded' });
 });
 
 // ─── Global Rate Limiting ─────────────────────────────────────────────────────
@@ -100,8 +116,12 @@ const allowedOrigins =
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (mobile apps, curl, etc.)
-      if (!origin) return callback(null, true);
+      // In production, block requests without origin to reduce abuse surface.
+      if (!origin) {
+        return isProduction
+          ? callback(new Error('Origin header is required.'), false)
+          : callback(null, true);
+      }
       if (allowedOrigins.indexOf(origin) === -1) {
         return callback(
           new Error('The CORS policy for this site does not allow access from the specified Origin.'),
@@ -112,6 +132,7 @@ app.use(
     },
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Authorization'],
+    credentials: true,
   })
 );
 
@@ -146,8 +167,8 @@ app.use('/api/lifecycle', require('./routes/dataLifecycleRoutes'));
 // ─── Global Error Handler ─────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
   // Never expose internal error details to the client in production
-  if (!isProduction) console.error(err.stack);
-  else console.error(err.message);
+  if (!isProduction) logger.error('Unhandled error', { stack: err.stack });
+  else logger.error('Unhandled error', { message: err.message });
   
   res.status(err.status || 500).json({
     success: false,
@@ -157,5 +178,5 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-  console.log(`🚀 SRM Classes Server running on port ${PORT}`);
+  logger.info(`SRM Classes Server running on port ${PORT}`);
 });

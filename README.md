@@ -56,6 +56,14 @@ This platform has been audited and fortified against modern cyber threats. We ma
 
 ---
 
+## OPERATIONS / SAFETY
+
+- Backup and recovery runbook: `docs/BACKUP_AND_RECOVERY.md`
+- CI checks: `.github/workflows/ci.yml`
+- Cron can be controlled per instance with `CRON_ENABLED=true|false`
+
+---
+
 ## COLLABORATIVE ENGINEERING / AI PARTNERSHIP
 
 The architecture of this platform was optimized through a high-performance pair-programming collaboration between the lead developer and **Antigravity**, an advanced agentic AI coding system by **Google DeepMind**.

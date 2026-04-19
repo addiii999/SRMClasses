@@ -1,12 +1,21 @@
 const Course = require('../models/Course');
 const mongoose = require('mongoose');
+const GENERIC_SERVER_ERROR = 'Something went wrong. Please try again.';
+const parseBooleanInput = (value) => {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'string') {
+    if (value.toLowerCase() === 'true') return true;
+    if (value.toLowerCase() === 'false') return false;
+  }
+  return Boolean(value);
+};
 
 const getCourses = async (req, res) => {
   try {
     const courses = await Course.find({ isActive: true }).sort({ className: 1 });
     res.json({ success: true, data: courses });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -15,17 +24,21 @@ const getAllCourses = async (req, res) => {
     const courses = await Course.find().sort({ className: 1 });
     res.json({ success: true, data: courses });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
 const createCourse = async (req, res) => {
   try {
     const { className, description, isActive } = req.body;
-    const course = await Course.create({ className, description, isActive });
+    const course = await Course.create({
+      className,
+      description,
+      ...(isActive !== undefined ? { isActive: parseBooleanInput(isActive) } : {}),
+    });
     res.status(201).json({ success: true, data: course });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -39,19 +52,23 @@ const updateCourse = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid ID format' });
     }
 
+    const updates = {
+      className: className !== undefined ? String(className) : undefined,
+      description: description !== undefined ? String(description) : undefined,
+    };
+    if (isActive !== undefined) {
+      updates.isActive = parseBooleanInput(isActive);
+    }
+
     const course = await Course.findByIdAndUpdate(
       new mongoose.Types.ObjectId(id), 
-      { 
-        className: String(className), 
-        description: description ? String(description) : undefined, 
-        isActive: Boolean(isActive) 
-      }, 
+      updates, 
       { new: true }
     );
     if (!course) return res.status(404).json({ success: false, message: 'Course not found' });
     res.json({ success: true, data: course });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -68,7 +85,7 @@ const deleteCourse = async (req, res) => {
     await course.softDelete(adminEmail);
     res.json({ success: true, message: 'Course moved to Recycle Bin' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 

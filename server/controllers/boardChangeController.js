@@ -20,7 +20,9 @@ const sendStudentNotification = async ({ title, message, type, studentId, relate
 // POST /api/board-change/request  — Student submits a board change request
 // ─────────────────────────────────────────────────────────────────────────────
 exports.requestBoardChange = async (req, res) => {
+  const session = await require('mongoose').startSession();
   try {
+    session.startTransaction();
     const { requestedBoard } = req.body;
     const student = req.user;
 
@@ -58,7 +60,7 @@ exports.requestBoardChange = async (req, res) => {
     const existingPending = await BoardChangeRequest.findOne({
       student: student._id,
       status: 'pending',
-    });
+    }).session(session);
 
     if (existingPending) {
       return res.status(400).json({
@@ -72,7 +74,7 @@ exports.requestBoardChange = async (req, res) => {
     // 🔒 24-hour cooldown: check most recent request (any status)
     const lastRequest = await BoardChangeRequest.findOne({
       student: student._id,
-    }).sort({ requestedAt: -1 });
+    }).sort({ requestedAt: -1 }).session(session);
 
     if (lastRequest) {
       const hoursSinceLast = (Date.now() - new Date(lastRequest.requestedAt).getTime()) / (1000 * 60 * 60);
@@ -94,22 +96,33 @@ exports.requestBoardChange = async (req, res) => {
     }
 
     // ✅ Create the request
-    const boardRequest = await BoardChangeRequest.create({
+    const boardRequest = await BoardChangeRequest.create([{
       student: student._id,
       currentBoard: student.board,
       requestedBoard,
       status: 'pending',
       requestedAt: new Date(),
-    });
+    }], { session });
+    await session.commitTransaction();
 
     res.status(201).json({
       success: true,
       message: 'Board change request submitted. Admin will review it shortly.',
-      data: boardRequest,
+      data: boardRequest[0],
       remainingChanges: 3 - student.boardChangeCount,
     });
   } catch (error) {
+    await session.abortTransaction();
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: 'You already have a pending board change request. Please wait for admin response.',
+        code: 'PENDING_REQUEST_EXISTS',
+      });
+    }
     res.status(500).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -186,16 +199,18 @@ exports.getBoardChangeRequests = async (req, res) => {
 // PUT /api/admin/board-change-requests/:id/approve
 // ─────────────────────────────────────────────────────────────────────────────
 exports.approveBoardChange = async (req, res) => {
+  const session = await require('mongoose').startSession();
   try {
+    session.startTransaction();
     const { adminNote } = req.body;
-    const boardRequest = await BoardChangeRequest.findById(req.params.id).populate('student');
+    const boardRequest = await BoardChangeRequest.findById(req.params.id).session(session).populate('student');
 
     if (!boardRequest) return res.status(404).json({ success: false, message: 'Request not found' });
     if (boardRequest.status !== 'pending') {
       return res.status(400).json({ success: false, message: 'This request has already been resolved' });
     }
 
-    const student = await User.findById(boardRequest.student._id || boardRequest.student);
+    const student = await User.findById(boardRequest.student._id || boardRequest.student).session(session);
     if (!student) return res.status(404).json({ success: false, message: 'Student not found' });
 
     const adminName = req.admin ? `${req.admin.name} (${req.admin.adminId})` : 'Admin';
@@ -209,7 +224,8 @@ exports.approveBoardChange = async (req, res) => {
     if (student.boardChangeCount >= 3) {
       await BoardChangeRequest.updateMany(
         { student: student._id, status: 'pending' },
-        { status: 'rejected', adminNote: 'Auto-rejected: board change limit reached', resolvedAt: new Date() }
+        { status: 'rejected', adminNote: 'Auto-rejected: board change limit reached', resolvedAt: new Date() },
+        { session }
       );
     }
 
@@ -232,7 +248,7 @@ exports.approveBoardChange = async (req, res) => {
       timestamp: new Date(),
     });
 
-    await student.save();
+    await student.save({ session });
 
     // Update the request
     boardRequest.status = 'approved';
@@ -240,7 +256,8 @@ exports.approveBoardChange = async (req, res) => {
     boardRequest.resolvedBy = req.admin._id;
     boardRequest.adminNote = adminNote || null;
     boardRequest.notified = true;
-    await boardRequest.save();
+    await boardRequest.save({ session });
+    await session.commitTransaction();
 
     // Notification
     const remaining = Math.max(0, 3 - student.boardChangeCount);
@@ -257,7 +274,10 @@ exports.approveBoardChange = async (req, res) => {
       message: `Board changed from ${oldBoard} to ${boardRequest.requestedBoard}. BoardChangeCount: ${student.boardChangeCount}/3`,
     });
   } catch (error) {
+    await session.abortTransaction();
     res.status(500).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
   }
 };
 
@@ -265,9 +285,11 @@ exports.approveBoardChange = async (req, res) => {
 // PUT /api/admin/board-change-requests/:id/reject
 // ─────────────────────────────────────────────────────────────────────────────
 exports.rejectBoardChange = async (req, res) => {
+  const session = await require('mongoose').startSession();
   try {
+    session.startTransaction();
     const { adminNote } = req.body;
-    const boardRequest = await BoardChangeRequest.findById(req.params.id);
+    const boardRequest = await BoardChangeRequest.findById(req.params.id).session(session);
 
     if (!boardRequest) return res.status(404).json({ success: false, message: 'Request not found' });
     if (boardRequest.status !== 'pending') {
@@ -279,7 +301,8 @@ exports.rejectBoardChange = async (req, res) => {
     boardRequest.resolvedBy = req.admin._id;
     boardRequest.adminNote = adminNote || null;
     boardRequest.notified = true;
-    await boardRequest.save();
+    await boardRequest.save({ session });
+    await session.commitTransaction();
 
     // Notification
     await sendStudentNotification({
@@ -294,6 +317,9 @@ exports.rejectBoardChange = async (req, res) => {
 
     res.json({ success: true, message: 'Board change request rejected' });
   } catch (error) {
+    await session.abortTransaction();
     res.status(500).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
   }
 };

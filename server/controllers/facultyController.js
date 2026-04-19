@@ -1,5 +1,15 @@
 const Faculty = require('../models/Faculty');
 const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinary');
+const GENERIC_SERVER_ERROR = 'Something went wrong. Please try again.';
+
+const pickFacultyFields = (body = {}) => {
+  const allowed = ['name', 'subject', 'qualification', 'experience', 'description', 'priorityOrder', 'isCoreTeam', 'isActive'];
+  const data = {};
+  for (const key of allowed) {
+    if (body[key] !== undefined) data[key] = body[key];
+  }
+  return data;
+};
 
 // @desc Get all active faculty (Public)
 exports.getPublicFaculty = async (req, res) => {
@@ -28,7 +38,7 @@ exports.getPublicFaculty = async (req, res) => {
 
     res.json({ success: true, count: faculty.length, data: faculty });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -59,14 +69,14 @@ exports.getAdminFaculty = async (req, res) => {
 
     res.json({ success: true, count: faculty.length, data: faculty });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
 // @desc Add new faculty
 exports.addFaculty = async (req, res) => {
   try {
-    const data = { ...req.body };
+    const data = pickFacultyFields(req.body);
     
     if (req.file) {
       const publicId = `faculty_${Date.now()}`;
@@ -90,14 +100,14 @@ exports.addFaculty = async (req, res) => {
     const faculty = await Faculty.create(data);
     res.status(201).json({ success: true, data: faculty });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(400).json({ success: false, message: 'Invalid faculty data' });
   }
 };
 
 // @desc Update faculty
 exports.updateFaculty = async (req, res) => {
   try {
-    const data = { ...req.body };
+    const data = pickFacultyFields(req.body);
     const facultyId = req.params.id;
 
     // Find existing to check for photo
@@ -138,7 +148,7 @@ exports.updateFaculty = async (req, res) => {
 
     res.json({ success: true, data: faculty });
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    res.status(400).json({ success: false, message: 'Invalid faculty data' });
   }
 };
 
@@ -160,6 +170,6 @@ exports.deleteFaculty = async (req, res) => {
     
     res.json({ success: true, message: 'Faculty moved to Recycle Bin' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };

@@ -87,7 +87,11 @@ export default function Login() {
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label htmlFor="password" className="label mb-0">Password</label>
-                <Link to="/forgot-password" disabled={loading} className="text-xs text-primary hover:underline font-medium">Forgot password?</Link>
+                {loading ? (
+                  <span className="text-xs text-gray-400 font-medium">Forgot password?</span>
+                ) : (
+                  <Link to="/forgot-password" className="text-xs text-primary hover:underline font-medium">Forgot password?</Link>
+                )}
               </div>
               <div className="relative">
                 <input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" className="input-field pr-12"

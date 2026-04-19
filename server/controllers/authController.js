@@ -3,6 +3,10 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { generateOTP, sendOTPviaEmail } = require('../utils/otpService');
 const { isValidCombination } = require('../utils/boardConstraints');
+const { setStudentAuthCookie } = require('../utils/authCookies');
+
+const GENERIC_SERVER_ERROR = 'Something went wrong. Please try again.';
+const hashResetOtp = (otp) => crypto.createHash('sha256').update(String(otp)).digest('hex');
 
 // ─── Token Helpers ────────────────────────────────────────────────────────────
 
@@ -75,7 +79,7 @@ const sendRegistrationOTP = async (req, res) => {
       expiresAt,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -116,7 +120,7 @@ const verifyRegistrationOTP = async (req, res) => {
       registrationToken,
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -145,7 +149,10 @@ const register = async (req, res) => {
 
     // Security check: Ensure the submitted email/mobile matches the verified token
     if (decoded.email !== email?.toLowerCase() || decoded.mobile !== req.body.mobile) {
-       // Note: the mobile is extracted from the body in this new flow
+      return res.status(401).json({
+        success: false,
+        message: 'Registration session mismatch. Please verify OTP again.',
+      });
     }
     const mobile = decoded.mobile;
 
@@ -249,7 +256,7 @@ const register = async (req, res) => {
           : 'This email is already registered.',
       });
     }
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -361,6 +368,7 @@ const login = async (req, res) => {
     }
 
     const token = generateToken(user._id);
+    setStudentAuthCookie(res, token);
 
     res.json({
       success: true,
@@ -376,7 +384,7 @@ const login = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -430,7 +438,7 @@ const getMe = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -491,7 +499,7 @@ const updateProfile = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -552,15 +560,24 @@ const forgotPassword = async (req, res) => {
     const genericMessage = 'If an account exists for this email, you will receive an OTP shortly.';
     if (!user) return res.json({ success: true, message: genericMessage });
 
+    if (user.resetOtpLockedUntil && user.resetOtpLockedUntil > Date.now()) {
+      return res.status(429).json({
+        success: false,
+        message: 'Too many failed OTP attempts. Please try again later.',
+      });
+    }
+
     const otp = generateOTP();
-    user.resetOTP = otp;
+    user.resetOTP = hashResetOtp(otp);
     user.resetOTPExpiry = Date.now() + 10 * 60 * 1000;
+    user.resetOtpAttempts = 0;
+    user.resetOtpLockedUntil = null;
     await user.save({ validateBeforeSave: false });
 
     await sendOTPviaEmail(normalized, user.mobile, otp);
     res.json({ success: true, message: genericMessage });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to send OTP. ' + error.message });
+    res.status(500).json({ success: false, message: 'Failed to send OTP.' });
   }
 };
 
@@ -585,7 +602,6 @@ const resetPassword = async (req, res) => {
     const normalized = email.toLowerCase().trim();
     const user = await User.findOne({
       email: normalized,
-      resetOTP: otp,
       resetOTPExpiry: { $gt: Date.now() },
     });
 
@@ -593,14 +609,33 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
     }
 
+    if (user.resetOtpLockedUntil && user.resetOtpLockedUntil > Date.now()) {
+      return res.status(429).json({
+        success: false,
+        message: 'Too many failed OTP attempts. Please try again later.',
+      });
+    }
+
+    const isOtpValid = user.resetOTP === hashResetOtp(otp);
+    if (!isOtpValid) {
+      user.resetOtpAttempts = (user.resetOtpAttempts || 0) + 1;
+      if (user.resetOtpAttempts >= 5) {
+        user.resetOtpLockedUntil = new Date(Date.now() + 15 * 60 * 1000);
+      }
+      await user.save({ validateBeforeSave: false });
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+    }
+
     user.password = newPassword;
     user.resetOTP = undefined;
     user.resetOTPExpiry = undefined;
+    user.resetOtpAttempts = 0;
+    user.resetOtpLockedUntil = null;
     await user.save();
 
     res.json({ success: true, message: 'Password reset successful' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 

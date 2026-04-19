@@ -48,7 +48,10 @@ const boardChangeRequestSchema = new mongoose.Schema({
   },
 }, { timestamps: true });
 
-// Compound index: fast "has pending request?" check per student
-boardChangeRequestSchema.index({ student: 1, status: 1 });
+// Compound index: enforce one pending request per student
+boardChangeRequestSchema.index(
+  { student: 1, status: 1 },
+  { unique: true, partialFilterExpression: { status: 'pending' } }
+);
 
 module.exports = mongoose.model('BoardChangeRequest', boardChangeRequestSchema);

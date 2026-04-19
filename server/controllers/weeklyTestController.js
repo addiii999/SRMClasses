@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const ExcelJS = require('exceljs');
 const fs = require('fs');
 const path = require('path');
+const GENERIC_SERVER_ERROR = 'Something went wrong. Please try again.';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // ADMIN ENDPOINTS
@@ -63,7 +64,7 @@ const createTest = async (req, res) => {
     });
     res.status(201).json({ success: true, data: test, message: 'Test created successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -98,7 +99,7 @@ const getAllTests = async (req, res) => {
 
     res.json({ success: true, data: testsWithCounts });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -161,7 +162,7 @@ const getTestById = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -186,7 +187,7 @@ const toggleLock = async (req, res) => {
       message: test.isLocked ? 'Test locked successfully' : 'Test unlocked successfully',
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -207,7 +208,7 @@ const deleteTest = async (req, res) => {
 
     res.json({ success: true, message: 'Test moved to Recycle Bin' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -269,7 +270,7 @@ const enterMarks = async (req, res) => {
     if (error.code === 11000) {
       return res.status(400).json({ success: false, message: 'Duplicate entry for this student' });
     }
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -450,7 +451,7 @@ const bulkImportMarks = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   } finally {
     // Always delete the uploaded file
     if (filePath) {
@@ -543,7 +544,7 @@ const downloadTemplate = async (req, res) => {
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -574,7 +575,7 @@ const publishResults = async (req, res) => {
 
     res.json({ success: true, message: 'Results published and students notified!' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -622,7 +623,7 @@ const getMyResults = async (req, res) => {
 
     res.json({ success: true, data: validResults });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -669,7 +670,7 @@ const getMyNotifications = async (req, res) => {
 
     res.json({ success: true, data: sanitized, unreadCount });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -684,13 +685,36 @@ const markNotificationRead = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid notification ID' });
     }
 
-    await Notification.findByIdAndUpdate(nid, {
-      $addToSet: { readBy: studentId },
+    const notification = await Notification.findOne({
+      _id: nid,
+      $and: [
+        { $or: [{ targetBatch: req.user.studentClass }, { targetBatch: 'all' }] },
+        {
+          $or: [
+            { type: { $ne: 'test_result' } },
+            {
+              relatedId: {
+                $in: await WeeklyTest.find({
+                  board: { $in: [req.user.board || 'CBSE', 'ALL'] },
+                  $or: [{ branch: req.user.branch }, { isAllBranches: true }],
+                }).distinct('_id'),
+              },
+            },
+          ],
+        },
+      ],
     });
+
+    if (!notification) {
+      return res.status(404).json({ success: false, message: 'Notification not found' });
+    }
+
+    notification.readBy.addToSet(studentId);
+    await notification.save();
 
     res.json({ success: true, message: 'Notification marked as read' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 

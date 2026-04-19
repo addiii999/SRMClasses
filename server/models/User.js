@@ -120,6 +120,8 @@ const userSchema = new mongoose.Schema({
   role: { type: String, default: 'student' },
   resetOTP: String,
   resetOTPExpiry: Date,
+  resetOtpAttempts: { type: Number, default: 0 },
+  resetOtpLockedUntil: { type: Date, default: null },
   shouldChangePassword: { type: Boolean, default: false },
   createdByAdmin: { type: Boolean, default: false },
 

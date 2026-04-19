@@ -18,6 +18,15 @@ export default function Contact() {
   const [activeMapIndex, setActiveMapIndex] = useState(0);
   
   const { hash } = useLocation();
+  const safeExternalUrl = (url) => {
+    if (typeof url !== 'string') return null;
+    try {
+      const parsed = new URL(url);
+      return ['https:', 'http:'].includes(parsed.protocol) ? url : null;
+    } catch {
+      return null;
+    }
+  };
 
   useEffect(() => {
     api.get('/branches').then(res => setBranches(res.data?.data || [])).catch(() => {});
@@ -216,17 +225,19 @@ export default function Contact() {
 
       <section id="map" className="relative group overflow-hidden border-t border-primary/10">
         <div className="h-[500px] bg-gray-100 relative">
-          {(branches || []).map((b, idx) => (
+          {branches[activeMapIndex] && (
             <iframe
-              key={b._id}
-              title={`SRM Classes - ${b.name}`}
-              className={`absolute inset-0 w-full h-full transition-opacity duration-500 ${activeMapIndex === idx ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-              src={idx === 0 
-                ? "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3661.8452668403957!2d85.26510447478121!3d23.393814302373514!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4de05a37f8591%3A0xd9b09379e246fa39!2sSrm%20Classes!5e0!3m2!1sen!2sin!4v1774293801590!5m2!1sen!2sin" 
+              title={`SRM Classes - ${branches[activeMapIndex].name}`}
+              className="absolute inset-0 w-full h-full"
+              src={activeMapIndex === 0
+                ? "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3661.8452668403957!2d85.26510447478121!3d23.393814302373514!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4de05a37f8591%3A0xd9b09379e246fa39!2sSrm%20Classes!5e0!3m2!1sen!2sin!4v1774293801590!5m2!1sen!2sin"
                 : "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3659.889708914041!2d85.08004571062635!3d23.46446739942484!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x39f4d06f570ae8a3%3A0xfe8ccca9389d906a!2sF37J%2BQVQ%2C%20Mandar%2C%20Jharkhand%20835214!5e0!3m2!1sen!2sin!4v1743856108123!5m2!1sen!2sin"}
-              style={{ border: 0 }} allowFullScreen loading="lazy" referrerPolicy="no-referrer-when-downgrade"
+              style={{ border: 0 }}
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
             />
-          ))}
+          )}
           
           {/* Branch Switching Overlay */}
           <div className="absolute top-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
@@ -248,9 +259,9 @@ export default function Contact() {
         </div>
         
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20">
-          {branches[activeMapIndex] && (
+          {branches[activeMapIndex] && safeExternalUrl(branches[activeMapIndex].googleMapsLink) && (
             <a 
-              href={branches[activeMapIndex].googleMapsLink} 
+              href={safeExternalUrl(branches[activeMapIndex].googleMapsLink)}
               target="_blank" 
               rel="noreferrer"
               className="flex items-center gap-2 px-6 py-3 bg-white text-brand-dark font-bold rounded-full shadow-2xl hover:bg-primary hover:text-white transition-all transform hover:-translate-y-1"

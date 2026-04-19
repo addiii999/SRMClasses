@@ -1,5 +1,6 @@
 const Announcement = require('../models/Announcement');
 const mongoose = require('mongoose');
+const GENERIC_SERVER_ERROR = 'Something went wrong. Please try again.';
 
 const getAnnouncements = async (req, res) => {
   try {
@@ -14,17 +15,20 @@ const getAnnouncements = async (req, res) => {
     const announcements = await Announcement.find(query).sort({ createdAt: -1 });
     res.json({ success: true, data: announcements });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
 const createAnnouncement = async (req, res) => {
   try {
-    const { content, targetClass, isImportant, isActive } = req.body;
-    const announcement = await Announcement.create({ content, targetClass, isImportant, isActive });
+    const { title, body, targetClass, priority, isActive } = req.body;
+    if (!title || !body) {
+      return res.status(400).json({ success: false, message: 'Title and body are required' });
+    }
+    const announcement = await Announcement.create({ title, body, targetClass, priority, isActive });
     res.status(201).json({ success: true, data: announcement });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
@@ -41,7 +45,7 @@ const deleteAnnouncement = async (req, res) => {
     await announcement.softDelete(adminEmail);
     res.json({ success: true, message: 'Announcement moved to Recycle Bin' });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
 };
 
