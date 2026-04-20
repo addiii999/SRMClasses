@@ -16,4 +16,8 @@ const gallerySchema = new mongoose.Schema({
 
 gallerySchema.plugin(softDeletePlugin);
 
+// Performance index — GET /gallery?category=events
+// Filters by category, excludes soft-deleted, newest first
+gallerySchema.index({ category: 1, isDeleted: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Gallery', gallerySchema);

@@ -25,4 +25,10 @@ const studyMaterialSchema = new mongoose.Schema({
 
 studyMaterialSchema.plugin(softDeletePlugin);
 
+// Performance indexes — match exact query patterns used in API
+// GET /materials?studentClass=X&type=Y — most frequent student dashboard query
+studyMaterialSchema.index({ studentClass: 1, type: 1, isDeleted: 1 });
+// Admin list — sorted by upload date
+studyMaterialSchema.index({ uploadedAt: -1, isDeleted: 1 });
+
 module.exports = mongoose.model('StudyMaterial', studyMaterialSchema);

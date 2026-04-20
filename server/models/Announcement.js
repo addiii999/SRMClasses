@@ -18,4 +18,8 @@ const announcementSchema = new mongoose.Schema({
 
 announcementSchema.plugin(softDeletePlugin);
 
+// Performance index — student dashboard: GET /announcements?studentClass=X
+// Filters active, non-deleted announcements for a class, sorted by newest
+announcementSchema.index({ targetClass: 1, isActive: 1, isDeleted: 1, createdAt: -1 });
+
 module.exports = mongoose.model('Announcement', announcementSchema);
