@@ -381,7 +381,7 @@ function TestDetailView({ testId, onBack }) {
     formData.append('weeklyTestId', testId);
     setUploading(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
       const res = await api.post(`/admin/import/excel?dryRun=true`, formData, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
       });
@@ -402,7 +402,7 @@ function TestDetailView({ testId, onBack }) {
     formData.append('weeklyTestId', testId);
     setUploading(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
       const res = await api.post(`/admin/import/excel?dryRun=false`, formData, {
         headers: { 'Content-Type': 'multipart/form-data', Authorization: `Bearer ${token}` },
       });

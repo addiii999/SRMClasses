@@ -33,7 +33,7 @@ export default function AdminFeeManagement({ selectedBranch }) {
   const fetchStudents = useCallback(async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
       const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
       const res = await api.get(`/fees/students?status=${enrollmentTab}${branchParam}`, {
         headers: { Authorization: `Bearer ${token}` }
@@ -89,7 +89,7 @@ export default function AdminFeeManagement({ selectedBranch }) {
     if (!window.confirm(`Are you sure you want to remove ${student.name} from the active fee list? Their data will NOT be deleted.`)) return;
     
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
       await api.patch(`/fees/remove/${student._id}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -102,7 +102,7 @@ export default function AdminFeeManagement({ selectedBranch }) {
 
   const handleRestore = async (student) => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
       await api.patch(`/fees/restore/${student._id}`, {}, {
         headers: { Authorization: `Bearer ${token}` }
       });

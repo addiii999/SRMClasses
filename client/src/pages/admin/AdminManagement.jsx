@@ -13,7 +13,7 @@ export default function AdminManagement({ adminRole }) {
   const fetchAdmins = async () => {
     try {
       const res = await api.get('/admin/admins', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken')}` }
       });
       setAdmins(res.data.data);
     } catch (err) {
@@ -37,7 +37,7 @@ export default function AdminManagement({ adminRole }) {
     setSubmitting(true);
     try {
       await api.post('/admin/create-admin', form, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken')}` }
       });
       toast.success('Admin created successfully');
       setShowAddModal(false);
@@ -53,7 +53,7 @@ export default function AdminManagement({ adminRole }) {
   const handleToggleActive = async (id) => {
     try {
       const res = await api.put(`/admin/admins/${id}/toggle-active`, {}, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken')}` }
       });
       toast.success(`Admin ${res.data.isActive ? 'activated' : 'deactivated'}`);
       setAdmins(admins.map(a => a._id === id ? { ...a, isActive: res.data.isActive } : a));
@@ -66,7 +66,7 @@ export default function AdminManagement({ adminRole }) {
     if (!window.confirm('Are you sure you want to permanently delete this admin? This action cannot be undone.')) return;
     try {
       await api.delete(`/admin/admins/${id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken')}` }
+        headers: { Authorization: `Bearer ${localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken')}` }
       });
       toast.success('Admin deleted securely');
       fetchAdmins();
