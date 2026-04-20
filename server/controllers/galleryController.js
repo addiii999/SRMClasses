@@ -12,7 +12,10 @@ const getGallery = async (req, res) => {
     if (category && typeof category === 'string' && category !== 'all') {
       query.category = category;
     }
-    const images = await Gallery.find(query).sort({ createdAt: -1 });
+    const images = await Gallery.find(query)
+      .select('title imageUrl category description createdAt')
+      .sort({ createdAt: -1 })
+      .lean();
     res.json({ success: true, data: images });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

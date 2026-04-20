@@ -55,7 +55,10 @@ const getMaterials = async (req, res) => {
       query.$and = (query.$and || []).concat([{ $or: [{ studentClass }, { studentClass: 'all' }] }]);
     }
     if (type && typeof type === 'string') query.type = type;
-    const materials = await StudyMaterial.find(query).sort({ uploadedAt: -1 });
+    const materials = await StudyMaterial.find(query)
+      .select('title description studentClass subject type fileUrl uploadedAt fileName fileSize')
+      .sort({ uploadedAt: -1 })
+      .lean();
     res.json({ success: true, data: materials });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

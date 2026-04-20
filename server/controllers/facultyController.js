@@ -14,7 +14,9 @@ const pickFacultyFields = (body = {}) => {
 // @desc Get all active faculty (Public)
 exports.getPublicFaculty = async (req, res) => {
   try {
-    const faculty = await Faculty.find({ isActive: true });
+    const faculty = await Faculty.find({ isActive: true })
+      .select('name subject photo experience rating priorityOrder isActive')
+      .lean();
     
     // Sort logic
     faculty.sort((a, b) => {

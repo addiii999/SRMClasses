@@ -4,6 +4,8 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
+const { RedisStore } = require('rate-limit-redis');
+const Redis = require('ioredis');
 const connectDB = require('./config/db');
 const Course = require('./models/Course');
 const logger = require('./utils/logger');
@@ -58,7 +60,26 @@ const app = express();
 // Trust proxy for Render/cloud deployments (fixes rate limiter using correct client IP)
 app.set('trust proxy', 1);
 
-// ─── Gzip Compression ─────────────────────────────────────────────────────────
+// ─── Global Rate Limiting ───────────────────────────────────────────────────
+// Protects endpoints from scraping and bot abuse
+let redisClient;
+if (process.env.REDIS_URL) {
+  try {
+    redisClient = new Redis(process.env.REDIS_URL, { enableOfflineQueue: false, lazyConnect: true });
+    redisClient.connect().catch(() => {});
+  } catch (e) {}
+}
+
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 200, // Limit each IP to 200 requests per window
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Too many requests from this IP, please try again later.' },
+  ...(redisClient ? { store: new RedisStore({ sendCommand: (...args) => redisClient.call(...args), prefix: 'rl:global:' }) } : {}),
+});
+app.use('/api', globalLimiter);
+
 // JSON API responses 60-80% smaller, major bandwidth reduction on Render
 app.use(compression({
   level: 6,         // Balance between speed and compression (1-9, default 6)

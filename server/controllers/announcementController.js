@@ -12,7 +12,10 @@ const getAnnouncements = async (req, res) => {
     if (studentClass && typeof studentClass === 'string') {
       query.$or = [{ targetClass: studentClass }, { targetClass: 'all' }];
     }
-    const announcements = await Announcement.find(query).sort({ createdAt: -1 });
+    const announcements = await Announcement.find(query)
+      .select('title body createdAt priority targetClass')
+      .sort({ createdAt: -1 })
+      .lean();
     res.json({ success: true, data: announcements });
   } catch (error) {
     res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });

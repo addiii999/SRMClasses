@@ -30,6 +30,8 @@ export default function Mentor() {
                 <img 
                   src="/images/founder.png" 
                   alt="Ranjan Kumar Soni - Founder of SRM Classes" 
+                  loading="lazy"
+                  decoding="async"
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                   onError={(e) => {
                     e.target.src = 'https://ui-avatars.com/api/?name=Ranjan+Soni&background=9787F3&color=fff&size=512';
