@@ -104,6 +104,7 @@ const productionOrigins = [
   'https://www.srmclasses.in',
   'https://srmclasses-frontend.vercel.app',
   'https://srm-classes.vercel.app',
+  'https://srm-classes-ten.vercel.app', // Client's Vercel deployment
   process.env.FRONTEND_URL,
 ].filter(Boolean);
 
