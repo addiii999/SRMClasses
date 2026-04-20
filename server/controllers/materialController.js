@@ -55,11 +55,21 @@ const getMaterials = async (req, res) => {
       query.$and = (query.$and || []).concat([{ $or: [{ studentClass }, { studentClass: 'all' }] }]);
     }
     if (type && typeof type === 'string') query.type = type;
+    if (type && typeof type === 'string') query.type = type;
+
+    // Pagination logic
+    const limit = Math.min(parseInt(req.query.limit) || 50, 100); // Max 100 per page
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
+
     const materials = await StudyMaterial.find(query)
       .select('title description studentClass subject type fileUrl uploadedAt fileName fileSize')
       .sort({ uploadedAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
-    res.json({ success: true, data: materials });
+
+    res.json({ success: true, data: materials, page, limit });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

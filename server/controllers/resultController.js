@@ -4,8 +4,17 @@ const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinar
 
 const getResults = async (req, res) => {
   try {
-    const results = await Result.find().sort({ createdAt: -1 });
-    res.json({ success: true, data: results });
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
+
+    const results = await Result.find()
+      .select('studentName examName studentClass marks totalMarks imageUrl createdAt')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+    res.json({ success: true, data: results, page, limit });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

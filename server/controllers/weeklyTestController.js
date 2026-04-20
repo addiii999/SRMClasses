@@ -87,17 +87,27 @@ const getAllTests = async (req, res) => {
     if (board === 'ALL') query.board = 'ALL';
     if (subject) query.subject = { $regex: subject, $options: 'i' };
 
-    const tests = await WeeklyTest.find(query).sort({ date: -1 });
+    // Pagination logic
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
 
-    // Attach result counts for each test
+    const tests = await WeeklyTest.find(query)
+      .select('testName subject date totalMarks batch board isPublished branch isAllBranches isLocked')
+      .sort({ date: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
+
+    // Attach result counts efficiently
     const testsWithCounts = await Promise.all(
       tests.map(async (test) => {
         const resultCount = await TestResult.countDocuments({ testId: test._id });
-        return { ...test.toObject(), resultCount };
+        return { ...test, resultCount };
       })
     );
 
-    res.json({ success: true, data: testsWithCounts });
+    res.json({ success: true, data: testsWithCounts, page, limit });
   } catch (error) {
     res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
@@ -112,12 +122,14 @@ const getTestById = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Invalid test ID' });
     }
 
-    const test = await WeeklyTest.findById(id);
+    const test = await WeeklyTest.findById(id).lean();
     if (!test) return res.status(404).json({ success: false, message: 'Test not found' });
 
     const results = await TestResult.find({ testId: id })
-      .populate('studentId', 'name studentId studentClass email')
-      .sort({ 'studentId.name': 1 });
+      .select('studentId marksObtained createdAt')
+      .populate('studentId', 'name studentId studentClass email branch board')
+      .sort({ 'studentId.name': 1 })
+      .lean();
 
     // Compute percentage for each result
     const resultsWithPercentage = results.map((r) => {
@@ -151,7 +163,10 @@ const getTestById = async (req, res) => {
       studentQuery.board = test.board;
     }
 
-    const eligibleStudents = await User.find(studentQuery).select('name studentId studentClass email board branch');
+    const eligibleStudents = await User.find(studentQuery)
+      .select('name studentId studentClass email board branch')
+      .limit(200) // Safety limit for extreme batch sizes
+      .lean();
 
     res.json({
       success: true,
@@ -593,6 +608,7 @@ const getMyResults = async (req, res) => {
     const studentBranch = req.user.branch;
 
     const results = await TestResult.find({ studentId })
+      .select('testId marksObtained createdAt')
       .populate({
         path: 'testId',
         match: {
@@ -602,7 +618,8 @@ const getMyResults = async (req, res) => {
         },
         select: 'testName subject date totalMarks batch board isPublished branch isAllBranches',
       })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     // Filter out results where testId (populated) is null (unpublished or deleted)
     const validResults = results

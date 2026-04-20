@@ -12,11 +12,19 @@ const getGallery = async (req, res) => {
     if (category && typeof category === 'string' && category !== 'all') {
       query.category = category;
     }
+
+    // Pagination logic
+    const limit = Math.min(parseInt(req.query.limit) || 24, 48); // 24 images per page
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
+
     const images = await Gallery.find(query)
       .select('title imageUrl category description createdAt')
       .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
       .lean();
-    res.json({ success: true, data: images });
+    res.json({ success: true, data: images, page, limit });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

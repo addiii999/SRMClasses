@@ -9,16 +9,16 @@ const mongoose = require('mongoose');
  */
 exports.getStudentsFeeStats = async (req, res) => {
   try {
-    const { status = 'active' } = req.query;
-    const filter = { role: 'student', isStudent: true };
-    
-    if (status === 'removed') {
-      filter.isEnrolled = false;
-    } else {
-      filter.isEnrolled = true;
-    }
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
 
-    const students = await User.find(filter).sort({ createdAt: -1 });
+    const students = await User.find(filter)
+      .select('studentId name email mobile studentClass feeType feeSnapshot payments')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
     
     const studentsWithFees = students.map(student => {
       const feeDetails = calculateFeeDetails(student);

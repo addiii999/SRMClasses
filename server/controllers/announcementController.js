@@ -15,6 +15,7 @@ const getAnnouncements = async (req, res) => {
     const announcements = await Announcement.find(query)
       .select('title body createdAt priority targetClass')
       .sort({ createdAt: -1 })
+      .limit(50)
       .lean();
     res.json({ success: true, data: announcements });
   } catch (error) {

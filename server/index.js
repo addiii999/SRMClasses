@@ -108,6 +108,19 @@ app.use((req, res, next) => {
   next();
 });
 
+// ─── Performance Monitoring ──────────────────────────────────────────────────
+// Logs requests that take too long (>500ms) to identify optimization needs
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    if (duration > 500 && !req.path.includes('/api/health')) {
+      logger.warn(`SLOW_REQUEST: ${req.method} ${req.originalUrl} took ${duration}ms`);
+    }
+  });
+  next();
+});
+
 // Root path friendly message
 app.get('/', (req, res) => {
   res.send('<h1>SRM Classes API is Running! 🚀🚀🚀</h1><p>The backend is fully live and connected to MongoDB Atlas.</p>');
