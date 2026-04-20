@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import EnquiryForm from '../components/EnquiryForm';
 import { ArrowRight, BookOpen, Users, Trophy, Star, Phone, CheckCircle, Play, ChevronRight, Sparkles, MapPin, Target, Award, TrendingUp } from 'lucide-react';
 import api from '../lib/api';
+import { cachedFetch } from '../lib/cache';
 import { CONTACT_NUMBERS } from '../config/contact';
 import toast from 'react-hot-toast';
 
@@ -64,7 +65,11 @@ export default function Home() {
   const [branches, setBranches] = useState([]);
 
   useEffect(() => {
-    api.get('/branches').then(res => setBranches(res.data?.data || [])).catch(() => {});
+    // Shared cache key 'branches' - Contact.jsx bhi yahi key use karti hai
+    // Agar ek page ne already fetch kiya ho toh dusra API call nahi karega
+    cachedFetch('branches', () => api.get('/branches').then(res => res.data?.data || []))
+      .then(data => setBranches(data))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MapPin, Phone, Mail, Clock, ArrowRight, CheckCircle } from 'lucide-react';
 import api from '../lib/api';
+import { cachedFetch } from '../lib/cache';
 import toast from 'react-hot-toast';
 import EnquiryForm from '../components/EnquiryForm';
 import { CONTACT_NUMBERS } from '../config/contact';
@@ -29,7 +30,10 @@ export default function Contact() {
   };
 
   useEffect(() => {
-    api.get('/branches').then(res => setBranches(res.data?.data || [])).catch(() => {});
+    // Same cache key as Home.jsx - ek baar fetch hoga, dono pages share karenge
+    cachedFetch('branches', () => api.get('/branches').then(res => res.data?.data || []))
+      .then(data => setBranches(data))
+      .catch(() => {});
   }, []);
 
   useEffect(() => {

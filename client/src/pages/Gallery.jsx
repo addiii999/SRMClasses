@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Image, X } from 'lucide-react';
 import api from '../lib/api';
+import { cachedFetch } from '../lib/cache';
 
 const categories = ['all', 'events', 'results', 'campus', 'activities', 'other'];
 
@@ -105,10 +106,16 @@ export default function Gallery() {
   useEffect(() => {
     setIsLoading(true);
     const params = activeCategory !== 'all' ? `?category=${activeCategory}` : '';
-    
+    const cacheKey = `gallery-${activeCategory}`;
+
     // Add artificial minimum delay to ensure smooth transition prevents jank
     const minDelay = new Promise(resolve => setTimeout(resolve, 600));
-    const fetchImages = api.get(`/gallery${params}`).then(res => res.data.data || []).catch(() => []);
+    // cachedFetch: same category tab click hai toh API call nahi hogi (5 min cache)
+    const fetchImages = cachedFetch(
+      cacheKey,
+      () => api.get(`/gallery${params}`).then(res => res.data.data || []),
+      5 * 60 * 1000
+    ).catch(() => []);
 
     Promise.all([fetchImages, minDelay]).then(([data]) => {
       setImages(data);

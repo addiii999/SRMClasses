@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute';
+import { Suspense, lazy } from 'react';
 
 // Layout Components
 import Navbar from './components/Navbar';
@@ -26,12 +27,12 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 
-// Student Dashboard
-import StudentDashboard from './pages/StudentDashboard';
+// Student Dashboard — lazy loaded (47KB saved on initial visit)
+const StudentDashboard = lazy(() => import('./pages/StudentDashboard'));
 
-// Admin Pages
+// Admin Pages — lazy loaded (47KB saved on initial visit)
 import AdminLogin from './pages/admin/AdminLogin';
-import AdminDashboard from './pages/admin/AdminDashboard';
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 
 const PublicLayout = ({ children }) => (
   <>
@@ -75,7 +76,9 @@ export default function App() {
           {/* Student Dashboard */}
           <Route path="/dashboard" element={
             <ProtectedRoute>
-              <StudentDashboard />
+              <Suspense fallback={<div className="min-h-screen bg-brand-bg flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" /></div>}>
+                <StudentDashboard />
+              </Suspense>
             </ProtectedRoute>
           } />
 
@@ -83,7 +86,9 @@ export default function App() {
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/*" element={
             <AdminRoute>
-              <AdminDashboard />
+              <Suspense fallback={<div className="min-h-screen bg-brand-bg flex items-center justify-center"><div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary" /></div>}>
+                <AdminDashboard />
+              </Suspense>
             </AdminRoute>
           } />
         </Routes>

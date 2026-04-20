@@ -20,9 +20,11 @@ export default defineConfig({
     sourcemap: false, // Disable source maps for production
     rollupOptions: {
       output: {
-        // Code splitting: group vendor libraries into a separate chunk
+        // Code splitting: vendor libraries alag chunks mein taaki browser zyada efficiently cache kare
         manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom', 'axios', 'lucide-react'],
+          'react-core': ['react', 'react-dom', 'react-router-dom'],
+          'ui-libs': ['lucide-react', 'react-hot-toast'],
+          'api-libs': ['axios'],
         },
       },
     },
