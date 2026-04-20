@@ -1,22 +1,10 @@
 const multer = require('multer');
 const path = require('path');
-const fs = require('fs');
 
-// Ensure upload directory exists
-const uploadDir = path.join(__dirname, '..', 'uploads', 'excel');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `marks_${uniqueSuffix}${path.extname(file.originalname)}`);
-  },
-});
+// Use memory storage — Excel files are read from buffer, not disk.
+// This is required for production environments (Render/Vercel) where
+// the local filesystem is ephemeral or read-only outside /tmp.
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   const allowedExts = /\.xlsx$|\.xls$/i;

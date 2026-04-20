@@ -4,8 +4,6 @@ const Notification = require('../models/Notification');
 const User = require('../models/User');
 const mongoose = require('mongoose');
 const ExcelJS = require('exceljs');
-const fs = require('fs');
-const path = require('path');
 const GENERIC_SERVER_ERROR = 'Something went wrong. Please try again.';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -292,7 +290,6 @@ const enterMarks = async (req, res) => {
 // @desc    Bulk import marks from Excel
 // @route   POST /api/weekly-tests/:id/import
 const bulkImportMarks = async (req, res) => {
-  let filePath = null;
   try {
     const { id } = req.params;
 
@@ -311,11 +308,9 @@ const bulkImportMarks = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please upload an Excel file' });
     }
 
-    filePath = req.file.path;
-
-    // Parse Excel
+    // Parse Excel from memory buffer (no disk I/O — production safe)
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.readFile(filePath);
+    await workbook.xlsx.load(req.file.buffer);
     const worksheet = workbook.getWorksheet(1);
 
     if (!worksheet) {
@@ -467,15 +462,6 @@ const bulkImportMarks = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
-  } finally {
-    // Always delete the uploaded file
-    if (filePath) {
-      try {
-        fs.unlinkSync(filePath);
-      } catch {
-        console.error('Failed to delete uploaded Excel file:', filePath);
-      }
-    }
   }
 };
 
