@@ -28,7 +28,7 @@ export default function Mentor() {
               <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-white/20 aspect-[4/5] bg-white">
                 <div className="absolute inset-0 bg-gradient-to-t from-[#2D274B]/80 via-[#2D274B]/20 to-transparent z-10" />
                 <img 
-                  src="/images/founder.png" 
+                  src="/images/founder.jpg" 
                   alt="Ranjan Kumar Soni - Founder of SRM Classes" 
                   loading="lazy"
                   decoding="async"
