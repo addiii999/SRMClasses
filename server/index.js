@@ -2,6 +2,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const connectDB = require('./config/db');
 const Course = require('./models/Course');
@@ -56,6 +57,18 @@ const app = express();
 
 // Trust proxy for Render/cloud deployments (fixes rate limiter using correct client IP)
 app.set('trust proxy', 1);
+
+// ─── Gzip Compression ─────────────────────────────────────────────────────────
+// JSON API responses 60-80% smaller, major bandwidth reduction on Render
+app.use(compression({
+  level: 6,         // Balance between speed and compression (1-9, default 6)
+  threshold: 1024,  // Only compress responses > 1KB (no overhead for tiny responses)
+  filter: (req, res) => {
+    // Don't compress file download streams (PDFs etc already compressed)
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  },
+}));
 
 // ─── Security Headers (helmet) ────────────────────────────────────────────────
 app.use(helmet());

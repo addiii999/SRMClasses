@@ -66,7 +66,7 @@ export default function Faculty() {
                   <div className="relative w-20 h-20 mx-auto mb-6 translate-y-0 group-hover:-translate-y-1 transition-transform">
                     <div className="w-20 h-20 rounded-full bg-gradient-brand flex items-center justify-center text-white font-display font-bold text-3xl shadow-glass border-4 border-white overflow-hidden">
                       {teacher.photo?.url ? (
-                        <img src={teacher.photo.url} alt={teacher.name} className="w-full h-full object-cover" />
+                        <img src={teacher.photo.url} alt={teacher.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       ) : (
                         (teacher.name || '?').charAt(0).toUpperCase()
                       )}

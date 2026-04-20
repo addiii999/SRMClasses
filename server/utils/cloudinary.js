@@ -17,13 +17,21 @@ cloudinary.config({
  */
 async function uploadToCloudinary(buffer, folder, publicId, resourceType = 'auto', options = {}) {
   return new Promise((resolve, reject) => {
+    // Default image optimizations (safe, non-breaking)
+    const imageDefaults = resourceType === 'image' ? {
+      // Auto-convert to WebP (25-35% smaller than JPEG, 50-70% smaller than PNG)
+      // Browsers that don't support WebP get original format automatically via f_auto
+      transformation: [{ quality: 'auto:good', fetch_format: 'auto' }],
+    } : {};
+
     const stream = cloudinary.uploader.upload_stream(
       {
         folder: `srmclasses/${folder}`,
         public_id: publicId,
         resource_type: resourceType,
         overwrite: true,
-        ...options,
+        ...imageDefaults,
+        ...options, // options (e.g. face crop for faculty) override defaults
       },
       (error, result) => {
         if (error) return reject(error);

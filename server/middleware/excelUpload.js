@@ -35,7 +35,7 @@ const fileFilter = (req, file, cb) => {
 const excelUpload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB — marks Excel files never exceed 1-2MB realistically
 });
 
 module.exports = excelUpload;
