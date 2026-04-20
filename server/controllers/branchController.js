@@ -1,4 +1,7 @@
+const Branch = require('../models/Branch');
+const mongoose = require('mongoose');
 const cacheManager = require('../utils/cacheManager');
+const GENERIC_SERVER_ERROR = 'Something went wrong. Please try again.';
 
 // @desc Get all active branches (public)
 // @route GET /api/branches
