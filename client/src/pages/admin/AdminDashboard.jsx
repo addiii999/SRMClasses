@@ -133,9 +133,13 @@ function AdminSidebar({ open, onClose, adminRole }) {
         </nav>
         <div className="p-3 border-t border-white/10">
           <button onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-white/50 hover:text-red-400 hover:bg-red-400/10 w-full text-sm font-medium transition-all">
+            className="flex items-center gap-3 px-4 py-2.5 rounded-xl text-white/50 hover:text-red-400 hover:bg-red-400/10 w-full text-sm font-medium transition-all mb-2">
             <LogOut className="w-4 h-4" /> Sign Out
           </button>
+          
+          <div className="text-center">
+            <span className="text-[9px] font-medium text-white/20 tracking-widest uppercase">Managed by Aditya</span>
+          </div>
         </div>
       </aside>
     </>
