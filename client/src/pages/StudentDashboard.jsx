@@ -40,6 +40,8 @@ export default function StudentDashboard() {
   const [feeData, setFeeData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // Tab data cache — prevents re-fetching same tab data (reduces API calls significantly)
+  const tabCache = useRef({});
 
   // Results state
   const [results, setResults] = useState([]);
@@ -114,23 +116,44 @@ export default function StudentDashboard() {
   };
 
   const fetchData = async () => {
+    // Agar ye tab pehle se fetch ho chuka hai toh API call mat karo
+    if (tabCache.current[activeTab]) {
+      const cached = tabCache.current[activeTab];
+      if (activeTab === 'materials') setMaterials(cached);
+      else if (activeTab === 'papers') setPapers(cached);
+      else if (activeTab === 'announcements') setAnnouncements(cached);
+      else if (activeTab === 'fees') setFeeData(cached);
+      else if (activeTab === 'results') setResults(cached);
+      return; // Skip API call
+    }
+
     setLoading(true);
     try {
       if (activeTab === 'materials') {
         const res = await api.get(`/materials?studentClass=${user?.studentClass}&type=notes`);
-        setMaterials(res.data.data || []);
+        const data = res.data.data || [];
+        setMaterials(data);
+        tabCache.current['materials'] = data;
       } else if (activeTab === 'papers') {
         const res = await api.get(`/materials?studentClass=${user?.studentClass}&type=test_paper`);
-        setPapers(res.data.data || []);
+        const data = res.data.data || [];
+        setPapers(data);
+        tabCache.current['papers'] = data;
       } else if (activeTab === 'announcements') {
         const res = await api.get(`/announcements?studentClass=${user?.studentClass}`);
-        setAnnouncements(res.data.data || []);
+        const data = res.data.data || [];
+        setAnnouncements(data);
+        tabCache.current['announcements'] = data;
       } else if (activeTab === 'fees') {
         const res = await api.get('/fees/my-fee');
-        setFeeData(res.data.data || null);
+        const data = res.data.data || null;
+        setFeeData(data);
+        tabCache.current['fees'] = data;
       } else if (activeTab === 'results') {
         const res = await api.get('/weekly-tests/my-results');
-        setResults(res.data.data || []);
+        const data = res.data.data || [];
+        setResults(data);
+        tabCache.current['results'] = data;
       }
     } catch {
       toast.error('Failed to load data');
