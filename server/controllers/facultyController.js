@@ -1,4 +1,5 @@
 const Faculty = require('../models/Faculty');
+const cacheManager = require('../utils/cacheManager');
 const { uploadToCloudinary, deleteFromCloudinary } = require('../utils/cloudinary');
 const GENERIC_SERVER_ERROR = 'Something went wrong. Please try again.';
 
@@ -14,6 +15,9 @@ const pickFacultyFields = (body = {}) => {
 // @desc Get all active faculty (Public)
 exports.getPublicFaculty = async (req, res) => {
   try {
+    const cached = cacheManager.get('faculty_public');
+    if (cached) return res.json({ success: true, data: cached });
+
     const faculty = await Faculty.find({ isActive: true })
       .select('name subject photo experience rating priorityOrder isActive')
       .lean();
@@ -38,6 +42,7 @@ exports.getPublicFaculty = async (req, res) => {
       return nameA.localeCompare(nameB);
     });
 
+    cacheManager.set('faculty_public', faculty, 300); // 5 min cache
     res.json({ success: true, count: faculty.length, data: faculty });
   } catch (error) {
     res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
@@ -148,6 +153,8 @@ exports.updateFaculty = async (req, res) => {
       runValidators: true,
     });
 
+    cacheManager.delete('faculty_public');
+    cacheManager.delete('branches_active');
     res.json({ success: true, data: faculty });
   } catch (error) {
     res.status(400).json({ success: false, message: 'Invalid faculty data' });
@@ -170,6 +177,7 @@ exports.deleteFaculty = async (req, res) => {
     const adminEmail = req.admin ? req.admin.email : 'Admin';
     await faculty.softDelete(adminEmail);
     
+    cacheManager.delete('faculty_public');
     res.json({ success: true, message: 'Faculty moved to Recycle Bin' });
   } catch (error) {
     res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });

@@ -27,6 +27,7 @@ const testResultSchema = new mongoose.Schema({
 
 // One result per student per test
 testResultSchema.index({ testId: 1, studentId: 1 }, { unique: true });
+testResultSchema.index({ studentId: 1, testId: 1 });
 
 // Virtual: isAbsent
 testResultSchema.virtual('isAbsent').get(function () {

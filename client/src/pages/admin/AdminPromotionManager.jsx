@@ -55,17 +55,25 @@ export default function AdminPromotionManager({ branches = [] }) {
     sessionStorage.setItem('promotionBannerDismissed', 'true');
   };
 
+  // ── Preview Pagination State ─────────────────────────────────────────────
+  const [prevPage, setPrevPage] = useState(1);
+  const [prevPagination, setPrevPagination] = useState({ total: 0, pages: 1 });
+
   // ── Fetch Preview ─────────────────────────────────────────────────────────
-  const fetchPreview = async () => {
+  const fetchPreview = async (page = 1) => {
     if (!fromClass) return toast.error('Please select a class first.');
     setLoadingPreview(true);
-    setPreview(null);
-    setBulkResult(null);
+    if (page === 1) {
+      setPreview(null);
+      setBulkResult(null);
+    }
     try {
-      const params = { fromClass };
+      const params = { fromClass, page, limit: 20 };
       if (selectedBranch) params.branch = selectedBranch;
       const { data } = await api.get('/admin/promotion-preview', { params });
       setPreview(data.data);
+      setPrevPagination(data.data.pagination || { total: 0, pages: 1 });
+      setPrevPage(page);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Failed to load preview.');
     } finally {
@@ -158,7 +166,7 @@ export default function AdminPromotionManager({ branches = [] }) {
           </div>
         </div>
 
-        <div className="p-6 space-y-5">
+        <div className="p-6 space-y-5 text-brand-dark">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="label">From Class</label>
@@ -201,7 +209,7 @@ export default function AdminPromotionManager({ branches = [] }) {
           </div>
 
           <div className="flex gap-3">
-            <button onClick={fetchPreview} disabled={!fromClass || loadingPreview} className="btn-outline flex items-center gap-2 disabled:opacity-50">
+            <button onClick={() => fetchPreview(1)} disabled={!fromClass || loadingPreview} className="btn-outline flex items-center gap-2 disabled:opacity-50">
               {loadingPreview ? <RefreshCw className="w-4 h-4 animate-spin" /> : <TrendingUp className="w-4 h-4" />}
               Preview Affected Students
             </button>
@@ -213,32 +221,55 @@ export default function AdminPromotionManager({ branches = [] }) {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="font-bold text-brand-dark">
-                    {preview.count} student{preview.count !== 1 ? 's' : ''} will be promoted
+                    {preview.total} student{preview.total !== 1 ? 's' : ''} will be promoted
                   </p>
                   <p className="text-xs text-gray-500">
                     Class {preview.fromClass} → {preview.toClass === 'Graduated' ? 'Graduated' : `Class ${preview.toClass}`} &nbsp;|&nbsp; Year: {targetYear}
                   </p>
                 </div>
-                {preview.count > 0 && (
-                  <button onClick={() => setShowBulkModal(true)} className="btn-primary flex items-center gap-2 text-sm">
+                {preview.total > 0 && (
+                  <button onClick={() => setShowBulkModal(true)} className="btn-primary flex items-center gap-2 text-sm shadow-sm scale-105 active:scale-95 transition-transform">
                     <GraduationCap className="w-4 h-4" />
-                    Promote All
+                    Promote All ({preview.total})
                   </button>
                 )}
               </div>
 
               {/* Student List Preview */}
-              <div className="max-h-48 overflow-y-auto divide-y divide-gray-100">
+              <div className="max-h-60 overflow-y-auto divide-y divide-gray-100 border rounded-xl bg-white px-3">
                 {preview.students.map(s => (
-                  <div key={s._id} className="flex items-center justify-between py-2 text-sm">
-                    <span className="font-medium text-brand-dark">{s.name}</span>
+                  <div key={s._id} className="flex items-center justify-between py-2.5 text-sm group">
+                    <span className="font-medium text-brand-dark group-hover:text-primary transition-colors">{s.name}</span>
                     <div className="flex items-center gap-2 text-gray-400 text-xs">
                       <span>{s.studentId}</span>
-                      <span className="px-1.5 py-0.5 bg-gray-200 rounded text-gray-600">{s.batch || 'No Batch'}</span>
+                      <span className="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-bold uppercase text-[9px]">{s.batch || 'No Batch'}</span>
                     </div>
                   </div>
                 ))}
               </div>
+
+              {/* Preview Pagination */}
+              {prevPagination.pages > 1 && (
+                <div className="flex items-center justify-center gap-3 pt-1">
+                  <button 
+                    disabled={prevPage === 1 || loadingPreview} 
+                    onClick={() => fetchPreview(prevPage - 1)}
+                    className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5 rotate-180" />
+                  </button>
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">
+                    Page {prevPage} of {prevPagination.pages}
+                  </span>
+                  <button 
+                    disabled={prevPage === prevPagination.pages || loadingPreview} 
+                    onClick={() => fetchPreview(prevPage + 1)}
+                    className="p-1.5 rounded-lg border border-gray-200 disabled:opacity-30 bg-white shadow-sm"
+                  >
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

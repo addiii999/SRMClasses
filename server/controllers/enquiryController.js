@@ -94,8 +94,24 @@ const getEnquiries = async (req, res) => {
     else if (sortBy === 'class') sortOptions = { studentClass: 1 };
     else if (sortBy === 'date') sortOptions = { createdAt: -1 };
 
-    const enquiries = await Enquiry.find(query).sort(sortOptions);
-    res.json({ success: true, count: enquiries.length, data: enquiries });
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
+
+    const total = await Enquiry.countDocuments(query);
+    const enquiries = await Enquiry.find(query)
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(limit)
+      .select('name email mobile studentClass schoolName status createdAt')
+      .lean();
+
+    res.json({ 
+      success: true, 
+      count: enquiries.length, 
+      pagination: { total, pages: Math.ceil(total / limit), page }, 
+      data: enquiries 
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

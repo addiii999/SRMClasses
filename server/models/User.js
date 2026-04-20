@@ -236,6 +236,7 @@ userSchema.index({ registrationStatus: 1, createdAt: -1 });
 userSchema.index({ isApproved: 1, batch: 1 });
 userSchema.index({ name: 'text', studentId: 'text' });
 userSchema.index({ isArchived: 1, registrationStatus: 1 });
+userSchema.index({ branch: 1, studentClass: 1, role: 1, registrationStatus: 1 });
 
 // ─── Pre-save hooks ───────────────────────────────────────────────────────────
 

@@ -304,6 +304,8 @@ function Enquiries({ selectedBranch }) {
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('date');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, pages: 1 });
   const [loading, setLoading] = useState(true);
 
   const getHeaders = () => ({ Authorization: `Bearer ${localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken')}` });
@@ -312,12 +314,23 @@ function Enquiries({ selectedBranch }) {
     setLoading(true);
     try {
       const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
-      const res = await api.get(`/enquiries?status=${filterStatus}&search=${search}&sortBy=${sortBy}${branchParam}`, { headers: getHeaders() });
+      const params = new URLSearchParams({
+        status: filterStatus,
+        search,
+        sortBy,
+        page,
+        limit: 20
+      });
+      if (selectedBranch) params.append('branch', selectedBranch);
+
+      const res = await api.get(`/enquiries?${params.toString()}`, { headers: getHeaders() });
       setEnquiries(res.data.data || []);
+      setPagination(res.data.pagination || { total: 0, pages: 1 });
     } catch { toast.error('Failed to load enquiries'); }
     finally { setLoading(false); }
-  }, [filterStatus, search, selectedBranch, sortBy]);
+  }, [filterStatus, search, selectedBranch, sortBy, page]);
 
+  useEffect(() => { setPage(1); }, [filterStatus, search, selectedBranch, sortBy]);
   useEffect(() => { fetchEnquiries(); }, [fetchEnquiries]);
 
   const updateStatus = async (id, status) => {
@@ -337,7 +350,7 @@ function Enquiries({ selectedBranch }) {
   const statusColors = { New: 'badge-new', Contacted: 'badge-contacted', Converted: 'badge-converted' };
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 text-brand-dark">
       <h2 className="text-2xl font-display font-bold text-brand-dark">Enquiries – CRM</h2>
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-48">
@@ -357,6 +370,12 @@ function Enquiries({ selectedBranch }) {
            </select>
         </div>
       </div>
+
+      <div className="flex items-center justify-between text-xs font-bold text-gray-400 uppercase px-1">
+        <span>{pagination.total} Total Enquiries</span>
+        <span>Page {page} of {pagination.pages}</span>
+      </div>
+
       <div className="card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -369,11 +388,11 @@ function Enquiries({ selectedBranch }) {
               {loading ? (
                 Array(5).fill(0).map((_, i) => (
                   <tr key={i} className="border-b border-gray-50">
-                    {Array(7).fill(0).map((_, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>)}
+                    {Array(8).fill(0).map((_, j) => <td key={j} className="px-4 py-3"><div className="h-4 bg-gray-100 rounded animate-pulse" /></td>)}
                   </tr>
                 ))
               ) : enquiries.length === 0 ? (
-                <tr><td colSpan={7} className="text-center py-10 text-gray-400">No enquiries found.</td></tr>
+                <tr><td colSpan={8} className="text-center py-10 text-gray-400">No enquiries found.</td></tr>
               ) : enquiries.map(e => (
                 <tr key={e._id} className="border-b border-gray-50 hover:bg-brand-bg/50 transition-colors">
                   <td className="px-4 py-3 font-medium text-brand-dark">{e.name}</td>
@@ -399,6 +418,28 @@ function Enquiries({ selectedBranch }) {
           </table>
         </div>
       </div>
+
+      {pagination.pages > 1 && (
+        <div className="flex items-center justify-center gap-4 pt-2">
+          <button 
+            disabled={page === 1} 
+            onClick={() => setPage(p => p - 1)}
+            className="p-2 rounded-xl border border-gray-200 disabled:opacity-30 hover:border-primary transition-all"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="text-xs font-bold text-gray-500">
+            PAGE {page} OF {pagination.pages}
+          </span>
+          <button 
+            disabled={page === pagination.pages} 
+            onClick={() => setPage(p => p + 1)}
+            className="p-2 rounded-xl border border-gray-200 disabled:opacity-30 hover:border-primary transition-all"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

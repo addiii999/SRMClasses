@@ -28,13 +28,12 @@ const buildStore = (prefix) => {
   });
 };
 
-// ─── OTP Rate Limiter ─────────────────────────────────────────────────────────
-// Max 5 OTP requests per IP per 15 min
+// Max 3 OTP requests per IP per 30 min (More strict to prevent SMS spam costing money)
 const otpLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 5,
+  windowMs: 30 * 60 * 1000,
+  max: 3,
   keyGenerator: identityKey,
-  message: { success: false, message: 'Too many OTP requests. Please try again later.' },
+  message: { success: false, message: 'Too many OTP requests. Please wait 30 minutes.' },
   standardHeaders: true,
   legacyHeaders: false,
   ...(redisClient ? { store: buildStore('rl:otp:') } : {}),

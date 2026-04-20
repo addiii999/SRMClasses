@@ -138,9 +138,17 @@ exports.getPromotionPreview = async (req, res) => {
     };
     if (branch) query.branch = branch;
 
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
+
+    const total = await User.countDocuments(query);
     const students = await User.find(query)
       .select('name studentId studentClass academicYear batch')
-      .sort({ name: 1 });
+      .sort({ name: 1 })
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
     const toClass = CLASS_PROGRESSION[fromClass];
     const targetAcademicYear = getNextAcademicYear(
@@ -150,7 +158,9 @@ exports.getPromotionPreview = async (req, res) => {
     res.json({
       success: true,
       data: {
+        total,
         count: students.length,
+        pagination: { total, pages: Math.ceil(total / limit), page },
         fromClass,
         toClass: toClass || 'Graduated',
         targetAcademicYear,
