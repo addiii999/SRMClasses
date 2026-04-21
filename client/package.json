@@ -9,6 +9,8 @@
         "preview": "vite preview"
     },
     "dependencies": {
+        "@vercel/analytics": "^2.0.1",
+        "@vercel/speed-insights": "^2.0.0",
         "axios": "^1.15.1",
         "chart.js": "^4.4.0",
         "lucide-react": "^0.471.0",
