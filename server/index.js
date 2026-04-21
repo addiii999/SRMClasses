@@ -60,26 +60,6 @@ const app = express();
 // Trust proxy for Render/cloud deployments (fixes rate limiter using correct client IP)
 app.set('trust proxy', 1);
 
-// ─── Global Rate Limiting ───────────────────────────────────────────────────
-// Protects endpoints from scraping and bot abuse
-let redisClient;
-if (process.env.REDIS_URL) {
-  try {
-    redisClient = new Redis(process.env.REDIS_URL, { enableOfflineQueue: false, lazyConnect: true });
-    redisClient.connect().catch(() => {});
-  } catch (e) {}
-}
-
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Limit each IP to 200 requests per window
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { success: false, message: 'Too many requests from this IP, please try again later.' },
-  ...(redisClient ? { store: new RedisStore({ sendCommand: (...args) => redisClient.call(...args), prefix: 'rl:global:' }) } : {}),
-});
-app.use('/api', globalLimiter);
-
 // JSON API responses 60-80% smaller, major bandwidth reduction on Render
 app.use(compression({
   level: 6,         // Balance between speed and compression (1-9, default 6)
@@ -132,18 +112,9 @@ app.get('/api/health', (req, res) => {
   res.status(dbReady ? 200 : 503).json({ status: dbReady ? 'ok' : 'degraded' });
 });
 
-// ─── Global Rate Limiting ─────────────────────────────────────────────────────
-// Reduced to 200/15min. Localhost bypass only applies in development.
-const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 200,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: 'Too many requests from this IP, please try again after 15 minutes',
-  skip: (req) =>
-    !isProduction &&
-    (req.ip === '::1' || req.ip === '127.0.0.1'),
-});
+// ─── Rate Limiting ──────────────────────────────────────────────────────────
+const { apiLimiter } = require('./middleware/rateLimits');
+app.use('/api', apiLimiter);
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 const productionOrigins = [
@@ -183,9 +154,6 @@ app.use(
     credentials: true,
   })
 );
-
-// Apply global rate limiter to all routes
-app.use(limiter);
 
 // ─── Body Parsing (10mb limit for JSON/URL-encoded payloads) ─────────────────
 // Note: Excel/file upload routes use multer with its own 50mb limit (see middleware/excelUpload.js)

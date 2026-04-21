@@ -95,6 +95,17 @@ const adminLoginLimiter = rateLimit({
   ...(redisClient ? { store: buildStore('rl:admin-login:') } : {}),
 });
 
+// ─── General API Rate Limiter ────────────────────────────────────────────────
+// Max 100 requests per IP per 5 min for public endpoints
+const apiLimiter = rateLimit({
+  windowMs: 5 * 60 * 1000,
+  max: 100,
+  message: { success: false, message: 'Too many requests. Please try again after 5 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false,
+  ...(redisClient ? { store: buildStore('rl:api:') } : {}),
+});
+
 module.exports = {
   otpLimiter,
   registrationLimiter,
@@ -102,4 +113,5 @@ module.exports = {
   passwordResetLimiter,
   boardRequestLimiter,
   adminLoginLimiter,
+  apiLimiter,
 };
