@@ -9,10 +9,22 @@ const mongoose = require('mongoose');
  */
 exports.getStudentsFeeStats = async (req, res) => {
   try {
+    const { branch, studentClass, search } = req.query;
     const limit = Math.min(parseInt(req.query.limit) || 20, 50);
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const skip = (page - 1) * limit;
 
+    const filter = { isStudent: true, isEnrolled: true };
+    if (branch) filter.branch = branch;
+    if (studentClass) filter.studentClass = studentClass;
+    if (search) {
+      filter.$or = [
+        { name: { $regex: search, $options: 'i' } },
+        { studentId: { $regex: search, $options: 'i' } }
+      ];
+    }
+
+    const total = await User.countDocuments(filter);
     const students = await User.find(filter)
       .select('studentId name email mobile studentClass feeType feeSnapshot payments')
       .sort({ createdAt: -1 })
@@ -36,8 +48,13 @@ exports.getStudentsFeeStats = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      count: studentsWithFees.length,
-      data: studentsWithFees
+      data: studentsWithFees,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
     });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

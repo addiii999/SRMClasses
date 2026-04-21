@@ -58,10 +58,11 @@ const getMaterials = async (req, res) => {
     if (type && typeof type === 'string') query.type = type;
 
     // Pagination logic
-    const limit = Math.min(parseInt(req.query.limit) || 50, 100); // Max 100 per page
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const skip = (page - 1) * limit;
 
+    const total = await StudyMaterial.countDocuments(query);
     const materials = await StudyMaterial.find(query)
       .select('title description studentClass subject type fileUrl uploadedAt fileName fileSize')
       .sort({ uploadedAt: -1 })
@@ -69,7 +70,16 @@ const getMaterials = async (req, res) => {
       .limit(limit)
       .lean();
 
-    res.json({ success: true, data: materials, page, limit });
+    res.json({ 
+      success: true, 
+      data: materials,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

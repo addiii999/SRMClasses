@@ -20,9 +20,13 @@ export default function AdminFeeManagement({ selectedBranch }) {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterClass, setFilterClass] = useState('all');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all'); // still local for status as it's computed
   const [sortConfig, setSortConfig] = useState({ key: 'remainingAmount', direction: 'desc' });
   const [enrollmentTab, setEnrollmentTab] = useState('active'); // active or removed
+  
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, pages: 1, limit: 20 });
 
   // Modals
   const [selectedStudent, setSelectedStudent] = useState(null);
@@ -35,16 +39,28 @@ export default function AdminFeeManagement({ selectedBranch }) {
     try {
       const token = localStorage.getItem('adminToken') || sessionStorage.getItem('adminToken');
       const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
-      const res = await api.get(`/fees/students?status=${enrollmentTab}${branchParam}`, {
+      const classParam = filterClass !== 'all' ? `&studentClass=${filterClass}` : '';
+      const searchParam = search ? `&search=${search}` : '';
+      
+      const res = await api.get(`/fees/students?status=${enrollmentTab}${branchParam}${classParam}${searchParam}&page=${page}&limit=20`, {
         headers: { Authorization: `Bearer ${token}` }
       });
+      
       setStudents(res.data.data || []);
+      if (res.data.pagination) {
+        setPagination(res.data.pagination);
+      }
     } catch (error) {
       toast.error('Failed to load students');
     } finally {
       setLoading(false);
     }
-  }, [enrollmentTab, selectedBranch]);
+  }, [enrollmentTab, selectedBranch, filterClass, search, page]);
+
+  useEffect(() => {
+    // Reset to page 1 on filter change
+    setPage(1);
+  }, [enrollmentTab, selectedBranch, filterClass, search]);
 
   useEffect(() => {
     fetchStudents();
@@ -58,13 +74,11 @@ export default function AdminFeeManagement({ selectedBranch }) {
     setSortConfig({ key, direction });
   };
 
+  // Status filtering remains local as it's a computed property in calculateFeeDetails
   const filteredStudents = students
     .filter(s => {
-      const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) || 
-                            s.mobile.includes(search);
-      const matchesClass = filterClass === 'all' || s.studentClass === filterClass;
       const matchesStatus = filterStatus === 'all' || s.paymentStatus === filterStatus;
-      return matchesSearch && matchesClass && matchesStatus;
+      return matchesStatus;
     })
     .sort((a, b) => {
       if (a[sortConfig.key] < b[sortConfig.key]) return sortConfig.direction === 'asc' ? -1 : 1;
@@ -275,6 +289,49 @@ export default function AdminFeeManagement({ selectedBranch }) {
             </tbody>
           </table>
         </div>
+        {/* Pagination Controls */}
+        {pagination.pages > 1 && (
+          <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+            <div className="text-xs text-gray-500">
+              Showing {(page - 1) * pagination.limit + 1} to {Math.min(page * pagination.limit, pagination.total)} of {pagination.total} students
+            </div>
+            <div className="flex gap-2">
+              <button 
+                disabled={page === 1}
+                onClick={() => setPage(p => p - 1)}
+                className="px-3 py-1 rounded-lg border border-gray-200 text-xs font-semibold disabled:opacity-50 hover:bg-white transition-all shadow-sm"
+              >
+                Previous
+              </button>
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                  let pageNum;
+                  if (pagination.pages <= 5) pageNum = i + 1;
+                  else if (page <= 3) pageNum = i + 1;
+                  else if (page >= pagination.pages - 2) pageNum = pagination.pages - 4 + i;
+                  else pageNum = page - 2 + i;
+                  
+                  return (
+                    <button
+                      key={pageNum}
+                      onClick={() => setPage(pageNum)}
+                      className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${page === pageNum ? 'bg-primary text-white' : 'text-gray-400 hover:bg-white'}`}
+                    >
+                      {pageNum}
+                    </button>
+                  );
+                })}
+              </div>
+              <button 
+                disabled={page === pagination.pages}
+                onClick={() => setPage(p => p + 1)}
+                className="px-3 py-1 rounded-lg border border-gray-200 text-xs font-semibold disabled:opacity-50 hover:bg-white transition-all shadow-sm"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Modals placeholders - we'll build them below or import them */}

@@ -681,20 +681,27 @@ function Materials({ selectedBranch }) {
   const [form, setForm] = useState({ title: '', studentClass: '', subject: '', type: 'notes', description: '', branch: '' });
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, pages: 1, limit: 10 });
+  const [filterClass, setFilterClass] = useState('all');
 
   const fetchMaterials = useCallback(async () => {
     try {
       const branchParam = selectedBranch ? `&branch=${selectedBranch}` : '';
-      const res = await api.get(`/materials?studentClass=all${branchParam}`);
+      const classParam = filterClass ? `&studentClass=${filterClass}` : '&studentClass=all';
+      const res = await api.get(`/materials?page=${page}&limit=10${classParam}${branchParam}`);
       setMaterials(res.data.data || []);
+      if (res.data.pagination) setPagination(res.data.pagination);
     } catch { }
-  }, [selectedBranch]);
+  }, [selectedBranch, filterClass, page]);
 
   useEffect(() => { fetchMaterials(); }, [fetchMaterials]);
 
   useEffect(() => {
     if (selectedBranch) setForm(prev => ({ ...prev, branch: selectedBranch }));
   }, [selectedBranch]);
+
+  useEffect(() => { setPage(1); }, [filterClass, selectedBranch]);
 
   const handleUpload = async (e) => {
     e.preventDefault();
@@ -706,7 +713,7 @@ function Materials({ selectedBranch }) {
     try {
       await api.post('/materials', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
       toast.success('Material uploaded!');
-      setForm({ title: '', studentClass: '', subject: '', type: 'notes', description: '' });
+      setForm({ title: '', studentClass: '', subject: '', type: 'notes', description: '', branch: selectedBranch || '' });
       setFile(null);
       fetchMaterials();
     } catch { toast.error('Upload failed'); }
@@ -722,6 +729,8 @@ function Materials({ selectedBranch }) {
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-display font-bold text-brand-dark">Study Materials</h2>
+      
+      {/* Upload Form */}
       <form onSubmit={handleUpload} className="card p-6 space-y-4">
         <h3 className="font-semibold text-brand-dark flex items-center gap-2"><Upload className="w-4 h-4 text-primary" /> Upload New Material</h3>
         <div className="grid grid-cols-2 gap-4">
@@ -745,9 +754,6 @@ function Materials({ selectedBranch }) {
           <div><label className="label">Branch (Optional)</label>
             <select className="input-field" value={form.branch} onChange={e => setForm({ ...form, branch: e.target.value })}>
               <option value="">Global (All Branches)</option>
-              {/* Note: This component doesn't have the full branches list, but it's passed via prop in the parent. 
-                  However, we can just use the selectedBranch for auto-tagging or leave as is if we want simple selection. */}
-              {/* For now we'll just allow the selectedBranch to be the default. */}
               {selectedBranch && <option value={selectedBranch}>Selected Branch Only</option>}
             </select>
           </div>
@@ -761,20 +767,70 @@ function Materials({ selectedBranch }) {
           <Upload className="w-4 h-4" /> {loading ? 'Uploading...' : 'Upload Material'}
         </button>
       </form>
-      <div className="space-y-3">
-        {materials.map(m => (
-          <div key={m._id} className="card p-4 flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0"><FileText className="w-5 h-5 text-primary" /></div>
-            <div className="flex-1 min-w-0">
-              <p className="font-semibold text-brand-dark text-sm truncate">{m.title}</p>
-              <p className="text-xs text-gray-400">Class {m.studentClass} • {m.subject} • {m.type}</p>
-            </div>
-            <a href={m.fileUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-1.5 px-3">View</a>
-            <button onClick={() => deleteMaterial(m._id)} className="text-red-400 hover:text-red-600"><Trash2 className="w-4 h-4" /></button>
+
+      {/* List Section */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold text-brand-dark">Uploaded Materials ({pagination.total})</h3>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-bold text-gray-400 uppercase">Filter Class:</span>
+            <select className="input-field py-1 text-xs w-32" value={filterClass} onChange={e => setFilterClass(e.target.value)}>
+              <option value="all">All Classes</option>
+              {['5', '6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
+            </select>
           </div>
-        ))}
+        </div>
+
+        <div className="space-y-3">
+          {materials.length === 0 ? (
+            <div className="card p-10 text-center text-gray-400 text-sm">No materials found for this selection.</div>
+          ) : (
+            materials.map(m => (
+              <div key={m._id} className="card p-4 flex items-center gap-4 group hover:border-primary/30 transition-all">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform"><FileText className="w-5 h-5 text-primary" /></div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-brand-dark text-sm truncate">{m.title}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[10px] bg-brand-bg text-brand-dark px-2 py-0.5 rounded font-bold uppercase">Class {m.studentClass}</span>
+                    <span className="text-[10px] text-gray-400 font-medium tracking-tight">●</span>
+                    <span className="text-[10px] text-gray-400 font-medium uppercase">{m.subject || 'General'}</span>
+                    <span className="text-[10px] text-gray-400 font-medium tracking-tight">●</span>
+                    <span className="text-[10px] text-primary font-bold uppercase">{m.type}</span>
+                  </div>
+                </div>
+                <a href={m.fileUrl} target="_blank" rel="noopener noreferrer" className="btn-ghost text-xs py-1.5 px-3">View</a>
+                <button onClick={() => deleteMaterial(m._id)} className="text-red-400 hover:text-red-600 transition-colors"><Trash2 className="w-4 h-4" /></button>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* Pagination */}
+        {pagination.pages > 1 && (
+          <div className="flex items-center justify-center gap-4 pt-4 border-t border-gray-50">
+            <button 
+              disabled={page === 1} 
+              onClick={() => setPage(p => p - 1)}
+              className="p-2 rounded-xl border border-gray-100 disabled:opacity-30 hover:border-primary transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+              Page {page} of {pagination.pages}
+            </span>
+            <button 
+              disabled={page === pagination.pages} 
+              onClick={() => setPage(p => p + 1)}
+              className="p-2 rounded-xl border border-gray-100 disabled:opacity-30 hover:border-primary transition-all"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
+  );
+}
   );
 }
 
@@ -1000,18 +1056,26 @@ function AnnouncementsAdmin() {
   const [announcements, setAnnouncements] = useState([]);
   const [form, setForm] = useState({ title: '', body: '', targetClass: 'all', priority: 'medium' });
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, pages: 1, limit: 10 });
 
-  const fetchAnnouncements = async () => {
-    try { const res = await api.get('/announcements?studentClass=all'); setAnnouncements(res.data.data || []); } catch { }
-  };
-  useEffect(() => { fetchAnnouncements(); }, []);
+  const fetchAnnouncements = useCallback(async () => {
+    try {
+      const res = await api.get(`/announcements?page=${page}&limit=10&studentClass=all`);
+      setAnnouncements(res.data.data || []);
+      if (res.data.pagination) setPagination(res.data.pagination);
+    } catch { }
+  }, [page]);
+
+  useEffect(() => { fetchAnnouncements(); }, [fetchAnnouncements]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
       await api.post('/announcements', form);
-      toast.success('Announcement posted!'); fetchAnnouncements();
+      toast.success('Announcement posted!');
+      fetchAnnouncements();
       setForm({ title: '', body: '', targetClass: 'all', priority: 'medium' });
     } catch { toast.error('Failed'); }
     finally { setLoading(false); }
@@ -1022,7 +1086,11 @@ function AnnouncementsAdmin() {
     try { await api.delete(`/announcements/${id}`); toast.success('Moved to Recycle Bin'); fetchAnnouncements(); } catch { }
   };
 
-  const priorityColors = { high: 'bg-red-100 text-red-700', medium: 'bg-yellow-100 text-yellow-700', low: 'bg-green-100 text-green-700' };
+  const priorityColors = { 
+    high: 'bg-red-100 text-red-700 border-red-200', 
+    medium: 'bg-yellow-100 text-yellow-700 border-yellow-200', 
+    low: 'bg-green-100 text-green-700 border-green-200' 
+  };
 
   return (
     <div className="space-y-6">
@@ -1048,21 +1116,61 @@ function AnnouncementsAdmin() {
           <Bell className="w-4 h-4 inline mr-2" />{loading ? 'Posting...' : 'Post Announcement'}
         </button>
       </form>
-      <div className="space-y-3">
-        {announcements.map(a => (
-          <div key={a._id} className="card p-5 flex gap-4">
-            <div className="flex-1">
-              <div className="flex items-center gap-2 mb-1">
-                <h4 className="font-semibold text-brand-dark">{a.title}</h4>
-                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${priorityColors[a.priority]}`}>{a.priority}</span>
-                <span className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">Class {a.targetClass}</span>
+
+      <div className="space-y-4">
+        <h3 className="font-semibold text-brand-dark flex items-center justify-between">
+          Recent History
+          <span className="text-xs font-normal text-gray-400 font-mono">Total: {pagination.total}</span>
+        </h3>
+        <div className="space-y-3">
+          {announcements.length === 0 ? (
+            <div className="card p-10 text-center text-gray-400 text-sm">No announcements posted yet.</div>
+          ) : (
+            announcements.map(a => (
+              <div key={a._id} className="card p-5 flex gap-4 hover:border-primary/20 transition-all group">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <h4 className="font-bold text-brand-dark">{a.title}</h4>
+                    <span className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase border ${priorityColors[a.priority]}`}>{a.priority}</span>
+                    <span className="text-[9px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold uppercase border border-primary/20">Class {a.targetClass}</span>
+                  </div>
+                  <p className="text-gray-600 text-sm leading-relaxed">{a.body}</p>
+                  <div className="flex items-center gap-3 mt-3 text-[10px] text-gray-400 font-medium font-mono uppercase tracking-widest">
+                    <span className="flex items-center gap-1"><Calendar className="w-3 h-3" /> {new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                    <span>•</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {new Date(a.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+                  </div>
+                </div>
+                <button onClick={() => del(a._id)} className="text-gray-300 hover:text-red-500 transition-colors shrink-0 self-start p-2 hover:bg-red-50 rounded-xl">
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
-              <p className="text-gray-500 text-sm">{a.body}</p>
-              <p className="text-xs text-gray-400 mt-2">{new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-            </div>
-            <button onClick={() => del(a._id)} className="text-red-400 hover:text-red-600 shrink-0"><Trash2 className="w-4 h-4" /></button>
+            ))
+          )}
+        </div>
+
+        {/* Pagination */}
+        {pagination.pages > 1 && (
+          <div className="flex items-center justify-center gap-4 pt-4 border-t border-gray-50">
+            <button 
+              disabled={page === 1} 
+              onClick={() => setPage(p => p - 1)}
+              className="p-2 rounded-xl border border-gray-100 disabled:opacity-30 hover:border-primary transition-all shadow-sm"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              {page} / {pagination.pages}
+            </span>
+            <button 
+              disabled={page === pagination.pages} 
+              onClick={() => setPage(p => p + 1)}
+              className="p-2 rounded-xl border border-gray-100 disabled:opacity-30 hover:border-primary transition-all shadow-sm"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
-        ))}
+        )}
       </div>
     </div>
   );

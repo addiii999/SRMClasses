@@ -75,8 +75,7 @@ const getAllTests = async (req, res) => {
     if (batch) query.batch = batch;
     
     if (branch === 'ALL') {
-      // No branch filter needed, or filter for isAllBranches?
-      // Usually, 'ALL' means see everything in the admin view
+      // Admin sees everything
     } else if (branch) {
       query.$or = [{ branch }, { isAllBranches: true }];
     }
@@ -85,29 +84,55 @@ const getAllTests = async (req, res) => {
     if (board === 'ALL') query.board = 'ALL';
     if (subject) query.subject = { $regex: subject, $options: 'i' };
 
-    // Pagination logic
     const limit = Math.min(parseInt(req.query.limit) || 20, 50);
     const page = Math.max(parseInt(req.query.page) || 1, 1);
     const skip = (page - 1) * limit;
 
-    const tests = await WeeklyTest.find(query)
-      .select('testName subject date totalMarks batch board isPublished branch isAllBranches isLocked')
-      .sort({ date: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    const total = await WeeklyTest.countDocuments(query);
+    
+    // Aggregation to get tests and result counts in ONE go
+    const tests = await WeeklyTest.aggregate([
+      { $match: query },
+      { $sort: { date: -1 } },
+      { $skip: skip },
+      { $limit: limit },
+      {
+        $lookup: {
+          from: 'testresults',
+          localField: '_id',
+          foreignField: 'testId',
+          as: 'results'
+        }
+      },
+      {
+        $project: {
+          testName: 1,
+          subject: 1,
+          date: 1,
+          totalMarks: 1,
+          batch: 1,
+          board: 1,
+          isPublished: 1,
+          branch: 1,
+          isAllBranches: 1,
+          isLocked: 1,
+          resultCount: { $size: '$results' }
+        }
+      }
+    ]);
 
-    // Attach result counts efficiently
-    const testsWithCounts = await Promise.all(
-      tests.map(async (test) => {
-        const resultCount = await TestResult.countDocuments({ testId: test._id });
-        return { ...test, resultCount };
-      })
-    );
-
-    res.json({ success: true, data: testsWithCounts, page, limit });
+    res.json({ 
+      success: true, 
+      data: tests,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
+    res.status(500).json({ success: false, message: error.message || GENERIC_SERVER_ERROR });
   }
 };
 
@@ -131,7 +156,7 @@ const getTestById = async (req, res) => {
 
     // Compute percentage for each result
     const resultsWithPercentage = results.map((r) => {
-      const obj = r.toObject();
+      const obj = { ...r };
       if (obj.marksObtained === 'AB' || obj.marksObtained === 'ab') {
         obj.percentage = null;
         obj.isAbsent = true;

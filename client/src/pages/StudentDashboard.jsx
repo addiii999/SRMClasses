@@ -115,51 +115,63 @@ export default function StudentDashboard() {
     } catch { }
   };
 
-  const fetchData = async () => {
-    // Agar ye tab pehle se fetch ho chuka hai toh API call mat karo
-    if (tabCache.current[activeTab]) {
-      const cached = tabCache.current[activeTab];
-      if (activeTab === 'materials') setMaterials(cached);
-      else if (activeTab === 'papers') setPapers(cached);
-      else if (activeTab === 'announcements') setAnnouncements(cached);
-      else if (activeTab === 'fees') setFeeData(cached);
-      else if (activeTab === 'results') setResults(cached);
-      return; // Skip API call
-    }
+  // Pagination state for each tab
+  const [tabPagination, setTabPagination] = useState({
+    materials: { page: 1, pages: 1, total: 0 },
+    papers: { page: 1, pages: 1, total: 0 },
+    announcements: { page: 1, pages: 1, total: 0 },
+    results: { page: 1, pages: 1, total: 0 }
+  });
 
+  const fetchData = async (targetPage = null) => {
+    const currentPage = targetPage || tabPagination[activeTab]?.page || 1;
+    
+    // Agar ye page pehle se cache mein hai toh API call mat karo (Optional complexity removed for simplicity in pagination)
     setLoading(true);
     try {
       if (activeTab === 'materials') {
-        const res = await api.get(`/materials?studentClass=${user?.studentClass}&type=notes`);
+        const res = await api.get(`/materials?studentClass=${user?.studentClass}&type=notes&page=${currentPage}&limit=10`);
         const data = res.data.data || [];
         setMaterials(data);
-        tabCache.current['materials'] = data;
+        if (res.data.pagination) {
+          setTabPagination(prev => ({ ...prev, materials: res.data.pagination }));
+        }
       } else if (activeTab === 'papers') {
-        const res = await api.get(`/materials?studentClass=${user?.studentClass}&type=test_paper`);
+        const res = await api.get(`/materials?studentClass=${user?.studentClass}&type=test_paper&page=${currentPage}&limit=10`);
         const data = res.data.data || [];
         setPapers(data);
-        tabCache.current['papers'] = data;
+        if (res.data.pagination) {
+          setTabPagination(prev => ({ ...prev, papers: res.data.pagination }));
+        }
       } else if (activeTab === 'announcements') {
-        const res = await api.get(`/announcements?studentClass=${user?.studentClass}`);
+        const res = await api.get(`/announcements?studentClass=${user?.studentClass}&page=${currentPage}&limit=10`);
         const data = res.data.data || [];
         setAnnouncements(data);
-        tabCache.current['announcements'] = data;
+        if (res.data.pagination) {
+          setTabPagination(prev => ({ ...prev, announcements: res.data.pagination }));
+        }
       } else if (activeTab === 'fees') {
         const res = await api.get('/fees/my-fee');
         const data = res.data.data || null;
         setFeeData(data);
-        tabCache.current['fees'] = data;
       } else if (activeTab === 'results') {
         const res = await api.get('/weekly-tests/my-results');
         const data = res.data.data || [];
         setResults(data);
-        tabCache.current['results'] = data;
       }
     } catch {
       toast.error('Failed to load data');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePageChange = (newPage) => {
+    setTabPagination(prev => ({
+      ...prev,
+      [activeTab]: { ...prev[activeTab], page: newPage }
+    }));
+    fetchData(newPage);
   };
 
   const fetchProfileData = async () => {
@@ -465,28 +477,52 @@ export default function StudentDashboard() {
       </div>
     );
 
-    if (activeTab === 'results') return renderResults();
-
-    if (activeTab === 'announcements') return (
-      <div className="space-y-4">
-        {announcements.length === 0 && <div className="text-center py-16 text-gray-400">No announcements yet.</div>}
-        {announcements.map(a => (
-          <div key={a._id} className="card p-5">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <h4 className="font-semibold text-brand-dark">{a.title}</h4>
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${priorityColors[a.priority]}`}>{a.priority}</span>
-                </div>
-                <p className="text-gray-500 text-sm leading-relaxed">{a.body}</p>
-                <p className="text-xs text-gray-400 mt-2">{new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-              </div>
-              <Bell className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+    if (activeTab === 'results') {
+      const p = tabPagination.results;
+      return (
+        <div className="space-y-6">
+          {renderResults()}
+          {p.pages > 1 && (
+            <div className="flex items-center justify-center gap-4 py-4 border-t border-gray-100">
+              <button disabled={p.page === 1} onClick={() => handlePageChange(p.page - 1)} className="p-2 rounded-xl border border-gray-100 disabled:opacity-30"><ChevronDown className="w-4 h-4 rotate-90" /></button>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{p.page} / {p.pages}</span>
+              <button disabled={p.page === p.pages} onClick={() => handlePageChange(p.page + 1)} className="p-2 rounded-xl border border-gray-100 disabled:opacity-30"><ChevronDown className="w-4 h-4 -rotate-90" /></button>
             </div>
-          </div>
-        ))}
-      </div>
-    );
+          )}
+        </div>
+      );
+    }
+
+    if (activeTab === 'announcements') {
+      const p = tabPagination.announcements;
+      return (
+        <div className="space-y-4">
+          {announcements.length === 0 && <div className="text-center py-16 text-gray-400">No announcements yet.</div>}
+          {announcements.map(a => (
+            <div key={a._id} className="card p-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 mb-1">
+                    <h4 className="font-semibold text-brand-dark">{a.title}</h4>
+                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${priorityColors[a.priority]}`}>{a.priority}</span>
+                  </div>
+                  <p className="text-gray-500 text-sm leading-relaxed">{a.body}</p>
+                  <p className="text-xs text-gray-400 mt-2">{new Date(a.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                </div>
+                <Bell className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+              </div>
+            </div>
+          ))}
+          {p.pages > 1 && (
+            <div className="flex items-center justify-center gap-4 py-4 border-t border-gray-100">
+              <button disabled={p.page === 1} onClick={() => handlePageChange(p.page - 1)} className="p-2 rounded-xl border border-gray-100 disabled:opacity-30"><ChevronDown className="w-4 h-4 rotate-90" /></button>
+              <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">{p.page} / {p.pages}</span>
+              <button disabled={p.page === p.pages} onClick={() => handlePageChange(p.page + 1)} className="p-2 rounded-xl border border-gray-100 disabled:opacity-30"><ChevronDown className="w-4 h-4 -rotate-90" /></button>
+            </div>
+          )}
+        </div>
+      );
+    }
 
     if (activeTab === 'fees') {
       if (!feeData || !feeData.payableAmount) return (
@@ -819,41 +855,66 @@ export default function StudentDashboard() {
     }
 
     const items = activeTab === 'materials' ? materials : papers;
+    const p = activeTab === 'materials' ? tabPagination.materials : tabPagination.papers;
+
     return (
-      <div className="space-y-3">
-        {items.length === 0 && (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
-              <BookOpen className="w-8 h-8 text-primary/40" />
+      <div className="space-y-4">
+        <div className="space-y-3">
+          {items.length === 0 && (
+            <div className="text-center py-16 card bg-white border border-gray-100">
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center mb-3">
+                <BookOpen className="w-8 h-8 text-primary/40" />
+              </div>
+              <p className="text-gray-400">No {activeTab === 'materials' ? 'study materials' : 'test papers'} available yet.</p>
             </div>
-            <p className="text-gray-400">No {activeTab === 'materials' ? 'study materials' : 'test papers'} available yet.</p>
+          )}
+          {items.map(item => (
+            <div key={item._id} className="card p-5 flex items-center gap-4 hover:border-primary/30 transition-all group">
+              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                <FileText className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="font-bold text-brand-dark truncate">{item.title}</h4>
+                <div className="flex items-center gap-2 mt-1">
+                  {item.subject && <span className="text-[10px] bg-brand-bg text-brand-dark px-2 py-0.5 rounded font-bold uppercase tracking-tighter">{item.subject}</span>}
+                  <span className="text-[10px] text-gray-400 font-medium tracking-tight">●</span>
+                  <span className="text-[10px] text-gray-500 font-semibold">Class {item.studentClass === 'all' ? 'All' : item.studentClass}</span>
+                </div>
+              </div>
+              <a
+                href={item.fileUrl}
+                download
+                target="_blank"
+                rel="noreferrer"
+                className="btn-primary text-xs py-2 px-4 shadow-glass hover:shadow-brand transition-all flex items-center gap-1.5 shrink-0"
+                onClick={() => toast.success('Download started!')}
+              >
+                <Download className="w-3.5 h-3.5 text-white/70" /> Download
+              </a>
+            </div>
+          ))}
+        </div>
+
+        {/* Pagination */}
+        {p.pages > 1 && (
+          <div className="flex items-center justify-center gap-4 py-4 border-t border-gray-50">
+            <button 
+              disabled={p.page === 1} 
+              onClick={() => handlePageChange(p.page - 1)} 
+              className="p-2 rounded-xl border border-gray-100 disabled:opacity-30 hover:border-primary transition-all shadow-sm"
+            >
+              <ChevronDown className="w-4 h-4 rotate-90" />
+            </button>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{p.page} / {p.pages}</span>
+            <button 
+              disabled={p.page === p.pages} 
+              onClick={() => handlePageChange(p.page + 1)} 
+              className="p-2 rounded-xl border border-gray-100 disabled:opacity-30 hover:border-primary transition-all shadow-sm"
+            >
+              <ChevronDown className="w-4 h-4 -rotate-90" />
+            </button>
           </div>
         )}
-        {items.map(item => (
-          <div key={item._id} className="card p-5 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <FileText className="w-6 h-6 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h4 className="font-semibold text-brand-dark truncate">{item.title}</h4>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {item.subject && <span className="mr-3">📚 {item.subject}</span>}
-                <span>Class {item.studentClass === 'all' ? 'All' : item.studentClass}</span>
-                {item.fileName && <span className="ml-2 text-gray-300">• {item.fileName}</span>}
-              </p>
-            </div>
-            <a
-              href={item.fileUrl}
-              download
-              target="_blank"
-              rel="noreferrer"
-              className="btn-primary text-xs py-2 px-4 flex items-center gap-1.5 shrink-0"
-              onClick={() => toast.success('Download started!')}
-            >
-              <Download className="w-3.5 h-3.5" /> Download
-            </a>
-          </div>
-        ))}
       </div>
     );
   };

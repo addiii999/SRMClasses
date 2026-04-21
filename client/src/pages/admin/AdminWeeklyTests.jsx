@@ -719,6 +719,10 @@ export default function AdminWeeklyTests() {
     fetchBranches();
   }, []);
 
+  // Pagination State
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, pages: 1, limit: 20 });
+
   const fetchTests = useCallback(async () => {
     setLoading(true);
     try {
@@ -727,15 +731,26 @@ export default function AdminWeeklyTests() {
       if (filterSubject) params.push(`subject=${filterSubject}`);
       if (filterBoard) params.push(`board=${filterBoard}`);
       if (filterBranch) params.push(`branch=${filterBranch}`);
-      const query = params.length ? `?${params.join('&')}` : '';
+      params.push(`page=${page}`);
+      params.push(`limit=20`);
+      
+      const query = `?${params.join('&')}`;
       const res = await api.get(`/weekly-tests${query}`);
       setTests(res.data.data || []);
+      if (res.data.pagination) {
+        setPagination(res.data.pagination);
+      }
     } catch {
       toast.error('Failed to load tests');
     } finally {
       setLoading(false);
     }
-  }, [filterBatch, filterSubject, filterBoard]);
+  }, [filterBatch, filterSubject, filterBoard, filterBranch, page]);
+
+  useEffect(() => {
+    // Reset to page 1 on filter change
+    setPage(1);
+  }, [filterBatch, filterSubject, filterBoard, filterBranch]);
 
   useEffect(() => { fetchTests(); }, [fetchTests]);
 
@@ -861,6 +876,50 @@ export default function AdminWeeklyTests() {
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {!loading && pagination.pages > 1 && (
+        <div className="flex items-center justify-between mt-8 p-4 bg-white rounded-2xl border border-gray-100">
+          <div className="text-xs text-gray-500 font-medium">
+            Showing {(page - 1) * pagination.limit + 1} to {Math.min(page * pagination.limit, pagination.total)} of {pagination.total} tests
+          </div>
+          <div className="flex gap-2">
+            <button 
+              disabled={page === 1}
+              onClick={() => setPage(p => p - 1)}
+              className="px-4 py-2 rounded-xl border border-gray-100 text-xs font-bold disabled:opacity-50 hover:bg-gray-50 transition-all flex items-center gap-2"
+            >
+              <ChevronLeft className="w-3 h-3" /> Previous
+            </button>
+            <div className="flex gap-1">
+              {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
+                let pageNum;
+                if (pagination.pages <= 5) pageNum = i + 1;
+                else if (page <= 3) pageNum = i + 1;
+                else if (page >= pagination.pages - 2) pageNum = pagination.pages - 4 + i;
+                else pageNum = page - 2 + i;
+                
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${page === pageNum ? 'bg-primary text-white shadow-lg' : 'text-gray-400 hover:bg-gray-50'}`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+            </div>
+            <button 
+              disabled={page === pagination.pages}
+              onClick={() => setPage(p => p + 1)}
+              className="px-4 py-2 rounded-xl border border-gray-100 text-xs font-bold disabled:opacity-50 hover:bg-gray-50 transition-all flex items-center gap-2"
+            >
+              Next <ChevronLeft className="w-3 h-3 rotate-180" />
+            </button>
+          </div>
         </div>
       )}
     </div>

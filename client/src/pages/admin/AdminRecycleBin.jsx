@@ -20,20 +20,29 @@ const TYPE_ICONS = {
 };
 
 export default function AdminRecycleBin() {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [filterType, setFilterType] = useState('all');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState({ total: 0, pages: 1 });
 
   useEffect(() => {
     fetchItems();
-  }, []);
+  }, [page, search, filterType]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, filterType]);
 
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const { data } = await api.get('/recycle-bin');
+      const params = new URLSearchParams({
+        page,
+        limit: 15,
+        search,
+        type: filterType === 'all' ? '' : filterType
+      });
+      const { data } = await api.get(`/recycle-bin?${params.toString()}`);
       setItems(data.data || []);
+      setPagination(data.pagination || { total: 0, pages: 1 });
     } catch (error) {
       toast.error('Failed to load recycle bin');
     } finally {
@@ -62,12 +71,6 @@ export default function AdminRecycleBin() {
       toast.error('Permanent deletion failed');
     }
   };
-
-  const filtered = items.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
-    const matchesType = filterType === 'all' || item.type === filterType;
-    return matchesSearch && matchesType;
-  });
 
   const getDayLabel = (days) => {
     if (days <= 0) return 'Purging Soon...';
@@ -127,7 +130,7 @@ export default function AdminRecycleBin() {
                 Array(5).fill(0).map((_, i) => (
                   <tr key={i}><td colSpan={5} className="px-6 py-6 animate-pulse bg-gray-50/10"></td></tr>
                 ))
-              ) : filtered.length === 0 ? (
+              ) : items.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-6 py-20 text-center">
                     <div className="flex flex-col items-center gap-3 grayscale opacity-50">
@@ -136,7 +139,7 @@ export default function AdminRecycleBin() {
                     </div>
                   </td>
                 </tr>
-              ) : filtered.map((item) => (
+              ) : items.map((item) => (
                 <tr key={item._id} className="hover:bg-brand-bg transition-colors group">
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
@@ -192,7 +195,29 @@ export default function AdminRecycleBin() {
         </div>
       </div>
       
-      {filtered.length > 0 && (
+      {pagination.pages > 1 && (
+        <div className="flex items-center justify-center gap-4 py-4 border-t border-gray-100 mt-6">
+          <button 
+            disabled={page === 1} 
+            onClick={() => setPage(p => Math.max(1, p - 1))} 
+            className="p-2 rounded-xl border border-gray-200 disabled:opacity-30 hover:shadow-sm transition-all"
+          >
+            <ChevronRight className="w-4 h-4 rotate-180" />
+          </button>
+          <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+            Page {page} / {pagination.pages}
+          </span>
+          <button 
+            disabled={page === pagination.pages} 
+            onClick={() => setPage(p => Math.min(pagination.pages, p + 1))} 
+            className="p-2 rounded-xl border border-gray-200 disabled:opacity-30 hover:shadow-sm transition-all"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {items.length > 0 && (
         <div className="flex items-center gap-3 p-4 bg-amber-50 rounded-2xl border border-amber-100/50">
           <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
           <p className="text-xs text-amber-900 leading-relaxed font-medium">

@@ -12,12 +12,27 @@ const getAnnouncements = async (req, res) => {
     if (studentClass && typeof studentClass === 'string') {
       query.$or = [{ targetClass: studentClass }, { targetClass: 'all' }];
     }
+    const limit = Math.min(parseInt(req.query.limit) || 20, 50);
+    const page = Math.max(parseInt(req.query.page) || 1, 1);
+    const skip = (page - 1) * limit;
+
+    const total = await Announcement.countDocuments(query);
     const announcements = await Announcement.find(query)
       .select('title body createdAt priority targetClass')
       .sort({ createdAt: -1 })
-      .limit(50)
+      .skip(skip)
+      .limit(limit)
       .lean();
-    res.json({ success: true, data: announcements });
+    res.json({ 
+      success: true, 
+      data: announcements,
+      pagination: {
+        total,
+        page,
+        limit,
+        pages: Math.ceil(total / limit)
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
   }
