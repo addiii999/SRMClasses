@@ -14,7 +14,8 @@ const getStoredToken = (key) => sessionStorage.getItem(key) || localStorage.getI
 api.interceptors.request.use((config) => {
   if (!config.headers.Authorization) {
     const authScope = config.headers['X-Auth-Scope'];
-    const isAdminRoute = authScope === 'admin' || String(config.url || '').includes('/admin');
+    const isBrowserAdmin = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+    const isAdminRoute = authScope === 'admin' || String(config.url || '').includes('/admin') || isBrowserAdmin;
     const token = isAdminRoute
       ? getStoredToken('adminToken')
       : getStoredToken('studentToken');
