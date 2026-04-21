@@ -831,8 +831,6 @@ function Materials({ selectedBranch }) {
     </div>
   );
 }
-  );
-}
 
 // ─── Courses Management ────────────────────────────────────────────
 function CoursesAdmin() {
