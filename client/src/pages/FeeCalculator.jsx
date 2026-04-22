@@ -52,7 +52,7 @@ export default function FeeCalculator() {
     const admissionFee = 500; // Always included
 
     // Compute Plans
-    const plans = [1, 2, 3].map(planNumber => {
+    const plans = [1, 2, 3, 4, 5, 6].map(planNumber => {
       let instDiscountPercent = 0;
       if (planNumber === 1) instDiscountPercent = 10;
       else if (planNumber === 2) instDiscountPercent = 5;
@@ -278,7 +278,7 @@ export default function FeeCalculator() {
                   <div className="bg-brand-bg border border-gray-100 rounded-2xl p-5 mb-8 opacity-100">
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-widest block mb-3 flex items-center gap-1.5"><Calendar className="w-4 h-4"/> Choose Payment Plan</label>
                     <div className="grid grid-cols-3 gap-2 mb-5">
-                      {[1, 2, 3].map(planNumber => (
+                      {[1, 2, 3, 4, 5, 6].map(planNumber => (
                         <button 
                           key={planNumber}
                           onClick={() => setActivePlan(planNumber)}
