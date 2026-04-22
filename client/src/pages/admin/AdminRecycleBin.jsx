@@ -3,7 +3,7 @@ import api from '../../lib/api';
 import toast from 'react-hot-toast';
 import { 
   Trash2, RotateCcw, Calendar, User, Image, FileText, 
-  Search, Filter, AlertTriangle, Clock, RefreshCw, ClipboardList
+  Search, Filter, AlertTriangle, Clock, RefreshCw, ClipboardList, ChevronRight
 } from 'lucide-react';
 
 const TYPE_ICONS = {
@@ -22,6 +22,10 @@ const TYPE_ICONS = {
 export default function AdminRecycleBin() {
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState({ total: 0, pages: 1 });
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('all');
 
   useEffect(() => {
     fetchItems();
