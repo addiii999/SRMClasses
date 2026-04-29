@@ -10,19 +10,19 @@ const BATCH_DEFINITIONS = {
     description: 'CBSE only — Class 5 to 10',
   },
   'Advance Batch': {
-    allowedBoards: ['ICSE'],
+    allowedBoards: ['CBSE', 'ICSE'],
     allowedClasses: ['6', '7', '8', '9', '10'],
-    description: 'ICSE only — Class 6 to 10',
+    description: 'CBSE and ICSE — Class 6 to 10',
   },
   'Core Batch': {
-    allowedBoards: ['CBSE', 'ICSE'],
+    allowedBoards: ['CBSE'],
     allowedClasses: ['9', '10'],
-    description: 'CBSE and ICSE — Class 9 and 10 only (Math/Science)',
+    description: 'CBSE only — Class 9 and 10 only (Math/Science)',
   },
   'Commerce Batch': {
-    allowedBoards: ['CBSE', 'ICSE'],
+    allowedBoards: ['CBSE', 'JAC'],
     allowedClasses: ['11', '12'],
-    description: 'CBSE and ICSE — Class 11 and 12 only (Commerce)',
+    description: 'CBSE and JAC — Class 11 and 12 only (Commerce)',
   },
 };
 

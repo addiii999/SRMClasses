@@ -332,9 +332,9 @@ function StudentDetailModal({ student, branches, onClose, onRefresh, adminRole }
               </div>
               <div className="text-xs text-gray-400 space-y-1">
                 <p>• <strong>Foundation Batch</strong> — CBSE only, Class 5–10</p>
-                <p>• <strong>Advance Batch</strong> — ICSE only, Class 6–10</p>
-                <p>• <strong>Core Batch</strong> — CBSE & ICSE, Class 9–10 (Math/Science)</p>
-                <p>• <strong>Commerce Batch</strong> — CBSE & ICSE, Class 11–12</p>
+                <p>• <strong>Advance Batch</strong> — CBSE & ICSE, Class 6–10</p>
+                <p>• <strong>Core Batch</strong> — CBSE only, Class 9–10 (Math/Science)</p>
+                <p>• <strong>Commerce Batch</strong> — CBSE & JAC, Class 11–12</p>
               </div>
               <button onClick={handleAssignBatch} disabled={assigning || !batchForm}
                 className="btn-primary w-full py-3 flex items-center justify-center gap-2 disabled:opacity-60">
