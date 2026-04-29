@@ -8,6 +8,7 @@ const {
   restoreFromArchive,
   exportStudents,
   softDeleteArchived,
+  directDeleteStudents,
   getDeletedArchivedStudents,
   restoreDeletedArchived,
   getLifecycleLogs,
@@ -25,9 +26,10 @@ router.post('/archive/restore', restoreFromArchive);      // Restore archived �
 // ── Export (SUPER_ADMIN only — enforced in controller + middleware) ────────────
 router.post('/export', superAdminOnly, exportStudents);
 
-// ── Deletion System (SUPER_ADMIN only) ───────────────────────────────────────
-router.get('/deleted', getDeletedArchivedStudents);               // 30-day window list
-router.post('/delete', superAdminOnly, softDeleteArchived);        // Mark for deletion
+// ── Deletion System ──────────────────────────────────────────────────────────
+router.get('/deleted', getDeletedArchivedStudents);                    // 30-day window list
+router.post('/delete', superAdminOnly, softDeleteArchived);             // Archive → deletion (SUPER_ADMIN)
+router.post('/direct-delete', directDeleteStudents);                    // Active → deletion (all admins)
 router.post('/deleted/restore', superAdminOnly, restoreDeletedArchived); // Un-delete
 
 // ── Lifecycle Audit Logs ──────────────────────────────────────────────────────

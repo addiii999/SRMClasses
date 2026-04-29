@@ -294,6 +294,91 @@ function DeleteModal({ selectedIds, onClose, onSuccess }) {
   );
 }
 
+// ─── Direct Delete Modal ──────────────────────────────────────────────────────
+function DirectDeleteModal({ selectedIds, onClose, onSuccess }) {
+  const [reason, setReason] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async () => {
+    if (reason.trim().length < 10) {
+      toast.error('Reason must be at least 10 characters.');
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await api.post('/lifecycle/direct-delete', {
+        studentIds: selectedIds,
+        reason: reason.trim(),
+      });
+      toast.success(res.data.message);
+      onSuccess();
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Delete failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
+        <div className="p-6 border-b border-gray-100 flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
+            <Trash2 className="w-5 h-5 text-red-600" />
+          </div>
+          <div>
+            <h3 className="font-bold text-gray-900 text-lg">Move to Recovery Window</h3>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {selectedIds.length} student{selectedIds.length !== 1 ? 's' : ''} will be removed from active list and placed in the 30-day recovery window.
+            </p>
+          </div>
+          <button onClick={onClose} className="ml-auto text-gray-300 hover:text-gray-500"><X className="w-5 h-5" /></button>
+        </div>
+
+        <div className="p-6 space-y-4">
+          <div className="bg-red-50 border border-red-200 rounded-xl p-4 flex gap-3">
+            <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+            <ul className="text-xs text-red-700 space-y-1 list-disc list-inside">
+              <li>Students will be immediately removed from the active list</li>
+              <li>They will appear in Recovery Window for 30 days</li>
+              <li>After 30 days, data is permanently erased</li>
+              <li>SUPER_ADMIN can restore within the recovery window</li>
+            </ul>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+              Reason for Deletion <span className="text-red-400">*</span>
+            </label>
+            <textarea
+              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-red-400/40 focus:border-red-400"
+              rows={3}
+              placeholder="Minimum 10 characters required…"
+              value={reason}
+              onChange={e => setReason(e.target.value)}
+            />
+            <p className={`text-xs mt-1 ${reason.length >= 10 ? 'text-green-500' : 'text-gray-400'}`}>
+              {reason.length}/10 minimum characters
+            </p>
+          </div>
+        </div>
+
+        <div className="p-6 pt-0 flex gap-3 justify-end">
+          <button onClick={onClose} className="px-5 py-2 text-sm font-medium text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50">Cancel</button>
+          <button
+            onClick={handleSubmit}
+            disabled={loading || reason.trim().length < 10}
+            className="px-5 py-2 bg-red-600 text-white rounded-xl text-sm font-medium hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+          >
+            {loading ? <><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Moving…</> : <><Trash2 className="w-3.5 h-3.5" /> Confirm Delete</>}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Tab: Active Students ─────────────────────────────────────────────────────
 function ActiveStudentsTab({ adminRole }) {
   const [students, setStudents] = useState([]);
@@ -303,6 +388,7 @@ function ActiveStudentsTab({ adminRole }) {
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState(new Set());
   const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showDirectDeleteModal, setShowDirectDeleteModal] = useState(false);
   const [exportLoading, setExportLoading] = useState(false);
 
   const fetchStudents = useCallback(async () => {
@@ -378,9 +464,9 @@ function ActiveStudentsTab({ adminRole }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-bold text-gray-900">Active Students</h3>
-          <p className="text-sm text-gray-500">Select students to archive or export data.</p>
+          <p className="text-sm text-gray-500">Select students to archive, delete, or export data.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {adminRole === 'SUPER_ADMIN' && (
             <button
               onClick={handleExport}
@@ -398,6 +484,14 @@ function ActiveStudentsTab({ adminRole }) {
           >
             <Archive className="w-4 h-4" />
             Archive {selected.size > 0 ? `(${selected.size})` : 'Selected'}
+          </button>
+          <button
+            onClick={() => { if (selected.size === 0) { toast.error('Select at least one student'); return; } setShowDirectDeleteModal(true); }}
+            disabled={selected.size === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-xl text-sm font-medium hover:bg-red-600 disabled:opacity-50"
+          >
+            <Trash2 className="w-4 h-4" />
+            Delete {selected.size > 0 ? `(${selected.size})` : 'Selected'}
           </button>
         </div>
       </div>
@@ -473,9 +567,17 @@ function ActiveStudentsTab({ adminRole }) {
           onSuccess={fetchStudents}
         />
       )}
+      {showDirectDeleteModal && (
+        <DirectDeleteModal
+          selectedIds={[...selected]}
+          onClose={() => setShowDirectDeleteModal(false)}
+          onSuccess={fetchStudents}
+        />
+      )}
     </div>
   );
 }
+
 
 // ─── Tab: Archived Students ───────────────────────────────────────────────────
 function ArchivedStudentsTab({ adminRole }) {

@@ -554,6 +554,133 @@ exports.softDeleteArchived = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// POST /api/lifecycle/direct-delete
+// Directly move ACTIVE students → 30-day Recovery Window in one step.
+// Combines archive + soft-delete atomically. Available to all admins.
+// Body: { studentIds: [...], reason: "..." }
+// ─────────────────────────────────────────────────────────────────────────────
+exports.directDeleteStudents = async (req, res) => {
+  const session = await mongoose.startSession();
+  try {
+    const { studentIds, reason } = req.body;
+    const adminEmail = req.admin.email;
+    const adminRole = req.admin.role;
+    const ip = getClientIP(req);
+
+    if (!studentIds || studentIds.length === 0) {
+      return res.status(400).json({ success: false, message: 'No student IDs provided.' });
+    }
+    if (!reason || reason.trim().length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: 'Deletion reason is required and must be at least 10 characters.',
+      });
+    }
+
+    session.startTransaction();
+
+    // ── Fetch active students ─────────────────────────────────────────────
+    const students = await User.find({
+      _id: { $in: studentIds },
+      isArchived: { $ne: true },
+      isDeleted: { $ne: true },
+    }).session(session).lean();
+
+    if (students.length === 0) {
+      await session.abortTransaction();
+      return res.status(400).json({ success: false, message: 'No eligible active students found.' });
+    }
+
+    const now = new Date();
+
+    // ── Build ArchivedStudent docs with isDeleted=true (skip archive step) ─
+    const archiveDocs = students.map((s) => ({
+      originalUserId: s._id,
+      name: s.name,
+      email: s.email,
+      mobile: s.mobile,
+      mobileVerified: s.mobileVerified,
+      parentName: s.parentName,
+      parentContact: s.parentContact,
+      schoolName: s.schoolName,
+      address: s.address,
+      studentClass: s.studentClass,
+      branch: s.branch,
+      board: s.board,
+      batch: s.batch,
+      boardChangeCount: s.boardChangeCount,
+      role: s.role,
+      studentId: s.studentId,
+      shouldChangePassword: s.shouldChangePassword,
+      createdByAdmin: s.createdByAdmin,
+      registrationStatus: s.registrationStatus,
+      isApproved: s.isApproved,
+      isActive: s.isActive,
+      isStudent: s.isStudent,
+      isEnrolled: s.isEnrolled,
+      verificationStatus: s.verificationStatus,
+      rejectedAt: s.rejectedAt,
+      enrollmentLogs: s.enrollmentLogs,
+      academicYear: s.academicYear,
+      classHistory: s.classHistory,
+      feeType: s.feeType,
+      registrationFeeApplicable: s.registrationFeeApplicable,
+      feeSnapshot: s.feeSnapshot,
+      payments: s.payments,
+      paymentLogs: s.paymentLogs,
+      profileHistory: s.profileHistory,
+      adminAuditLog: s.adminAuditLog,
+      photo: s.photo || { url: null, public_id: null },
+      originalCreatedAt: s.createdAt,
+      originalUpdatedAt: s.updatedAt,
+      // Lifecycle: directly mark as deleted (bypasses archive state)
+      isArchived: true,
+      archivedAt: now,
+      archivedBy: adminEmail,
+      archiveReason: reason.trim(),
+      isDeleted: true,
+      deletedAt: now,
+      deletedBy: adminEmail,
+      lifecycleLog: [
+        {
+          action: 'direct_delete',
+          performedBy: adminEmail,
+          performedByRole: adminRole,
+          performedAt: now,
+          note: `Directly moved to 30-day recovery window. Reason: ${reason.trim()}`,
+          ipAddress: ip,
+        },
+      ],
+    }));
+
+    await ArchivedStudent.insertMany(archiveDocs, { session, ordered: true });
+    await User.deleteMany({ _id: { $in: students.map((s) => s._id) } }, { session });
+
+    await session.commitTransaction();
+
+    await notifySuperAdmins(
+      '🗑️ Students Moved to Deletion Queue',
+      `${students.length} student(s) were directly moved to the 30-day recovery window by ${adminEmail}. Reason: ${reason.trim()}`,
+      'lifecycle_delete'
+    );
+
+    return res.json({
+      success: true,
+      message: `${students.length} student(s) moved to 30-day recovery window. They will be permanently deleted after 30 days.`,
+      data: {
+        count: students.length,
+        purgeDate: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+      },
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    return res.status(500).json({ success: false, message: error.message });
+  } finally {
+    session.endSession();
+  }
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 // GET /api/lifecycle/deleted
 // List soft-deleted archived students still in recovery window
 // ─────────────────────────────────────────────────────────────────────────────
