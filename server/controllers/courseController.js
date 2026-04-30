@@ -12,7 +12,9 @@ const parseBooleanInput = (value) => {
 
 const getCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ isActive: true, isDeleted: false }).sort({ className: 1 });
+    let courses = await Course.find({ isActive: true, isDeleted: false });
+    // Sort numerically since className is a string
+    courses.sort((a, b) => parseInt(a.className) - parseInt(b.className));
     res.json({ success: true, data: courses });
   } catch (error) {
     res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
@@ -21,7 +23,9 @@ const getCourses = async (req, res) => {
 
 const getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ isDeleted: false }).sort({ className: 1 });
+    let courses = await Course.find({ isDeleted: false });
+    // Sort numerically since className is a string
+    courses.sort((a, b) => parseInt(a.className) - parseInt(b.className));
     res.json({ success: true, data: courses });
   } catch (error) {
     res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
