@@ -12,7 +12,7 @@ const parseBooleanInput = (value) => {
 
 const getCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ isActive: true }).sort({ className: 1 });
+    const courses = await Course.find({ isActive: true, isDeleted: false }).sort({ className: 1 });
     res.json({ success: true, data: courses });
   } catch (error) {
     res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
@@ -21,7 +21,7 @@ const getCourses = async (req, res) => {
 
 const getAllCourses = async (req, res) => {
   try {
-    const courses = await Course.find().sort({ className: 1 });
+    const courses = await Course.find({ isDeleted: false }).sort({ className: 1 });
     res.json({ success: true, data: courses });
   } catch (error) {
     res.status(500).json({ success: false, message: GENERIC_SERVER_ERROR });
@@ -30,9 +30,13 @@ const getAllCourses = async (req, res) => {
 
 const createCourse = async (req, res) => {
   try {
-    const { className, description, isActive } = req.body;
+    const { className, subjects, duration, batchTimings, fee, description, isActive } = req.body;
     const course = await Course.create({
       className,
+      subjects,
+      duration,
+      batchTimings,
+      fee,
       description,
       ...(isActive !== undefined ? { isActive: parseBooleanInput(isActive) } : {}),
     });
@@ -45,7 +49,7 @@ const createCourse = async (req, res) => {
 const updateCourse = async (req, res) => {
   try {
     const { id } = req.params;
-    const { className, description, isActive } = req.body;
+    const { className, subjects, duration, batchTimings, fee, description, isActive } = req.body;
     
     // Explicitly validate ID to satisfy static analysis
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -54,6 +58,10 @@ const updateCourse = async (req, res) => {
 
     const updates = {
       className: className !== undefined ? String(className) : undefined,
+      subjects: subjects !== undefined ? subjects : undefined,
+      duration: duration !== undefined ? String(duration) : undefined,
+      batchTimings: batchTimings !== undefined ? batchTimings : undefined,
+      fee: fee !== undefined ? Number(fee) : undefined,
       description: description !== undefined ? String(description) : undefined,
     };
     if (isActive !== undefined) {

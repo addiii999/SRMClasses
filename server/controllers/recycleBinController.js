@@ -165,7 +165,7 @@ exports.permanentlyDeleteItem = async (req, res) => {
       console.error(`Storage cleanup failed for ${type} ${id}:`, storageError.message);
     }
 
-    await Model.findByIdAndDelete(id);
+    await Model.deleteOne({ _id: id });
 
     res.status(200).json({ success: true, message: `${type} permanently deleted` });
   } catch (error) {
