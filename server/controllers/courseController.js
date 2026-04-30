@@ -30,9 +30,10 @@ const getAllCourses = async (req, res) => {
 
 const createCourse = async (req, res) => {
   try {
-    const { className, subjects, duration, batchTimings, fee, description, isActive } = req.body;
+    const { className, board, subjects, duration, batchTimings, fee, description, isActive } = req.body;
     const course = await Course.create({
       className,
+      board,
       subjects,
       duration,
       batchTimings,
@@ -49,7 +50,7 @@ const createCourse = async (req, res) => {
 const updateCourse = async (req, res) => {
   try {
     const { id } = req.params;
-    const { className, subjects, duration, batchTimings, fee, description, isActive } = req.body;
+    const { className, board, subjects, duration, batchTimings, fee, description, isActive } = req.body;
     
     // Explicitly validate ID to satisfy static analysis
     if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -58,6 +59,7 @@ const updateCourse = async (req, res) => {
 
     const updates = {
       className: className !== undefined ? String(className) : undefined,
+      board: board !== undefined ? String(board) : undefined,
       subjects: subjects !== undefined ? subjects : undefined,
       duration: duration !== undefined ? String(duration) : undefined,
       batchTimings: batchTimings !== undefined ? batchTimings : undefined,

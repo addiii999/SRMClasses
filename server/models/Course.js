@@ -7,6 +7,11 @@ const courseSchema = new mongoose.Schema({
     required: true,
     enum: ['5', '6', '7', '8', '9', '10', '11', '12'],
   },
+  board: {
+    type: String,
+    enum: ['CBSE', 'ICSE', 'JAC', 'Both', 'All'],
+    default: 'CBSE'
+  },
   subjects: [{ type: String }],
   duration: { type: String, required: true },
   batchTimings: [{ type: String }],

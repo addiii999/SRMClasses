@@ -835,7 +835,7 @@ function Materials({ selectedBranch }) {
 // ─── Courses Management ────────────────────────────────────────────
 function CoursesAdmin() {
   const [courses, setCourses] = useState([]);
-  const [form, setForm] = useState({ className: '', subjects: '', duration: '1 Year', batchTimings: '' });
+  const [form, setForm] = useState({ className: '', board: 'CBSE', subjects: '', duration: '1 Year', batchTimings: '' });
   const [loading, setLoading] = useState(false);
 
   const fetchCourses = async () => {
@@ -853,7 +853,7 @@ function CoursesAdmin() {
         batchTimings: form.batchTimings.split(',').map(b => b.trim()),
       });
       toast.success('Course created!'); fetchCourses();
-      setForm({ className: '', subjects: '', duration: '1 Year', batchTimings: '' });
+      setForm({ className: '', board: 'CBSE', subjects: '', duration: '1 Year', batchTimings: '' });
     } catch { toast.error('Failed'); }
     finally { setLoading(false); }
   };
@@ -883,6 +883,11 @@ function CoursesAdmin() {
               {['5', '6', '7', '8', '9', '10', '11', '12'].map(c => <option key={c} value={c}>Class {c}</option>)}
             </select>
           </div>
+          <div><label className="label">Board</label>
+            <select className="input-field" value={form.board} onChange={e => setForm({ ...form, board: e.target.value })}>
+              {['CBSE', 'ICSE', 'JAC', 'Both', 'All'].map(b => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </div>
           <div><label className="label">Duration</label><input className="input-field" value={form.duration} onChange={e => setForm({ ...form, duration: e.target.value })} /></div>
         </div>
         <div><label className="label">Subjects (comma-separated)</label><input className="input-field" placeholder="Mathematics, Science, English" value={form.subjects} onChange={e => setForm({ ...form, subjects: e.target.value })} required /></div>
@@ -897,6 +902,7 @@ function CoursesAdmin() {
               <button onClick={() => deleteCourse(c._id)} className="text-red-300 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
             </div>
             <p className="font-semibold text-brand-dark mb-1">Class {c.className}</p>
+            <p className="text-[10px] text-white bg-primary rounded px-2 py-0.5 inline-block mb-2 font-bold">{c.board}</p>
             <p className="text-xs text-gray-400 mb-2">{c.subjects?.join(', ')}</p>
             {c.batchTimings?.map((t, i) => <span key={i} className="block text-xs text-primary">{t}</span>)}
           </div>
